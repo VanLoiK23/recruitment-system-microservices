@@ -1,7 +1,5 @@
 package com.loihvk23.application_service.dto;
 
-import java.time.LocalDateTime;
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -11,16 +9,9 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class ApplicationDTO {
-	private Long id;
+public class JobCacheDTO {
 
-	private String jobId;
-
-	private String candidateEmail;
-	
-	private String cvUrl;
-
+	private String id;
+	private String recruiterEmail;
 	private String status;
-
-	private LocalDateTime createdAt;
 }

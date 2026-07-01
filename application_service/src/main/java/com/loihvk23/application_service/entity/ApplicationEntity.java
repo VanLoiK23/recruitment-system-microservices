@@ -19,13 +19,10 @@ public class ApplicationEntity {
 	private Long id;
 
 	@Column(nullable = false)
-	private Long jobId;
+	private String jobId;
 
 	@Column(nullable = false)
 	private String candidateEmail;
-	
-	@Column(nullable = false)
-	private String recruiterEmail;
 
 	@Column(nullable = false)
 	private String cvUrl;

@@ -10,8 +10,11 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MultipartException;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import com.loihvk23.application_service.dto.response.ErrorResponse;
@@ -66,6 +69,16 @@ public class GlobalHandlerException {
 
 		return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
 	}
+	
+	
+	@ExceptionHandler(MissingServletRequestPartException.class)
+	public ResponseEntity<ErrorResponse<String>> handleMissingServletRequestPartException(MissingServletRequestPartException exp) {
+		ErrorResponse<String> errorResponse = ErrorResponse.<String>builder().timestamp(LocalDateTime.now())
+				.status(HttpStatus.NOT_FOUND.value()).error(HttpStatus.NOT_FOUND.getReasonPhrase())
+				.message(exp.getMessage()).build();
+
+		return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
+	}
 
 	@ExceptionHandler(AccessDeniedException.class)
 	public ResponseEntity<ErrorResponse<String>> handleAccessDeniedException(AccessDeniedException exp) {
@@ -103,6 +116,33 @@ public class GlobalHandlerException {
 		ErrorResponse<String> errorResponse = ErrorResponse.<String>builder().timestamp(LocalDateTime.now())
 				.status(HttpStatus.NOT_FOUND.value()).error(HttpStatus.NOT_FOUND.getReasonPhrase())
 				.message("The requested resources do not exist., please try again later !!").build();
+
+		return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
+	}
+	
+	@ExceptionHandler(MissingServletRequestParameterException.class)
+	public ResponseEntity<ErrorResponse<String>> handleMissingRequestParamException(MissingServletRequestParameterException exp) {
+	    
+	    String parameterName = exp.getParameterName(); 
+	    
+	    String errorMessage = String.format("Param '%s' is required in request (Request)!", parameterName);
+
+	    ErrorResponse<String> errorResponse = ErrorResponse.<String>builder()
+	            .timestamp(LocalDateTime.now())
+	            .status(HttpStatus.BAD_REQUEST.value()) 
+	            .error(HttpStatus.BAD_REQUEST.getReasonPhrase())
+	            .message(errorMessage)
+	            .build();
+
+	    return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+	}
+	
+	@ExceptionHandler(MultipartException.class)
+	public ResponseEntity<ErrorResponse<String>> handleMultipartException(MultipartException exp) {
+		exp.printStackTrace();
+		ErrorResponse<String> errorResponse = ErrorResponse.<String>builder().timestamp(LocalDateTime.now())
+				.status(HttpStatus.NOT_FOUND.value()).error(HttpStatus.NOT_FOUND.getReasonPhrase())
+				.message("File CV is required").build();
 
 		return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
 	}

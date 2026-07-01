@@ -2,6 +2,7 @@ package com.loihvk23.job_service.controller;
 
 import java.util.Map;
 
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
@@ -20,7 +21,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.loihvk23.job_service.config.RabbitMQConfig;
 import com.loihvk23.job_service.dto.JobDTO;
+import com.loihvk23.job_service.dto.request.JobEvent;
 import com.loihvk23.job_service.dto.request.JobSearchRequest;
 import com.loihvk23.job_service.service.JobService;
 
@@ -33,6 +36,8 @@ import lombok.RequiredArgsConstructor;
 public class JobResController {
 
 	private final JobService jobService;
+	
+	private final RabbitTemplate rabbitTemplate;
 
 	@GetMapping
 	public ResponseEntity<?> getListJobs(@RequestParam(name = "page", defaultValue = "1") int page,
@@ -59,8 +64,12 @@ public class JobResController {
 
 		String email = userDetails.getUsername();
 		jobDTO.setRecruiterEmail(email);
-
+		
 		JobDTO jobSaveDto = jobService.createNewJob(jobDTO);
+		
+		JobEvent jobEvent = JobEvent.builder().id(jobSaveDto.getId()).recruiterEmail(email).status(jobSaveDto.getStatus()).build();
+		
+		rabbitTemplate.convertAndSend(RabbitMQConfig.JOB_EXCHANGE, RabbitMQConfig.JOB_UPSERTED_KEY, jobEvent);
 
 		return ResponseEntity.status(HttpStatus.CREATED).body(jobSaveDto);
 	}
@@ -72,8 +81,13 @@ public class JobResController {
 		String email = userDetails.getUsername();
 
 		jobDTO.setId(jobId);
+		jobDTO.setRecruiterEmail(email);
 
 		JobDTO jobSaveDto = jobService.updateJob(jobDTO, email);
+		
+		JobEvent jobEvent = JobEvent.builder().id(jobSaveDto.getId()).recruiterEmail(email).status(jobSaveDto.getStatus()).build();
+		
+		rabbitTemplate.convertAndSend(RabbitMQConfig.JOB_EXCHANGE, RabbitMQConfig.JOB_UPSERTED_KEY, jobEvent);
 
 		return ResponseEntity.ok(jobSaveDto);
 	}
@@ -84,6 +98,10 @@ public class JobResController {
 
 		String email = userDetails.getUsername();
 
+		JobEvent jobEvent = JobEvent.builder().id(jobId).build();
+		
+		rabbitTemplate.convertAndSend(RabbitMQConfig.JOB_EXCHANGE, RabbitMQConfig.JOB_DELETE_KEY, jobEvent);
+		
 		jobService.deleteJob(jobId, email);
 
 		return ResponseEntity.ok(Map.of("message", "Delete Successfully !"));

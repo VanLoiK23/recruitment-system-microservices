@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: recruitment-rabbitmq
+    ports:
+      - "5672:5672"     
+      - "15672:15672"  
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - recruitment-network
+
+  auth-db:
+    image: mysql:8.0
+    container_name: auth-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: auth_service_db
+    ports:
+      - "3307:3306"
+    volumes:
+      - auth_db_data:/var/lib/mysql
+    networks:
+      - recruitment-network
+
+  application-db:
+    image: mysql:8.0
+    container_name: application-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: application_service_db 
+    ports:
+      - "3308:3306"
+    volumes:
+      - application_db_data:/var/lib/mysql
+    networks:
+      - recruitment-network
+
+volumes:
+  rabbitmq_data:
+  auth_db_data:
+  job_db_data:
+  application_db_data:
+
+networks:
+  recruitment-network:
+    driver: bridge

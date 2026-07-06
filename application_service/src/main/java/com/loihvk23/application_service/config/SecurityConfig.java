@@ -23,7 +23,9 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-	private final JwtAuthenticationFilter jwtAuthenticationFilter;
+//	private final JwtAuthenticationFilter jwtAuthenticationFilter;
+
+	private final HeaderAuthenticationFilter headerAuthenticationFilter;
 
 	@Bean
 	public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
@@ -32,29 +34,35 @@ public class SecurityConfig {
 
 	@Bean
 	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-		http.csrf(csrf -> csrf.disable()).cors(cors->cors.configurationSource(configurationSource()))
+		http.csrf(csrf -> csrf.disable()).cors(cors -> cors.configurationSource(configurationSource()))
 				.authorizeHttpRequests(auth -> auth
 //						.requestMatchers("/admin/**").hasRole("ADMIN").requestMatchers("/recruiter/**").hasRole("RECRUITER")
-	                    .requestMatchers(HttpMethod.GET, "/api/applications/job/**").hasRole("RECRUITER") // fetch list application follow job
-	                    
-	                    .requestMatchers(HttpMethod.PUT, "/api/applications/*/status").hasRole("RECRUITER") // update status application
+						.requestMatchers(HttpMethod.GET, "/api/applications/job/**").hasRole("RECRUITER") // fetch list
+																											// application
+																											// follow
+																											// job
 
-	                    .requestMatchers(HttpMethod.GET, "/api/applications").hasRole("CANDIDATE") // candidate watch all application
+						.requestMatchers(HttpMethod.PUT, "/api/applications/*/status").hasRole("RECRUITER") // update
+																											// status
+																											// application
 
-	                    .requestMatchers(HttpMethod.POST, "/api/applications").hasRole("CANDIDATE")
-	                    
-	                    .requestMatchers(HttpMethod.DELETE, "/api/applications/**").hasRole("CANDIDATE")
-	                    
-	                    .requestMatchers(HttpMethod.GET, "/api/applications/**").hasAnyRole("RECRUITER", "CANDIDATE")
+						.requestMatchers(HttpMethod.GET, "/api/applications").hasRole("CANDIDATE") // candidate watch
+																									// all application
 
-	                    .anyRequest().authenticated())
+						.requestMatchers(HttpMethod.POST, "/api/applications").hasRole("CANDIDATE")
+
+						.requestMatchers(HttpMethod.DELETE, "/api/applications/**").hasRole("CANDIDATE")
+
+						.requestMatchers(HttpMethod.GET, "/api/applications/**").hasAnyRole("RECRUITER", "CANDIDATE")
+
+						.anyRequest().authenticated())
 				// turn off session in system, make sure STATE LESS
 				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-				.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+				.addFilterBefore(headerAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
 		return http.build();
 	}
-	
+
 	@Bean
 	public CorsConfigurationSource configurationSource() {
 		CorsConfiguration configuration = new CorsConfiguration();

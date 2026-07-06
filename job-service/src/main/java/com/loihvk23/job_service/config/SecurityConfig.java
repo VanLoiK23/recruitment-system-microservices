@@ -23,7 +23,9 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-	private final JwtAuthenticationFilter jwtAuthenticationFilter;
+//	private final JwtAuthenticationFilter jwtAuthenticationFilter;
+	
+	private final HeaderAuthenticationFilter headerAuthenticationFilter;
 
 	@Bean
 	public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
@@ -46,7 +48,7 @@ public class SecurityConfig {
 						.anyRequest().authenticated())
 				// turn off session in system, make sure STATE LESS
 				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-				.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+				.addFilterBefore(headerAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
 		return http.build();
 	}

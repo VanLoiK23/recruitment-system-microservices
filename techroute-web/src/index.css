@@ -1,0 +1,22 @@
+@import url('https://googleapis.com');
+@import "tailwindcss";
+
+html, body {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+@theme {
+    --font-roboto: 'Roboto', sans-serif;
+    
+    --font-ramsina: 'Ramsina', sans-serif;
+
+    --font-adlam: 'ADLaM Display', sans-serif;
+
+    --font-idiqlat: 'Idiqlat', serif;
+    
+    --text-hero-header: 25px_auto;
+
+    --shadow-soft-glow: 0 0 24px rgba(0, 0, 0, 0.06);
+  }

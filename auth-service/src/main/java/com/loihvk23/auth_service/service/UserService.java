@@ -11,7 +11,15 @@ public interface UserService {
 	
 	JwtResponse login(RegisterLoginRequest request) throws AuthenticationException ;
 		
-	UserDTO findUserByEmail(String email) throws AuthenticationException;
+	UserDTO findUserByEmail(String email);
+	
+	boolean generateOTPAndSendMail(String email);
+	
+	boolean verifyOTP(String email,String OTP);
+	
+	boolean generateTokenAndSendMailReset(String email);
+	
+	boolean resetPassword(String token,String password);
 	
 	UserDTO findUserById(int id) throws AuthenticationException;
 }

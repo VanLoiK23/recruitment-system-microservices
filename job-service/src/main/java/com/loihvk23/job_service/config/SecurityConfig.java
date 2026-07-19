@@ -34,7 +34,7 @@ public class SecurityConfig {
 
 	@Bean
 	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-		http.csrf(csrf -> csrf.disable()).cors(cors->cors.configurationSource(configurationSource()))
+		http.csrf(csrf -> csrf.disable()).cors(cors -> cors.disable())
 				.authorizeHttpRequests(auth -> auth
 //						.requestMatchers("/admin/**").hasRole("ADMIN").requestMatchers("/recruiter/**").hasRole("RECRUITER")
 	                    .requestMatchers(HttpMethod.GET, "/api/jobs/**").permitAll()
@@ -52,25 +52,4 @@ public class SecurityConfig {
 
 		return http.build();
 	}
-	
-	@Bean
-	public CorsConfigurationSource configurationSource() {
-		CorsConfiguration configuration = new CorsConfiguration();
-
-		configuration.setAllowedOrigins(List.of("http://localhost:3000"));
-
-		configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-
-		configuration.setAllowedHeaders(List.of("Content-Type", "Authorization"));
-
-		configuration.setAllowCredentials(true);
-
-		UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-
-		// apply for all url
-		source.registerCorsConfiguration("/**", configuration);
-
-		return source;
-	}
-
 }

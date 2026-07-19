@@ -13,8 +13,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.loihvk23.auth_service.config.JwtProvider;
 import com.loihvk23.auth_service.dto.UserDTO;
+import com.loihvk23.auth_service.dto.request.ValidateRequestDTO;
 import com.loihvk23.auth_service.dto.request.JwtRequest;
 import com.loihvk23.auth_service.dto.request.RegisterLoginRequest;
+import com.loihvk23.auth_service.dto.request.ResetPasswordRequest;
 import com.loihvk23.auth_service.dto.response.JwtResponse;
 import com.loihvk23.auth_service.entity.RefreshToken;
 import com.loihvk23.auth_service.service.UserService;
@@ -60,6 +62,47 @@ public class AuthResController {
 		JwtResponse jwtResponse = userService.login(request);
 
 		return ResponseEntity.ok(jwtResponse);
+	}
+
+	@PostMapping("check-duplicate-email")
+	public ResponseEntity<?> checkDuplicateEmail(@RequestBody @Valid ValidateRequestDTO request){
+		UserDTO userDTO = userService.findUserByEmail(request.getEmail());
+
+		return ResponseEntity.ok(Map.of("isDuplicate", userDTO != null));
+	}
+
+	@PostMapping("send-otp-check-email")
+	public ResponseEntity<?> sendOTP(@RequestBody @Valid ValidateRequestDTO request) {
+		boolean isSuccess = userService.generateOTPAndSendMail(request.getEmail());
+
+		return ResponseEntity.ok(Map.of("isSuccess", isSuccess));
+	}
+
+	@PostMapping("verify-otp")
+	public ResponseEntity<?> confirmEmailValid(@RequestBody @Valid ValidateRequestDTO request){
+		if (request.getOtp() == null || request.getOtp().isBlank()) {
+			throw new IllegalArgumentException("OTP is required !");
+		}
+
+		boolean success = userService.verifyOTP(request.getEmail(), request.getOtp());
+
+		return ResponseEntity.ok(Map.of("success", success));
+	}
+	
+	@PostMapping("forgot-password")
+	public ResponseEntity<?> sendEmailForgotPassword(@RequestBody @Valid ValidateRequestDTO request){
+
+		boolean success = userService.generateTokenAndSendMailReset(request.getEmail());
+
+		return ResponseEntity.ok(Map.of("success", success));
+	}
+	
+	@PostMapping("reset-password")
+	public ResponseEntity<?> resetPassword(@RequestBody @Valid ResetPasswordRequest request){
+
+		boolean success = userService.resetPassword(request.getToken(), request.getPassword());
+
+		return ResponseEntity.ok(Map.of("success", success));
 	}
 
 	@PostMapping("refresh")

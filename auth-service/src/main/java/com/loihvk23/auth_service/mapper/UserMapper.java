@@ -3,7 +3,6 @@ package com.loihvk23.auth_service.mapper;
 import org.mapstruct.AfterMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.MappingTarget;
-import org.mapstruct.factory.Mappers;
 
 import com.loihvk23.auth_service.dto.UserDTO;
 import com.loihvk23.auth_service.dto.request.RegisterLoginRequest;

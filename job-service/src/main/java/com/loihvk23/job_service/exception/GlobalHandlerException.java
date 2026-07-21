@@ -73,19 +73,26 @@ public class GlobalHandlerException {
 
 		return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
 	}
-	
+
 	@ExceptionHandler(HttpMessageNotReadableException.class)
-	public ResponseEntity<ErrorResponse<String>> handleHttpMessageNotReadableException(HttpMessageNotReadableException exp) {
-	    String customizedMessage = "Dữ liệu gửi lên sai định dạng kiểu dữ liệu!";	    
+	public ResponseEntity<ErrorResponse<String>> handleHttpMessageNotReadableException(
+			HttpMessageNotReadableException exp) {
+		String customizedMessage = "The submitted data is in the wrong format!";
 
-	    ErrorResponse<String> errorResponse = ErrorResponse.<String>builder()
-	            .timestamp(LocalDateTime.now())
-	            .status(HttpStatus.BAD_REQUEST.value()) 
-	            .error(HttpStatus.BAD_REQUEST.getReasonPhrase())
-	            .message(customizedMessage)
-	            .build();
+		ErrorResponse<String> errorResponse = ErrorResponse.<String>builder().timestamp(LocalDateTime.now())
+				.status(HttpStatus.BAD_REQUEST.value()).error(HttpStatus.BAD_REQUEST.getReasonPhrase())
+				.message(customizedMessage).build();
 
-	    return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+		return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+	}
+
+	@ExceptionHandler(DuplicateResourceException.class)
+	public ResponseEntity<ErrorResponse<String>> handleDuplicateResourceException(DuplicateResourceException exp) {
+		ErrorResponse<String> errorResponse = ErrorResponse.<String>builder().timestamp(LocalDateTime.now())
+				.status(HttpStatus.CONFLICT.value()).error(HttpStatus.CONFLICT.getReasonPhrase())
+				.message(exp.getMessage()).build();
+
+		return new ResponseEntity<>(errorResponse, HttpStatus.CONFLICT);
 	}
 
 	@ExceptionHandler(Exception.class)

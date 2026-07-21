@@ -4,6 +4,8 @@ import { Outlet, useLocation, Navigate,useNavigate } from "react-router-dom";
 // import pageTitle from "./components/Page_Title";
 import { AuthContext } from "./components/context/auth.context"; 
 import NavBar from "./components/header";
+import Footer from "./components/footer";
+import CircleLoading from "./components/animate-loading";
 
 export default function App() {
   const { auth, setAuth, isAppLoading } = useContext(AuthContext);
@@ -14,20 +16,16 @@ export default function App() {
 
   // Logout
   const handleLogout = () => {
-    localStorage.removeItem("access_token");
+    sessionStorage.removeItem("access_token");
     setAuth({
         isAuthenticated: false,
         user: { email: "", role: ""}
     });
-    navigate("/login"); 
+    navigate("/auth"); 
   };
 
   if (isAppLoading) {
-    return <div className="flex items-center justify-center">Đang tải dữ liệu hệ thống...</div>;
-  }
-
-  if (!auth.user || !auth.user.email) {
-    return <Navigate to="/login" />;
+    return <div className="flex items-center justify-center scale-110"><CircleLoading/> </div>;
   }
 
   return (
@@ -46,6 +44,8 @@ export default function App() {
         <main className="page-content">
           <Outlet context={{ auth }} />
         </main>
+
+        <Footer />
       </div>
     </div>
   );

@@ -1,8 +1,8 @@
 package com.loihvk23.job_service.controller;
 
+import java.util.List;
 import java.util.Map;
 
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
@@ -21,9 +21,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.loihvk23.job_service.config.RabbitMQConfig;
+import com.loihvk23.job_service.document.JobDocument;
 import com.loihvk23.job_service.dto.JobDTO;
-import com.loihvk23.job_service.dto.request.JobEvent;
 import com.loihvk23.job_service.dto.request.JobSearchRequest;
 import com.loihvk23.job_service.service.JobService;
 
@@ -36,8 +35,6 @@ import lombok.RequiredArgsConstructor;
 public class JobResController {
 
 	private final JobService jobService;
-	
-	private final RabbitTemplate rabbitTemplate;
 
 	@GetMapping
 	public ResponseEntity<?> getListJobs(@RequestParam(name = "page", defaultValue = "1") int page,
@@ -51,11 +48,23 @@ public class JobResController {
 	}
 
 	@GetMapping("/{id}")
-	public ResponseEntity<?> getDetailJob(@PathVariable(name = "id") String jobId) {
-
-		JobDTO jobDTO = jobService.findDetailJob(jobId);
+	public ResponseEntity<?> getDetailJob(@PathVariable(name = "id") String id) {
+		JobDTO jobDTO = jobService.findDetailJob(id);
 
 		return ResponseEntity.ok(jobDTO);
+	}
+
+	@GetMapping("/relevant")
+	public ResponseEntity<?> getJobRelevants(@RequestParam(name = "technologies") List<String> technologies,
+			@RequestParam(name = "page", defaultValue = "1") int page,
+			@RequestParam(name = "limit", defaultValue = "7") int limit,
+			@RequestParam(name = "sortBy", defaultValue = "createdAt") String sortBy) {
+
+		Pageable pageable = PageRequest.of(page - 1, limit, Sort.by(Sort.Direction.DESC, sortBy));
+
+		Slice<JobDTO> jobSlice = jobService.findJobRelevants(technologies, pageable);
+
+		return ResponseEntity.ok(jobSlice);
 	}
 
 	@PostMapping
@@ -64,12 +73,8 @@ public class JobResController {
 
 		String email = userDetails.getUsername();
 		jobDTO.setRecruiterEmail(email);
-		
-		JobDTO jobSaveDto = jobService.createNewJob(jobDTO);
-		
-		JobEvent jobEvent = JobEvent.builder().id(jobSaveDto.getId()).recruiterEmail(email).status(jobSaveDto.getStatus()).build();
-		
-		rabbitTemplate.convertAndSend(RabbitMQConfig.JOB_EXCHANGE, RabbitMQConfig.JOB_UPSERTED_KEY, jobEvent);
+
+		JobDTO jobSaveDto = jobService.createNewJob(jobDTO, email);
 
 		return ResponseEntity.status(HttpStatus.CREATED).body(jobSaveDto);
 	}
@@ -80,14 +85,7 @@ public class JobResController {
 
 		String email = userDetails.getUsername();
 
-		jobDTO.setId(jobId);
-		jobDTO.setRecruiterEmail(email);
-
-		JobDTO jobSaveDto = jobService.updateJob(jobDTO, email);
-		
-		JobEvent jobEvent = JobEvent.builder().id(jobSaveDto.getId()).recruiterEmail(email).status(jobSaveDto.getStatus()).build();
-		
-		rabbitTemplate.convertAndSend(RabbitMQConfig.JOB_EXCHANGE, RabbitMQConfig.JOB_UPSERTED_KEY, jobEvent);
+		JobDTO jobSaveDto = jobService.updateJob(jobDTO, jobId, email);
 
 		return ResponseEntity.ok(jobSaveDto);
 	}
@@ -98,10 +96,6 @@ public class JobResController {
 
 		String email = userDetails.getUsername();
 
-		JobEvent jobEvent = JobEvent.builder().id(jobId).build();
-		
-		rabbitTemplate.convertAndSend(RabbitMQConfig.JOB_EXCHANGE, RabbitMQConfig.JOB_DELETE_KEY, jobEvent);
-		
 		jobService.deleteJob(jobId, email);
 
 		return ResponseEntity.ok(Map.of("message", "Delete Successfully !"));

@@ -15,7 +15,8 @@ import org.springframework.stereotype.Service;
 
 import com.loihvk23.auth_service.config.JwtProvider;
 import com.loihvk23.auth_service.dto.UserDTO;
-import com.loihvk23.auth_service.dto.request.RegisterLoginRequest;
+import com.loihvk23.auth_service.dto.request.LoginRequest;
+import com.loihvk23.auth_service.dto.request.RegisterRequest;
 import com.loihvk23.auth_service.dto.response.JwtResponse;
 import com.loihvk23.auth_service.entity.UserEntity;
 import com.loihvk23.auth_service.mapper.UserMapper;
@@ -44,7 +45,7 @@ public class UserServiceImpl implements UserService {
 	private final EmailService emailService;
 
 	@Override
-	public UserDTO register(RegisterLoginRequest request) {
+	public UserDTO register(RegisterRequest request) {
 		if (userRepository.existsByEmail(request.getEmail())) {
 			throw new EntityExistsException("Email has already in the system. Try again !!");
 		}
@@ -56,14 +57,19 @@ public class UserServiceImpl implements UserService {
 	}
 
 	@Override
-	public JwtResponse login(RegisterLoginRequest request) throws AuthenticationException {
+	public JwtResponse login(LoginRequest request) throws AuthenticationException {
 		Authentication authentication = authenticationManager
 				.authenticate(new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
 
 		String accessToken = jwtProvider.generateAccessToken(authentication);
 		String refreshToken = jwtProvider.createRefreshToken(request.getEmail());
 
-		JwtResponse jwtResponse = JwtResponse.builder().accessToken(accessToken).refreshToken(refreshToken).build();
+		UserDTO userDTO = findUserByEmail(request.getEmail());
+		userDTO.setPassword(null);
+		userDTO.setCreateAt(null);
+
+		JwtResponse jwtResponse = JwtResponse.builder().accessToken(accessToken).refreshToken(refreshToken)
+				.user(userDTO).build();
 
 		return jwtResponse;
 	}
@@ -128,16 +134,16 @@ public class UserServiceImpl implements UserService {
 		if (email == null || email.isBlank()) {
 			return false;
 		}
-		
+
 		UserEntity userEntity = userRepository.findByEmail(email).orElse(null);
-		
-		if(userEntity == null) {
+
+		if (userEntity == null) {
 			return false;
 		}
 		userEntity.setPassword(passwordEncoder.encode(password));
-		
+
 		userRepository.save(userEntity);
-		
+
 		redisTemplate.delete(key);
 
 		return true;

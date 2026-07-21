@@ -1,11 +1,11 @@
 import { MapPin, Heart } from "lucide-react";
 import { useState } from "react";
 
-const JobCard = ({ job }) => {
+const JobCard = ({ job,onClick }) => {
   const [isFavorite, setIsFavorite] = useState(false);
 
   return (
-    <div className="w-full bg-white p-3 rounded-xl border border-[#2F00FF] hover:scale-102 hover:opacity-70 hover:bg-[#5b5ec725]">
+    <div className="w-full bg-white p-3 rounded-xl border border-[#2F00FF] hover:scale-102 hover:opacity-70 cursor-pointer hover:bg-[#5b5ec725] z-0" onClick={onClick}>
       <div className="font-bold font-idiqlat mb-3">{job.title}</div>
       <div className="text-gray-500 text-xs flex flex-row flex-wrap items-center gap-1.5 mb-3">
         <span>
@@ -36,10 +36,13 @@ const JobCard = ({ job }) => {
         </div>
       </div>
       <div className="w-[90%] border mx-auto my-0 border-gray-400 mb-6"></div>
-      <div className="w-[90%] mx-auto my-0 flex flex-row items-center justify-between">
+      <div className="w-[90%] mx-auto my-0 flex flex-row items-center justify-between z-10">
         <div className="text-gray-500 text-xs">{job.createdAt}</div>
         <button
-          onClick={() => setIsFavorite(!isFavorite)}
+          onClick={(e) => {
+            e.preventDefault();
+            setIsFavorite(!isFavorite)
+          }}
           className="w-5 h-5 rounded-full bg-[#EFEFEF] flex items-center justify-center transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer focus:outline-none select-none"
         >
           <Heart

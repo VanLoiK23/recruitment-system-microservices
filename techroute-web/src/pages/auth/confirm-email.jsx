@@ -35,11 +35,11 @@ const ConfirmEmailPage = () => {
 
         setUserInfo(parseObject);
       } catch (error) {
-        navigate("/register", { replace: true });
+        navigate("/auth", { replace: true });
         console.error("Lỗi giải mã JSON từ sessionStorage:", err);
       }
     } else {
-      // navigate("/register", { replace: true });
+      navigate("/auth", { replace: true });
     }
   }, []);
 
@@ -175,11 +175,11 @@ const ConfirmEmailPage = () => {
       {showPopup && (
         <InfoRegisterSuccessfully
           clickLogin={() => {
-            navigate("/login");
+            navigate("/auth");
           }}
           onClose={() => {
             setShowPopUp(false);
-            navigate("/login");
+            navigate("/auth");
           }}
         />
       )}

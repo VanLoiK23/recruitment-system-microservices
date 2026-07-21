@@ -21,7 +21,7 @@ export const AuthWrapper = (props) => {
 
   useEffect(() => {
       const fetchAccount = async () => {
-          const token = localStorage.getItem("access_token");
+          const token = sessionStorage.getItem("access_token");
           if (token) {
               try {
                   const res = await instance.get("/auth/account"); 
@@ -32,7 +32,7 @@ export const AuthWrapper = (props) => {
                       });
                   }
               } catch (error) {
-                  localStorage.removeItem("access_token"); 
+                sessionStorage.removeItem("access_token"); 
               }
           }
           setIsAppLoading(false);

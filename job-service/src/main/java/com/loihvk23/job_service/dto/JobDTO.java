@@ -37,11 +37,17 @@ public class JobDTO {
 	
 	private String recruiterEmail;
 	
+	@NotEmpty(message = "Roles are required")
+	private List<String> roles;
+	
 	@NotEmpty(message = "List technologies must be not empty")
 	private List<String> technologies;
 	
 	@NotEmpty(message = "List requirements must be not empty")
     private List<String> requirements;
+	
+	@NotEmpty(message = "List benefits must be not empty")
+    private List<String> benefits;
     
 	@NotBlank(message = "Level job must be not empty")
     private String jobLevel; 

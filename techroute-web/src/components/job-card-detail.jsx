@@ -1,11 +1,11 @@
 import React, { useState } from "react";
 import { MapPin, Clock, Heart } from "lucide-react";
 
-function JobDetailCard({ job, isDetail }) {
+function JobDetailCard({ job, isDetail,onClick }) {
   const [isFavorite, setIsFavorite] = useState(false);
 
   return (
-    <div className="flex flex-col justify-center w-full bg-white p-4 rounded-xl border border-[#2F00FF]/30">
+    <div className="flex flex-col justify-center w-full bg-white p-4 rounded-xl border border-[#2F00FF]/30" onClick={onClick}>
       <div className="font-bold text-xl text-gray-900 mb-2">
         {job?.title || "Senior Java Backend Engineer"}
       </div>

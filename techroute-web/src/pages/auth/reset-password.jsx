@@ -35,7 +35,7 @@ const ResetPasswordPage = () => {
 
       if (data.success) {
         toast.success("Change password successfully!");
-        navigate("/login");
+        navigate("/auth");
       } else {
         toast.warn("Change password failed!");
       }
@@ -49,18 +49,18 @@ const ResetPasswordPage = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center w-full bg-white p-6 font-sans">
-      <div className="relative flex flex-col justify-center items-center gap-5 border p-17 md:px-28 scale-65 sm:scale-100 rounded-[11px] border-gray-200 shadow-[0_0_24px_rgba(0,0,0,0.06)]">
+      <div className="relative flex flex-col justify-center items-center gap-5 border p-23 pb-12 md:pb-7 md:px-28 scale-65 sm:scale-100 rounded-[11px] border-gray-200 shadow-[0_0_24px_rgba(0,0,0,0.06)]">
         <div className="absolute top-[15px] left-[15px]">
           <BackButton
             onBack={() => {
-              navigate("/login");
+              navigate("/auth");
             }}
           />
         </div>
-        <div className="font-bold text-3xl text-[#00C3FF]">Reset Password</div>
-        <div className=" text-gray-500 text-xm text-center">Type your new password</div>
+        <div className="font-bold text-3xl whitespace-nowrap text-[#00C3FF]">Reset Password</div>
+        <div className="whitespace-nowrap text-gray-500 text-xm text-center">Type your new password</div>
 
-        <form onSubmit={handleSubmit} className="w-[140%] flex flex-col gap-4 items-center justify-center">
+        <form onSubmit={handleSubmit} className="w-[140%] flex flex-col gap-7 items-center justify-center">
           <input
             type="password"
             placeholder="Your new Password"

@@ -11,9 +11,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class JwtResponse {
+public class LoginSuccessResponse {
 	private String accessToken;
-	private String refreshToken;
-	
 	private UserDTO user;
 }

@@ -5,11 +5,10 @@ import "./index.css";
 import App from "./App.jsx";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/ReactToastify.css";
-import {AuthWrapper} from "./components/context/auth.context.jsx"
+import { AuthWrapper } from "./components/context/auth.context.jsx";
 import ProtectedRoute from "./route/ProtectedRoute.jsx";
 import RoleRoute from "./route/RoleRoute.jsx";
-import LoginPage from "./pages/auth/login.jsx";
-import RegisterPage from "./pages/auth/register.jsx";
+import AuthPage from "./pages/auth/auth.jsx";
 import HomePage from "./pages/client/homepage.jsx";
 import JobDetailPage from "./pages/client/job-detail.jsx";
 import ConfirmEmailPage from "./pages/auth/confirm-email.jsx";
@@ -21,30 +20,51 @@ import ResetPasswordPage from "./pages/auth/reset-password.jsx";
 const router = createBrowserRouter([
   {
     path: "/",
-    element: (
-      <ProtectedRoute>
-        <App />
-      </ProtectedRoute>
-    ),
+    element: <App />,
     children: [
+      //Public
       {
-        path: "candidate",
-        element: (
-          <RoleRoute allowedRoles={["candidate"]}>
-            <Outlet />
-          </RoleRoute>
-        ),
+        index: true, 
+        element: <HomePage />,
+      },
+      {
+        path: "jobs/:id",
+        element: <JobDetailPage />
+      },
+      // {
+      //   path: "about",
+      //   element: <AboutPage />,
+      // },
+
+      // Private
+      {
+        element: <ProtectedRoute />,
         children: [
-          { index: true, element: <HomePage /> },
-          // { path: "today-schedule", element: <TodaySchedule role="student" /> },
+          {
+            path: "candidate",
+            element: (
+              <RoleRoute allowedRoles={["candidate"]}>
+                <Outlet />
+              </RoleRoute>
+            ),
+            children: [
+              // { index: true, element: <CandidateDashboard /> },
+              // { path: "today-schedule", element: <TodaySchedule /> },
+            ],
+          },
+          // {
+          //   path: "profile",
+          //   element: <ProfilePage />,
+          // },
         ],
       },
     ],
   },
-  { path: "/login", element: <LoginPage /> },
-  { path: "/register", element: <RegisterPage /> },
+  { path: "/", element: <HomePage /> },
+  { path: "/auth", element: <AuthPage /> },
   {
-    path: "/confirm-email", element: <ConfirmEmailPage />
+    path: "/confirm-email",
+    element: <ConfirmEmailPage />,
   },
   { path: "/forgot-password", element: <ForgotPasswordPage /> },
   { path: "/reset-password/:token", element: <ResetPasswordPage /> },
@@ -55,9 +75,9 @@ const router = createBrowserRouter([
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <AuthWrapper>
-      <ToastContainer position="top-right" autoClose="3000"/>
+      <ToastContainer position="top-right" autoClose="3000" />
 
-      <RouterProvider router={router}/>
+      <RouterProvider router={router} />
     </AuthWrapper>
   </StrictMode>
 );

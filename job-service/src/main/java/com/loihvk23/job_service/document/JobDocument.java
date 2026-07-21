@@ -34,9 +34,13 @@ public class JobDocument {
 	
 	private String recruiterEmail;
 	
+	private List<String> roles;
+	
 	private List<String> technologies;
 	
     private List<String> requirements;
+    
+    private List<String> benefits;
     
     @Indexed
     private String jobLevel; 

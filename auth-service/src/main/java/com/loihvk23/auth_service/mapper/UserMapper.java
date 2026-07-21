@@ -5,7 +5,8 @@ import org.mapstruct.Mapper;
 import org.mapstruct.MappingTarget;
 
 import com.loihvk23.auth_service.dto.UserDTO;
-import com.loihvk23.auth_service.dto.request.RegisterLoginRequest;
+import com.loihvk23.auth_service.dto.request.LoginRequest;
+import com.loihvk23.auth_service.dto.request.RegisterRequest;
 import com.loihvk23.auth_service.entity.UserEntity;
 
 @Mapper(componentModel = "spring")
@@ -17,7 +18,8 @@ public abstract class UserMapper {
 	public abstract UserEntity toEntity(UserDTO userDTO);
 	
 //	@Mapping(target = "role", constant = "candidate")
-	public abstract UserEntity toEntity(RegisterLoginRequest request);
+	public abstract UserEntity toEntity(RegisterRequest request);
+	public abstract UserEntity toEntity(LoginRequest request);
 	
 	public abstract UserDTO toDTO(UserEntity userEntity);
 

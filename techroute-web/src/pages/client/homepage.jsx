@@ -6,11 +6,17 @@ import HeroCard from "../../components/hero-card";
 import JobCard from "../../components/job-card-homepage";
 import JobDetailView from "../../components/job-detail-preview";
 import axios from "../../utils/axios.customize";
+import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom";
 
 const HomePage = () => {
   const [sortBy, setSortBy] = useState("");
-  const [jobs,setListJob] = useState([])
+  const [jobs,setJobs] = useState([])
+  const [pageInfo, setPageInfo] = useState({});
   const [jobActive, setJobActive] = useState(false);
+  const [filters,setFilters] = useState([]);
+
+  const navigate = useNavigate();
 
   const statsData = [
     { id: 1, stats: "3,200+", label: "Job openings" },
@@ -24,7 +30,8 @@ const HomePage = () => {
       try {
         const data = await axios.get("jobs");
         if (data) {
-          setListJob(data)
+          setJobs(data.content)
+          setPageInfo(data.page)
         }
       } catch (err) {
         toast.error(err.message);
@@ -33,129 +40,6 @@ const HomePage = () => {
     };
     fetchJobs();
   }, []);
-
-  const mockJobs = [
-    {
-      _id: "6a4526cf26fc6d054b47cecc",
-      title: "Senior Java Backend Engineer",
-      minSalary: 1500,
-      maxSalary: 2500,
-      description:
-        "Chúng tôi đang tìm kiếm kỹ sư Java có kinh nghiệm làm việc với hệ thống Microservices và MongoDB.",
-      status: "OPENING",
-      recruiterEmail: "loi@gmail.com",
-      technologies: ["Java", "Spring Boot", "MongoDB", "Docker"],
-      requirements: [
-        "Có tối thiểu 3 năm kinh nghiệm lập trình Java chuyên nghiệp.",
-        "Hiểu sâu về cấu trúc dữ liệu, thuật toán và thiết kế hệ thống.",
-        "Có khả năng giao tiếp và làm việc nhóm tốt.",
-      ],
-      jobLevel: "Senior",
-      location: "Đà Nẵng",
-      createdAt: "Jul 01, 2026", // Đã rút gọn để hiển thị UI cho đẹp
-      _class: "com.loihvk23.job_service.document.JobDocument",
-    },
-    {
-      _id: "6a4526cf26fc6d054b47ced1",
-      title: "Frontend React Developer",
-      minSalary: 1000,
-      maxSalary: 1800,
-      description:
-        "Tham gia phát triển giao diện hệ thống Dashboard quản lý và tối ưu hóa hiệu năng ứng dụng Web với ReactJS.",
-      status: "OPENING",
-      recruiterEmail: "hr@techroute.vn",
-      technologies: ["React", "Tailwind CSS", "TypeScript", "Vite"],
-      requirements: [
-        "Kinh nghiệm làm việc với React ít nhất 2 năm.",
-        "Thành thạo tối ưu hóa UI/UX và thiết kế Responsive.",
-        "Có tư duy cấu trúc component tốt.",
-      ],
-      jobLevel: "Intermediate",
-      location: "Hà Nội",
-      createdAt: "Jul 05, 2026",
-      _class: "com.loihvk23.job_service.document.JobDocument",
-    },
-    {
-      _id: "6a4526cf26fc6d054b47ced5",
-      title: "AI & Data Engineer Specialist",
-      minSalary: 2000,
-      maxSalary: 3500,
-      description:
-        "Xây dựng pipeline xử lý dữ liệu lớn và triển khai các mô hình Machine Learning lên môi trường Production.",
-      status: "OPENING",
-      recruiterEmail: "tech@route.io",
-      technologies: ["Python", "FastAPI", "PyTorch", "AWS"],
-      requirements: [
-        "Tốt nghiệp ngành Khoa học máy tính hoặc các ngành liên quan.",
-        "Thành thạo xử lý dữ liệu lớn với Spark/Hadoop.",
-        "Kinh nghiệm làm việc với Cloud (AWS/GCP).",
-      ],
-      jobLevel: "Expert",
-      location: "Hồ Chí Minh",
-      createdAt: "Jul 11, 2026",
-      _class: "com.loihvk23.job_service.document.JobDocument",
-    },
-    {
-      _id: "6a4526cf26fc6d054b47ced5",
-      title: "AI & Data Engineer Specialist",
-      minSalary: 2000,
-      maxSalary: 3500,
-      description:
-        "Xây dựng pipeline xử lý dữ liệu lớn và triển khai các mô hình Machine Learning lên môi trường Production.",
-      status: "OPENING",
-      recruiterEmail: "tech@route.io",
-      technologies: ["Python", "FastAPI", "PyTorch", "AWS"],
-      requirements: [
-        "Tốt nghiệp ngành Khoa học máy tính hoặc các ngành liên quan.",
-        "Thành thạo xử lý dữ liệu lớn với Spark/Hadoop.",
-        "Kinh nghiệm làm việc với Cloud (AWS/GCP).",
-      ],
-      jobLevel: "Expert",
-      location: "Hồ Chí Minh",
-      createdAt: "Jul 11, 2026",
-      _class: "com.loihvk23.job_service.document.JobDocument",
-    },
-    {
-      _id: "6a4526cf26fc6d054b47ced5",
-      title: "AI & Data Engineer Specialist",
-      minSalary: 2000,
-      maxSalary: 3500,
-      description:
-        "Xây dựng pipeline xử lý dữ liệu lớn và triển khai các mô hình Machine Learning lên môi trường Production.",
-      status: "OPENING",
-      recruiterEmail: "tech@route.io",
-      technologies: ["Python", "FastAPI", "PyTorch", "AWS"],
-      requirements: [
-        "Tốt nghiệp ngành Khoa học máy tính hoặc các ngành liên quan.",
-        "Thành thạo xử lý dữ liệu lớn với Spark/Hadoop.",
-        "Kinh nghiệm làm việc với Cloud (AWS/GCP).",
-      ],
-      jobLevel: "Expert",
-      location: "Hồ Chí Minh",
-      createdAt: "Jul 11, 2026",
-      _class: "com.loihvk23.job_service.document.JobDocument",
-    },
-    {
-      _id: "6a4526cf26fc6d054b47ced5",
-      title: "AI & Data Engineer Specialist",
-      minSalary: 2000,
-      maxSalary: 3500,
-      description:
-        "Xây dựng pipeline xử lý dữ liệu lớn và triển khai các mô hình Machine Learning lên môi trường Production.",
-      status: "OPENING",
-      recruiterEmail: "tech@route.io",
-      technologies: ["Python", "FastAPI", "PyTorch", "AWS"],
-      requirements: [
-        "Tốt nghiệp ngành Khoa học máy tính hoặc các ngành liên quan.",
-        "Thành thạo xử lý dữ liệu lớn với Spark/Hadoop.",
-        "Kinh nghiệm làm việc với Cloud (AWS/GCP).",
-      ],
-      jobLevel: "Expert",
-      location: "Hồ Chí Minh",
-      createdAt: "Jul 11, 2026",
-      _class: "com.loihvk23.job_service.document.JobDocument",
-    },
-  ];
 
   const onClickSortBy = useCallback(
     (sort) => {
@@ -169,7 +53,6 @@ const HomePage = () => {
       <div className="absolute top-[170px] left-[-102px] w-[291px] h-[264px] rounded-full bg-[#00C3FF] opacity-50 blur-[159px] pointer-events-none z-0" />{" "}
       <div className="hidden md:block absolute top-[300px] right-[80px] w-[250px] h-[250px] rounded-full bg-[#00C3FF] opacity-50 blur-[159px] pointer-events-none z-0" />
       <div className="absolute bottom-[300px] right-[0px] w-[200px] h-[200px] rounded-full bg-[#00C3FF] opacity-50 blur-[159px] pointer-events-none z-1" />
-      <NavBar />
       <div className="p-0 m-0 w-full flex flex-col items-center bg-linear-[to_bottom,#EEF0FC_0%,#F2F3FC_31%,white_100%]">
         <div className="md:text-3xl font-bold text-center my-4 font-[Inter] tracking-[-0.02em]">
           Find your dream job, connect <br />
@@ -257,14 +140,15 @@ const HomePage = () => {
             <div className="w-full bg-[#1677FF] text-white font-bold text-2xs p-3 rounded-xl">
               4788 results
             </div>
-            {mockJobs.map((job) => (
-              <JobCard job={job} key={job._id} />
+            {jobs.map((job) => (
+              <JobCard job={job} key={job.id} onClick={()=>{
+                navigate("/jobs/"+job.id);
+              }}/>
             ))}
           </div>
-          <JobDetailView job={mockJobs[0]} />
+          <JobDetailView job={jobs[0]} />
         </div>
       </div>
-      <Footer />
     </div>
   );
 };

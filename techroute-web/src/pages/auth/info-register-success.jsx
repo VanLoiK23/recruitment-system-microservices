@@ -1,4 +1,4 @@
-import CloseButton from "../../components/button-close";
+import CloseButton from "../../components/button/button-close";
 
 const InfoRegisterSuccessfully = ({clickLogin,onClose}) => {
   return (

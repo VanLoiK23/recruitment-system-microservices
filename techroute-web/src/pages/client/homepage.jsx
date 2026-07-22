@@ -1,20 +1,26 @@
-import { useCallback, useEffect, useState } from "react";
-import NavBar from "../../components/header";
-import SearchFilterBox from "../../components/searchFilterBox";
-import Footer from "../../components/footer";
-import HeroCard from "../../components/hero-card";
-import JobCard from "../../components/job-card-homepage";
-import JobDetailView from "../../components/job-detail-preview";
+import { useCallback, useEffect, useRef, useState } from "react";
+import SearchFilterBox from "../../components/homepage/searchFilterBox";
+import HeroCard from "../../components/homepage/hero-card";
+import JobCard from "../../components/homepage/job-card";
+import JobDetailView from "../../components/homepage/job-detail-preview";
 import axios from "../../utils/axios.customize";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 
 const HomePage = () => {
   const [sortBy, setSortBy] = useState("");
-  const [jobs,setJobs] = useState([])
+  const [jobs, setJobs] = useState([]);
   const [pageInfo, setPageInfo] = useState({});
   const [jobActive, setJobActive] = useState(false);
-  const [filters,setFilters] = useState([]);
+  const [filters, setFilters] = useState([]);
+
+  const ref = useRef();
+
+  const handleClosePanel = () => {
+    if (ref.current) {
+      ref.current.closePanel();
+    }
+  };
 
   const navigate = useNavigate();
 
@@ -30,8 +36,8 @@ const HomePage = () => {
       try {
         const data = await axios.get("jobs");
         if (data) {
-          setJobs(data.content)
-          setPageInfo(data.page)
+          setJobs(data.content);
+          setPageInfo(data.page);
         }
       } catch (err) {
         toast.error(err.message);
@@ -61,12 +67,15 @@ const HomePage = () => {
         <div className="text-[10px] md:text-xs font-bold text-gray-400 text-center mb-3 font-[Inter]">
           Thousands of jobs are waiting for you to apply.
         </div>
-        <div className="w-full md:w-[93%] grid grid-cols-2 md:grid-cols-4 gap-6 mx-auto my-10">
+        <div
+          onClick={handleClosePanel}
+          className="w-full md:w-[93%] grid grid-cols-2 md:grid-cols-4 gap-6 mx-auto my-10"
+        >
           {statsData.map((info) => (
             <HeroCard key={info.id} info={info} />
           ))}
         </div>
-        <SearchFilterBox />
+        <SearchFilterBox ref={ref} onSubmit={(finalFilters) => {console.log(finalFilters)}} />
       </div>
       <div className="w-full p-0 m-0 flex flex-col justify-center items-center bg-white mx-auto my-7">
         <div className="w-[90%] md:w-[93%] py-3 px-5 border border-[#D0EBFF] rounded-2xl flex flex-row justify-between md:justify-start items-center gap-2 md:gap-8 font-sans text-left">
@@ -141,9 +150,13 @@ const HomePage = () => {
               4788 results
             </div>
             {jobs.map((job) => (
-              <JobCard job={job} key={job.id} onClick={()=>{
-                navigate("/jobs/"+job.id);
-              }}/>
+              <JobCard
+                job={job}
+                key={job.id}
+                onClick={() => {
+                  navigate("/jobs/" + job.id);
+                }}
+              />
             ))}
           </div>
           <JobDetailView job={jobs[0]} />

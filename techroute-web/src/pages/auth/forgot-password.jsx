@@ -1,9 +1,9 @@
 import axios from "../../utils/axios.customize";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import CircleLoading from "../../components/animate-loading";
+import CircleLoading from "../../components/animation/animate-loading";
 import { toast } from "react-toastify";
-import BackButton from "../../components/button-back";
+import BackButton from "../../components/button/button-back";
 
 const ForgotPasswordPage = () => {
   const [email, setEmail] = useState("");

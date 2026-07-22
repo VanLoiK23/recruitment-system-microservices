@@ -3,8 +3,8 @@ import { useNavigate } from "react-router-dom";
 import InfoRegisterSuccessfully from "./info-register-success";
 import { toast } from "react-toastify";
 import axios from "../../utils/axios.customize";
-import CircleLoading from "../../components/animate-loading";
-import BackButton from "../../components/button-back";
+import CircleLoading from "../../components/animation/animate-loading";
+import BackButton from "../../components/button/button-back";
 
 const ConfirmEmailPage = () => {
   const navigate = useNavigate();

@@ -5,7 +5,7 @@ import { Outlet, useLocation, Navigate,useNavigate } from "react-router-dom";
 import { AuthContext } from "./components/context/auth.context"; 
 import NavBar from "./components/header";
 import Footer from "./components/footer";
-import CircleLoading from "./components/animate-loading";
+import CircleLoading from "./components/animation/animate-loading";
 
 export default function App() {
   const { auth, setAuth, isAppLoading } = useContext(AuthContext);

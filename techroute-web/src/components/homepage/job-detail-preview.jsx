@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import JobDetailCard from './job-card-detail';
+import JobDetailCard from '../detail/job-card';
 function JobDetailView({ job }) {
   const [isFavorite, setIsFavorite] = useState(false);
 

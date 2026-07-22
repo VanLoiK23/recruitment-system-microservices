@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "../../utils/axios.customize";
 import { toast } from "react-toastify";
-import BackButton from "../../components/button-back";
-import CircleLoading from "../../components/animate-loading";
+import BackButton from "../../components/button/button-back";
+import CircleLoading from "../../components/animation/animate-loading";
 
 const ResetPasswordPage = () => {
   const { token } = useParams();

@@ -2,7 +2,7 @@ import axios from "../../utils/axios.customize";
 import { useContext, useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
-import CircleLoading from "../../components/animate-loading";
+import CircleLoading from "../../components/animation/animate-loading";
 import { AuthContext } from "../../components/context/auth.context";
 
 const AuthPage = () => {

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { MapPin, BarChart3, Heart, Briefcase, Award, Gift, FileText } from "lucide-react";
-import JobDetailCard from "../../components/job-card-detail";
+import JobDetailCard from "../../components/detail/job-card";
 import axios from "../../utils/axios.customize";
 import { toast } from "react-toastify";
 const JobDetailPage = () => {

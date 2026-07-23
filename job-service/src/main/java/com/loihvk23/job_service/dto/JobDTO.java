@@ -37,6 +37,9 @@ public class JobDTO {
 	
 	private String recruiterEmail;
 	
+	@NotEmpty(message = "Categories are required")
+	private List<String> categories;
+	
 	@NotEmpty(message = "Roles are required")
 	private List<String> roles;
 	
@@ -51,9 +54,14 @@ public class JobDTO {
     
 	@NotBlank(message = "Level job must be not empty")
     private String jobLevel; 
+	
+	@NotBlank(message = "Work type is requied")
+    private String workType; 
 
 	@NotBlank(message = "Location must be not empty")
     private String location; 
+	
+	private boolean hotJob; 
 
     private LocalDateTime createdAt;
 }

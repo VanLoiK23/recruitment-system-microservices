@@ -57,7 +57,7 @@ const LocationPanel = ({selectedLocations,onChange}) => {
     "Thanh Hóa",
     "Thừa Thiên Huế",
     "Tiền Giang",
-    "TP Hồ Chí Minh",
+    "Hồ Chí Minh",
     "Trà Vinh",
     "Tuyên Quang",
     "Vĩnh Long",

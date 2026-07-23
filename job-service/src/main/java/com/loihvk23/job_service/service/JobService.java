@@ -7,7 +7,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 
 import com.loihvk23.job_service.dto.JobDTO;
-import com.loihvk23.job_service.dto.request.JobSearchRequest;
+import com.loihvk23.job_service.dto.request.AdvanceFilterRequest;
 
 public interface JobService {
 	Slice<JobDTO> findAll(Pageable pageable);
@@ -31,5 +31,5 @@ public interface JobService {
 //	Slice<JobDTO> filterJobsByTechnologiesJobLevelAndLocation(String technology, String jobLevel, String location, Pageable pageable);
 	Slice<JobDTO> findJobRelevants(List<String> technologies, Pageable pageable);
 	
-	Slice<JobDTO> filterAdvanceJobs(JobSearchRequest searchRequest, Pageable pageable);
+	Slice<JobDTO> filterAdvanceJobs(AdvanceFilterRequest searchRequest, Pageable pageable);
 }

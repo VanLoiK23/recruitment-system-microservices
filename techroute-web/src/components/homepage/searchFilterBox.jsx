@@ -114,7 +114,7 @@ const SearchFilterBox = forwardRef(({ onSubmit }, ref) => {
 
   const handleSearch = () => {
     const finalFilters = {
-      categories: contentActive,
+      categories: Object.values(contentActive).flat(),
       locations: selectedLocations,
       workType: selectedWorkType,
       experience: selectedExperience,
@@ -127,7 +127,7 @@ const SearchFilterBox = forwardRef(({ onSubmit }, ref) => {
 
     closeAllPopup();
     //reset
-    resetFilter();
+    // resetFilter();
   };
 
   const resetFilter = () => {

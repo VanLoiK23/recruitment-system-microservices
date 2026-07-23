@@ -1,6 +1,7 @@
 package com.loihvk23.job_service.service.impl;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -12,12 +13,13 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import com.loihvk23.job_service.config.RabbitMQConfig;
 import com.loihvk23.job_service.document.JobDocument;
 import com.loihvk23.job_service.dto.JobDTO;
+import com.loihvk23.job_service.dto.request.AdvanceFilterRequest;
 import com.loihvk23.job_service.dto.request.JobEvent;
-import com.loihvk23.job_service.dto.request.JobSearchRequest;
 import com.loihvk23.job_service.exception.DuplicateResourceException;
 import com.loihvk23.job_service.exception.ResourceNotFoundException;
 import com.loihvk23.job_service.mapper.JobMapper;
@@ -127,28 +129,52 @@ public class JobServiceImpl implements JobService {
 	}
 
 	@Override
-	public Slice<JobDTO> filterAdvanceJobs(JobSearchRequest searchRequest, Pageable pageable) {
+	public Slice<JobDTO> filterAdvanceJobs(AdvanceFilterRequest searchRequest, Pageable pageable) {
 
 		Query query = new Query();
+		List<Criteria> criterias = new ArrayList<Criteria>();
 
-		if (searchRequest.getTechnology() != null && !searchRequest.getTechnology().isBlank()) {
-			query.addCriteria(Criteria.where("technologies").is(searchRequest.getTechnology()));
+		if (StringUtils.hasText(searchRequest.getSearch())) {
+
+			String keyword = searchRequest.getSearch().trim();
+
+			Criteria searchCriteria = new Criteria().orOperator(Criteria.where("technologies").regex(keyword, "i"),
+					Criteria.where("jobLevel").regex(keyword, "i"), Criteria.where("title").regex(keyword, "i"));
+			criterias.add(searchCriteria);
 		}
 
-		if (searchRequest.getJobLevel() != null && !searchRequest.getJobLevel().isBlank()) {
-			query.addCriteria(Criteria.where("jobLevel").is(searchRequest.getJobLevel()));
+		if (searchRequest.getCategories() != null && !searchRequest.getCategories().isEmpty()) {
+			criterias.add(Criteria.where("categories").in(searchRequest.getCategories()));
 		}
 
-		if (searchRequest.getLocation() != null && !searchRequest.getLocation().isBlank()) {
-			query.addCriteria(Criteria.where("location").regex(searchRequest.getLocation(), "i"));
+		if (searchRequest.getExperience() != null && !searchRequest.getExperience().isEmpty()) {
+			criterias.add(Criteria.where("jobLevel").regex(searchRequest.getExperience(), "i"));
 		}
 
-		if (searchRequest.getMinSalary() != null && searchRequest.getMinSalary() > 0) {
-			query.addCriteria(Criteria.where("minSalary").gte(searchRequest.getMinSalary()));
+		if (searchRequest.getWorkType() != null && !searchRequest.getWorkType().isEmpty()) {
+			criterias.add(Criteria.where("workType").is(searchRequest.getWorkType()));
 		}
 
-		if (searchRequest.getMaxSalary() != null && searchRequest.getMaxSalary() > 0) {
-			query.addCriteria(Criteria.where("maxSalary").lte(searchRequest.getMaxSalary()));
+		if (searchRequest.getLocations() != null && !searchRequest.getLocations().isEmpty()) {
+			criterias.add(Criteria.where("location").in(searchRequest.getLocations()));
+		}
+
+		  if (searchRequest.getMinSalary() != null && searchRequest.getMinSalary() > 0) {
+		        Criteria salaryCriteria = Criteria.where("minSalary").gte(searchRequest.getMinSalary());
+		        if (searchRequest.getMaxSalary() != null && searchRequest.getMaxSalary() > 0) {
+		            salaryCriteria.lte(searchRequest.getMaxSalary());
+		        }
+		        criterias.add(salaryCriteria);
+		    } else if (searchRequest.getMaxSalary() != null && searchRequest.getMaxSalary() > 0) {
+		        criterias.add(Criteria.where("maxSalary").lte(searchRequest.getMaxSalary()));
+		    }
+
+		if (searchRequest.isHotJob()) {
+	        criterias.add(Criteria.where("hotJob").is(true));
+	    }
+
+		if (!criterias.isEmpty()) {
+			query.addCriteria(new Criteria().andOperator(criterias.toArray(new Criteria[0])));
 		}
 
 		query.with(pageable);
@@ -167,10 +193,10 @@ public class JobServiceImpl implements JobService {
 
 	@Override
 	public Slice<JobDTO> findJobRelevants(List<String> technologies, Pageable pageable) {
-		Slice<JobDocument> jobDocumentSlices = jobRepository.findByTechnologies(technologies,pageable);
-		
+		Slice<JobDocument> jobDocumentSlices = jobRepository.findByTechnologies(technologies, pageable);
+
 		Slice<JobDTO> jobDtos = jobDocumentSlices.map(jobMapper::toDTO);
-		
+
 		return jobDtos;
 	}
 

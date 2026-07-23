@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import JobDetailCard from '../detail/job-card';
-function JobDetailView({ job }) {
+function JobDetailView({ job,onClickDetail }) {
   const [isFavorite, setIsFavorite] = useState(false);
 
   const roles = job?.roles || [
@@ -23,7 +23,7 @@ function JobDetailView({ job }) {
   return (
     <div className="hidden col-span-2 gap-3 p-6 bg-white md:flex flex-col w-full h-fit border border-[#D9D9D9] rounded-xl sticky top-6 shadow-xs text-left font-sans">
       
-      <JobDetailCard job={job}/>
+      <JobDetailCard job={job} onClickDetail={onClickDetail}/>
 
       <div className="w-full border-t border-gray-200/80 my-2"></div>
 

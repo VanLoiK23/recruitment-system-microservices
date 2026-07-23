@@ -21,9 +21,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.loihvk23.job_service.document.JobDocument;
 import com.loihvk23.job_service.dto.JobDTO;
-import com.loihvk23.job_service.dto.request.JobSearchRequest;
+import com.loihvk23.job_service.dto.request.AdvanceFilterRequest;
 import com.loihvk23.job_service.service.JobService;
 
 import jakarta.validation.Valid;
@@ -101,19 +100,25 @@ public class JobResController {
 		return ResponseEntity.ok(Map.of("message", "Delete Successfully !"));
 	}
 
-	@GetMapping("/filter")
+	@PostMapping("/filter")
 	public ResponseEntity<?> filterAdvanceJobs(@RequestParam(name = "page", defaultValue = "1") int page,
 			@RequestParam(name = "limit", defaultValue = "7") int limit,
 			@RequestParam(name = "sortBy", defaultValue = "createdAt") String sortBy,
-			@RequestParam(name = "technology", defaultValue = "") String technology,
-			@RequestParam(name = "minSalary", defaultValue = "0") Double minSalary,
-			@RequestParam(name = "maxSalary", defaultValue = "0") Double maxSalary,
-			@RequestParam(name = "jobLevel", defaultValue = "") String jobLevel,
-			@RequestParam(name = "location", defaultValue = "") String location) {
-		Pageable pageable = PageRequest.of(page - 1, limit, Sort.by(Sort.Direction.DESC, sortBy));
+			@RequestBody AdvanceFilterRequest searchRequest) {
+		Sort sort = Sort.by(Sort.Direction.DESC, sortBy);
 
-		JobSearchRequest searchRequest = JobSearchRequest.builder().technology(technology).minSalary(minSalary)
-				.maxSalary(maxSalary).jobLevel(jobLevel).location(location).build();
+		if (sortBy.contains("-")) {
+			String[] arr = sortBy.split("-");
+
+			String direction = arr[0];
+			sortBy = arr[1];
+			if (direction.equals("asc")) {
+				sort = Sort.by(Sort.Direction.ASC, sortBy);
+			}else {
+				sort = Sort.by(Sort.Direction.DESC, sortBy);
+			}
+		}
+		Pageable pageable = PageRequest.of(page - 1, limit, sort);
 
 		Slice<JobDTO> jobSlice = jobService.filterAdvanceJobs(searchRequest, pageable);
 

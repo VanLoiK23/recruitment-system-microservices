@@ -3,6 +3,8 @@ const categories = [
     title: "IT",
     jobs: [
       "Software Developer",
+      "Backend",
+      "Frontend",
       "Machine Learning / AI Engineer",
       "Internet of Things (IoT) Developer",
       "DevOps Engineer",

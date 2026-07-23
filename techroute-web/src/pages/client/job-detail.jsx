@@ -1,6 +1,16 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
-import { MapPin, BarChart3, Heart, Briefcase, Award, Gift, FileText } from "lucide-react";
+import { useNavigate, useParams } from "react-router-dom";
+import {
+  MapPin,
+  BarChart3,
+  Heart,
+  Briefcase,
+  Award,
+  Gift,
+  FileText,
+  Flame,
+  Tag,
+} from "lucide-react";
 import JobDetailCard from "../../components/detail/job-card";
 import axios from "../../utils/axios.customize";
 import { toast } from "react-toastify";
@@ -10,6 +20,8 @@ const JobDetailPage = () => {
   const { id } = useParams();
   const [job, setJobDetail] = useState({});
   const [jobsRelevant, setJobsRelevant] = useState([]);
+
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchJob = async () => {
@@ -37,7 +49,9 @@ const JobDetailPage = () => {
           },
         });
         if (data) {
-          setJobsRelevant(data.content);
+          setJobsRelevant(
+            data.content?.filter((jobItem) => jobItem.id != job.id)
+          );
         }
       } catch (err) {
         toast.error(err.message);
@@ -65,8 +79,16 @@ const JobDetailPage = () => {
       <div className="w-[95%] md:w-[93%] mx-2 md:mx-auto  my-5">
         <div className="p-5 rounded-xl bg-white border border-gray-100/50 shadow-[0_0_16px_rgba(0,0,0,0.06)] sticky top-6 mb-10">
           <div className="flex flex-col justify-center gap-3">
-            <div className="font-bold font-roboto text-xl text-gray-700 mb-2">
-              {job?.title}
+            <div className="flex flex-row items-center gap-3">
+              <div className="font-bold font-roboto text-xl text-gray-700 text-left">
+                {job?.title}
+              </div>
+              {job?.hotJob && (
+                <div className="flex items-center gap-1 py-0.5 px-2.5 rounded-full bg-amber-50 text-amber-600 text-[10px] font-bold border border-amber-200 uppercase tracking-wider animate-pulse">
+                  <Flame className="w-3 h-3 fill-amber-500 stroke-amber-600" />
+                  <span>Hot Job</span>
+                </div>
+              )}
             </div>
             <div className="text-[#D6249F] text-xs flex flex-row flex-wrap items-center gap-1.5 mb-3">
               <span>
@@ -76,7 +98,7 @@ const JobDetailPage = () => {
               <span className="w-1 h-1 rounded-full bg-gray-400" />
               <span>{job?.jobLevel || "Senior"} Level</span>
               <span className="w-1 h-1 rounded-full bg-gray-400" />
-              <span>Full-time</span>
+              <span className="capitalize">{job?.workType || "Full-time"}</span>
             </div>
             <div className="flex flex-row flex-wrap items-center gap-12 text-xs text-gray-600 mb-4">
               <div className="flex flex-row items-center gap-1">
@@ -134,7 +156,29 @@ const JobDetailPage = () => {
           </div>
         </div>
         <div className="p-6 bg-white rounded-xl border border-gray-100/50 shadow-[0_0_16px_rgba(0,0,0,0.06)] font-sans ">
-          <div className="w-full overflow-y-auto max-h-[calc(120vh-260px)] pr-2 flex flex-col gap-8 custom-scrollbar">
+          <div className="w-full overflow-y-auto max-h-[calc(130vh-260px)] pr-2 flex flex-col gap-8 custom-scrollbar">
+            {job?.categories && job?.categories.length > 0 && (
+              <div className="flex flex-col gap-3 text-left">
+                <div className="flex items-center gap-2.5 text-[#5B5FC7]">
+                  <div className="w-7 h-7 rounded-lg bg-[#5B5FC7]/10 flex items-center justify-center">
+                    <Tag className="w-4 h-4 stroke-[2.5]" />
+                  </div>
+                  <h3 className="text-sm font-bold tracking-wide uppercase">
+                    Job Categories
+                  </h3>
+                </div>
+                <div className="pl-9 flex flex-row flex-wrap gap-2">
+                  {job.categories.map((cat, idx) => (
+                    <span
+                      key={idx}
+                      className="py-1 px-3 rounded-full bg-[#E0F7FF] text-[#008BBF] text-xs font-semibold border border-sky-100"
+                    >
+                      {cat}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
             <div className="flex flex-col gap-3">
               <div className="flex items-center gap-2.5 text-[#5B5FC7]">
                 <div className="w-7 h-7 rounded-lg bg-[#5B5FC7]/10 flex items-center justify-center">
@@ -210,7 +254,14 @@ const JobDetailPage = () => {
           {jobsRelevant?.length > 0 ? "More jobs for you" : "No job relevant"}
         </div>
         {jobsRelevant.map((jobRelevant) => (
-          <JobDetailCard job={jobRelevant} isDetail={true} />
+          <JobDetailCard
+            job={jobRelevant}
+            isDetail={true}
+            onClickDetail={() => {
+              navigate("/jobs/" + jobRelevant.id);
+            }}
+            onApply={() => {}}
+          />
         ))}
       </div>
     </div>

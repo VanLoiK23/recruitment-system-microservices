@@ -1,12 +1,15 @@
 import React, { useState } from "react";
 import { MapPin, Clock, Heart } from "lucide-react";
 
-function JobDetailCard({ job, isDetail,onClick }) {
+function JobDetailCard({ job, isDetail, onClickDetail, onApply }) {
   const [isFavorite, setIsFavorite] = useState(false);
 
   return (
-    <div className="flex flex-col justify-center w-full bg-white p-4 rounded-xl border border-[#2F00FF]/30" onClick={onClick}>
-      <div className="font-bold text-xl text-gray-900 mb-2">
+    <div className="flex flex-col justify-center w-full bg-white p-4 rounded-xl border border-[#2F00FF]/30">
+      <div
+        onClick={onClickDetail}
+        className="font-bold text-xl text-gray-900 mb-2 cursor-pointer"
+      >
         {job?.title || "Senior Java Backend Engineer"}
       </div>
       <div className="text-gray-500 text-xs flex flex-row items-center gap-1.5 mb-3">
@@ -17,7 +20,7 @@ function JobDetailCard({ job, isDetail,onClick }) {
         <span className="w-1 h-1 rounded-full bg-gray-400" />
         <span>{job?.jobLevel || "Senior"} Level</span>
         <span className="w-1 h-1 rounded-full bg-gray-400" />
-        <span>Full-time</span>
+        <span className="capitalize">{job?.workType || "Full-time"}</span>
       </div>
       <div className="flex flex-row items-center justify-between text-xs text-gray-600 mb-4">
         <div className="flex flex-row items-center gap-1">
@@ -30,7 +33,7 @@ function JobDetailCard({ job, isDetail,onClick }) {
         </div>
       </div>
       <div className="flex flex-row items-center justify-between gap-2 pt-1">
-        <div className="flex flex-row flex-wrap max-w-[70%] items-center gap-2">
+        <div className="flex flex-row flex-wrap max-w-[70%] items-center gap-2 cursor-pointer">
           {(job?.technologies || ["Java", "Spring Boot"]).map((tech, index) => (
             <div
               key={index}
@@ -60,7 +63,10 @@ function JobDetailCard({ job, isDetail,onClick }) {
               }`}
             />
           </button>
-          <button className="h-9 px-6 rounded-xl bg-[#1677FF] text-white text-xs font-bold transition-all duration-200 hover:scale-105 hover:bg-[#1631ff] active:scale-95 cursor-pointer uppercase tracking-wider">
+          <button
+            onClick={onApply}
+            className="h-9 px-6 rounded-xl bg-[#1677FF] text-white text-xs font-bold transition-all duration-200 hover:scale-105 hover:bg-[#1631ff] active:scale-95 cursor-pointer uppercase tracking-wider"
+          >
             Apply Now
           </button>
         </div>

@@ -34,6 +34,8 @@ public class SecurityConfig {
 //						.requestMatchers("/admin/**").hasRole("ADMIN").requestMatchers("/recruiter/**").hasRole("RECRUITER")
 	                    .requestMatchers(HttpMethod.GET, "/api/jobs/**").permitAll()
 	                    
+	                    .requestMatchers(HttpMethod.POST, "/api/jobs/filter").permitAll()
+	                    
 	                    .requestMatchers(HttpMethod.POST, "/api/jobs").hasRole("RECRUITER")
 	                    
 	                    .requestMatchers(HttpMethod.PUT, "/api/jobs/**").hasRole("RECRUITER")

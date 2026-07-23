@@ -34,6 +34,8 @@ public class JobDocument {
 	
 	private String recruiterEmail;
 	
+	private List<String> categories; 
+	
 	private List<String> roles;
 	
 	private List<String> technologies;
@@ -44,6 +46,11 @@ public class JobDocument {
     
     @Indexed
     private String jobLevel; 
+    
+    private String workType; 
+    
+    @Indexed
+    private boolean hotJob; 
 
     private String location; 
 

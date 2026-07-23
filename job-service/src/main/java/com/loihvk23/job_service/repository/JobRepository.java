@@ -28,4 +28,6 @@ public interface JobRepository extends MongoRepository<JobDocument, String> {
 	Slice<JobDocument> findByTechnologiesContainsAndJobLevel(String technology, String jobLevel, Pageable pageable);
 	
 	Slice<JobDocument> findByTechnologiesContainsAndJobLevelAndLocation(String technology, String jobLevel, String location, Pageable pageable);
+	
+	Slice<JobDocument> findByTechnologiesContainsOrJobLevel(String technologies, String jobLevel);
 }

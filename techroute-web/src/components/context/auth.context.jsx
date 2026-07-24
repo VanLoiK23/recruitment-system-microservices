@@ -5,7 +5,7 @@ import instance from '../../utils/axios.customize';
 export const AuthContext = createContext({
   auth: {
       isAuthenticated: false,
-      user: { email: "", role: "" }
+      user: { email: "", role: "", fullName: "" }
   },
   setAuth: () => {},
   isAppLoading: true 
@@ -15,7 +15,7 @@ export const AuthContext = createContext({
 export const AuthWrapper = (props) => {
   const [auth, setAuth] = useState({
       isAuthenticated: false,
-      user: { email: "", role: "" }
+      user: { email: "", role: "", fullName: "" }
   });
   const [isAppLoading, setIsAppLoading] = useState(true);
 

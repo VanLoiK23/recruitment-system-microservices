@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   MapPin,
@@ -14,17 +14,33 @@ import {
 import JobDetailCard from "../../components/detail/job-card";
 import axios from "../../utils/axios.customize";
 import { toast } from "react-toastify";
+import { AuthContext } from "../../components/context/auth.context";
 const JobDetailPage = () => {
+  const {auth} = useContext(AuthContext);
   const [isFavorite, setIsFavorite] = useState(false);
 
   const { id } = useParams();
   const [job, setJobDetail] = useState({});
   const [jobsRelevant, setJobsRelevant] = useState([]);
 
+  const [previous, setPrevious] = useState(false);
+  const [pageActive, setPageActive] = useState(1);
+  const [limit, setLimit] = useState(5);
+  const [next, setNext] = useState(false);
+
+  const [loading, setLoading] = useState(false);
+
+  const jobRef = useRef();
+
   const navigate = useNavigate();
+
+  const redirectLogin = ()=>{
+    navigate("/auth");
+  }
 
   useEffect(() => {
     const fetchJob = async () => {
+      setLoading(true);
       try {
         const data = await axios.get(`jobs/${id}`);
         if (data) {
@@ -33,25 +49,39 @@ const JobDetailPage = () => {
       } catch (err) {
         toast.error(err.message);
         console.error(`Status code from Backend [${err.code}]:`, err.message);
+      } finally {
+        setTimeout(() => {
+          setLoading(false);
+          jobRef.current.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
+        }, 1000);
       }
     };
     if (id) {
       fetchJob();
     }
-  }, []);
+  }, [id]);
 
   useEffect(() => {
     const fetchJobsRelevant = async () => {
       try {
-        const data = await axios.get(`jobs/relevant`, {
-          params: {
-            technologies: job.technologies,
-          },
-        });
+        const data = await axios.get(
+          `jobs/relevant?page=${pageActive}&limit=${limit}&jobId=${job.id}`,
+          {
+            params: {
+              technologies: job.technologies,
+            },
+          }
+        );
         if (data) {
+          console.log(data);
           setJobsRelevant(
             data.content?.filter((jobItem) => jobItem.id != job.id)
           );
+          setPrevious(!data?.first);
+          setNext(!data?.last);
         }
       } catch (err) {
         toast.error(err.message);
@@ -61,7 +91,19 @@ const JobDetailPage = () => {
     if (job?.technologies?.length > 0) {
       fetchJobsRelevant();
     }
-  }, [job.id]);
+  }, [job.id, pageActive]);
+
+  const onChangePage = (page, isPrev) => {
+    if (isPrev) {
+      if (previous) {
+        setPageActive(page);
+      }
+    } else {
+      if (next) {
+        setPageActive(page);
+      }
+    }
+  };
 
   const jobSummary = job?.description ? job.description : "";
 
@@ -76,7 +118,11 @@ const JobDetailPage = () => {
       <div className="absolute top-[170px] left-[-102px] w-[291px] h-[264px] rounded-full bg-[#00C3FF] opacity-50 blur-[159px] pointer-events-none z-0" />{" "}
       <div className="hidden md:block absolute top-[300px] right-[80px] w-[250px] h-[250px] rounded-full bg-[#00C3FF] opacity-50 blur-[159px] pointer-events-none z-0" />
       <div className="absolute bottom-[300px] right-[0px] w-[200px] h-[200px] rounded-full bg-[#00C3FF] opacity-50 blur-[159px] pointer-events-none z-1" />
-      <div className="w-[95%] md:w-[93%] mx-2 md:mx-auto  my-5">
+      <div
+        className={`w-[95%] md:w-[93%] mx-2 md:mx-auto  my-5 transition-opacity duration-300 scroll-mt-20 
+        ${loading ? "opacity-20 pointer-events-none" : "opacity-100"} `}
+        ref={jobRef}
+      >
         <div className="p-5 rounded-xl bg-white border border-gray-100/50 shadow-[0_0_16px_rgba(0,0,0,0.06)] sticky top-6 mb-10">
           <div className="flex flex-col justify-center gap-3">
             <div className="flex flex-row items-center gap-3">
@@ -91,10 +137,19 @@ const JobDetailPage = () => {
               )}
             </div>
             <div className="text-[#D6249F] text-xs flex flex-row flex-wrap items-center gap-1.5 mb-3">
-              <span>
-                ${job?.minSalary?.toLocaleString()} - $
-                {job?.maxSalary?.toLocaleString()} / month
-              </span>
+              {auth.isAuthenticated ? (
+                <span>
+                  ${job.minSalary?.toLocaleString()} - $
+                  {job.maxSalary?.toLocaleString()} / month
+                </span>
+              ) : (
+                <button
+                  className="py-1 px-2 rounded-3xl cursor-pointer text-blue-600"
+                  onClick={redirectLogin}
+                >
+                  Login to view Salary
+                </button>
+              )}
               <span className="w-1 h-1 rounded-full bg-gray-400" />
               <span>{job?.jobLevel || "Senior"} Level</span>
               <span className="w-1 h-1 rounded-full bg-gray-400" />
@@ -260,9 +315,30 @@ const JobDetailPage = () => {
             onClickDetail={() => {
               navigate("/jobs/" + jobRelevant.id);
             }}
+            redirectLogin={redirectLogin}
             onApply={() => {}}
           />
         ))}
+        {jobsRelevant?.length > 0 && (
+          <div className="flex items-center gap-3">
+            <div
+              className={`px-2 py-1 text-center text-sm border rounded-xl border-blue-300
+            ${!previous ? "bg-gray-400 pointer-events-none" : "cursor-pointer"}
+            `}
+              onClick={() => onChangePage(pageActive - 1, true)}
+            >
+              Previous
+            </div>
+            <div
+              className={`px-2 py-1 text-center text-sm border rounded-xl border-blue-300
+            ${!next ? "bg-gray-400 pointer-events-none" : "cursor-pointer"}
+            `}
+              onClick={() => onChangePage(pageActive + 1, false)}
+            >
+              Next
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

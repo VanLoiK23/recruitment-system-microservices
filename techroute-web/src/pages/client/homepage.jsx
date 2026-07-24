@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import SearchFilterBox from "../../components/homepage/searchFilterBox";
 import HeroCard from "../../components/homepage/hero-card";
 import JobCard from "../../components/homepage/job-card";
@@ -6,14 +6,19 @@ import JobDetailView from "../../components/homepage/job-detail-preview";
 import axios from "../../utils/axios.customize";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
-import { SearchX } from "lucide-react";
+import { ChevronLeft, ChevronRight, SearchX } from "lucide-react";
+import { AuthContext } from "../../components/context/auth.context";
+import ApplyJobModal from "../../components/apply/apply-popup";
 
 const HomePage = () => {
+  const { auth } = useContext(AuthContext);
+
   const [sortBy, setSortBy] = useState("");
   const [filters, setFilters] = useState({});
   const [jobs, setJobs] = useState([]);
   const [totalJob, setTotalJob] = useState(0);
   const [jobActive, setJobActive] = useState(0);
+
   const [totalPage, setTotalPage] = useState(0);
   const [startPage, setStarPage] = useState(0);
   const [numberPageDisplay, setNumberPageDisplay] = useState(3);
@@ -21,7 +26,12 @@ const HomePage = () => {
   const [pageSize, setPageSize] = useState(3);
   const [pageActive, setPageActive] = useState(1);
 
+  const [loading, setLoading] = useState(false);
+
+  const [showApplyPopup, setShowApplyPopup] = useState(false);
+
   const ref = useRef();
+  const topListRef = useRef();
 
   const handleClosePanel = () => {
     if (ref.current) {
@@ -38,28 +48,22 @@ const HomePage = () => {
     { id: 4, stats: "96%", label: "Success Rate" },
   ];
 
-  // useEffect(() => {
-  //   const fetchJobs = async () => {
-  //     try {
-  //       const data = await axios.get("jobs");
-  //       if (data) {
-  //         setJobs(data.content);
-  //         setTotalJob(data?.page?.totalElements);
-  //         setTotalPage(data?.page.totalPages);
-  //         setPageActive(data?.page.number + 1);
-  //         setNumberPageDisplay(totalPage > 3 ? 3 : totalPage);
-  //         setStarPage(pageActive-1);
-  //       }
-  //     } catch (err) {
-  //       toast.error(err.message);
-  //       console.error(`Status code from Backend [${err.code}]:`, err.message);
-  //     }
-  //   };
-  //   fetchJobs();
-  // }, []);
+  const redirectLogin = () => {
+    navigate("/auth");
+  };
+
+  const onApply = () => {
+    if (!auth.isAuthenticated) {
+      toast.warn("Pls Login before apply this job !");
+      redirectLogin();
+      return;
+    }
+    setShowApplyPopup(true);
+  };
 
   useEffect(() => {
     const fetchFilteredJobs = async () => {
+      setLoading(true);
       try {
         const data = await axios.post(
           `jobs/filter?sortBy=${sortBy}&page=${pageActive}&limit=${pageSize}`,
@@ -69,10 +73,9 @@ const HomePage = () => {
         if (data) {
           setJobs(data.content || []);
 
-          setTotalJob(data?.numberOfElements);
+          setTotalJob(data?.page.totalElements);
 
-          const totalElems = 10 || 0;
-          console.log(totalElems);
+          const totalElems = data?.page.totalElements || 0;
           const computedTotalPages = Math.ceil(totalElems / pageSize) || 1;
           setTotalPage(computedTotalPages);
 
@@ -83,6 +86,14 @@ const HomePage = () => {
       } catch (err) {
         toast.error(err.message);
         console.error(`Status code from Backend [${err.code}]:`, err.message);
+      } finally {
+        setTimeout(() => {
+          setLoading(false);
+          topListRef.current?.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
+        }, 1000);
       }
     };
 
@@ -94,6 +105,28 @@ const HomePage = () => {
       <div className="absolute top-[170px] left-[-102px] w-[291px] h-[264px] rounded-full bg-[#00C3FF] opacity-50 blur-[159px] pointer-events-none z-0" />{" "}
       <div className="hidden md:block absolute top-[300px] right-[80px] w-[250px] h-[250px] rounded-full bg-[#00C3FF] opacity-50 blur-[159px] pointer-events-none z-0" />
       <div className="absolute bottom-[300px] right-[0px] w-[200px] h-[200px] rounded-full bg-[#00C3FF] opacity-50 blur-[159px] pointer-events-none z-1" />
+      <div
+        className={`w-full h-full z-40 absolute inset-0 transition-opacity duration-200
+        ${
+          showApplyPopup
+            ? "bg-gray-500 opacity-40  block"
+            : "bg-transparent hidden"
+        }
+        `}
+        onClick={() => {
+          setShowApplyPopup(false);
+        }}
+      ></div>
+      {showApplyPopup && (
+        <ApplyJobModal
+          auth={auth}
+          job={jobActive}
+          onClose={() => {
+            setShowApplyPopup(false);
+          }}
+          uploadCV={() => {}}
+        />
+      )}
       <div className="p-0 m-0 w-full flex flex-col items-center bg-linear-[to_bottom,#EEF0FC_0%,#F2F3FC_31%,white_100%]">
         <div className="md:text-3xl font-bold text-center my-4 font-[Inter] tracking-[-0.02em]">
           Find your dream job, connect <br />
@@ -113,7 +146,7 @@ const HomePage = () => {
         <SearchFilterBox
           ref={ref}
           onSubmit={(finalFilters) => {
-            setFilters(filters);
+            setFilters(finalFilters);
             console.log(finalFilters);
           }}
         />
@@ -186,7 +219,12 @@ const HomePage = () => {
         </div>
 
         {jobs?.length !== 0 ? (
-          <div className="w-full md:w-[93%] p-3 grid grid-cols-1 md:grid-cols-3 items-start gap-8">
+          <div
+            className={`w-full md:w-[93%] p-3 grid grid-cols-1 md:grid-cols-3 items-start gap-8 transition-opacity duration-300 scroll-mt-20
+          ${loading ? "opacity-20 pointer-events-none" : "opacity-100"}
+          `}
+            ref={topListRef}
+          >
             <div className="col-span-1 w-full sm:w-[85%] sm:ml-15 md:w-auto md:ml-auto flex flex-col items-center gap-5">
               <div className="w-full bg-[#1677FF] text-white font-bold text-2xs p-3 rounded-xl">
                 {totalJob || 0} results
@@ -201,45 +239,56 @@ const HomePage = () => {
                   onClickJobActive={() => {
                     setJobActive(index);
                   }}
+                  redirectLogin={redirectLogin}
                 />
               ))}
               <div className="flex items-center justify-around gap-2">
                 {pageActive > 1 && (
                   <div
-                    className="px-2 py-1 text-white text-sm bg-blue-300 rounded-2xl"
+                    className="px-2 py-1 text-sm cursor-pointer flex items-center gap-2"
                     onClick={() => {
                       setPageActive(pageActive - 1);
                     }}
                   >
-                    Back
+                    <ChevronLeft className="h-5 w-5" />
+                    Previous
                   </div>
                 )}
-                {totalPage != 0 &&
-                  Array.from({ length: numberPageDisplay }, (_, index) => {
-                    const pageNum = startPage + index;
+                {totalPage > 0 &&
+                  (() => {
+                    const endPage = Math.min(
+                      startPage + numberPageDisplay - 1,
+                      totalPage
+                    );
 
-                    return (
-                      <>
+                    const displayCount = Math.max(0, endPage - startPage + 1);
+
+                    return Array.from({ length: displayCount }, (_, index) => {
+                      const pageNum = startPage + index;
+                      const isActive = pageNum === pageActive;
+
+                      return (
                         <div
                           key={pageNum}
-                          className="bg-blue-400 rounded-full w-7 h-7 my-auto text-center text-white flex items-center justify-center cursor-pointer"
-                          onClick={() => {
-                            setPageActive(pageNum);
-                          }}
+                          onClick={() => setPageActive(pageNum)}
+                          className={`w-7 h-7 my-auto rounded-full flex items-center justify-center cursor-pointer text-xs font-medium transition-all ${
+                            isActive && "bg-blue-600 text-white font-bold"
+                          }`}
                         >
                           {pageNum}
                         </div>
-                      </>
-                    );
-                  })}
-                {pageActive + 1 < totalPage && (
+                      );
+                    });
+                  })()}
+                {pageActive + 1 <= totalPage && (
                   <div
                     onClick={() => {
                       setPageActive(pageActive + 1);
                     }}
-                    className="px-2 py-1 text-white text-sm bg-blue-300 rounded-2xl"
+                    className="px-2 py-1 text-sm cursor-pointer flex items-center gap-2"
                   >
                     Next
+                    <ChevronRight className="h-5 w-5" />
                   </div>
                 )}
               </div>
@@ -249,6 +298,8 @@ const HomePage = () => {
               onClickDetail={() => {
                 navigate("/jobs/" + jobs[jobActive].id);
               }}
+              redirectLogin={redirectLogin}
+              onApply={onApply}
             />
           </div>
         ) : (
@@ -267,7 +318,7 @@ const HomePage = () => {
             </p>
 
             <button
-              onClick={() => window.location.reload()} // Hoặc truyền hàm resetFilters của bạn vào đây
+              onClick={() => window.location.reload()}
               className="py-2 px-5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold rounded-xl transition-all duration-200 cursor-pointer active:scale-95"
             >
               Clear All Filters

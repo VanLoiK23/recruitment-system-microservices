@@ -3,6 +3,7 @@ package com.loihvk23.job_service.service;
 
 import java.util.List;
 
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 
@@ -29,7 +30,7 @@ public interface JobService {
 //	Slice<JobDTO> filterJobsByTechnologiesAndJobLevel(String technology, String jobLevel, Pageable pageable);
 //	
 //	Slice<JobDTO> filterJobsByTechnologiesJobLevelAndLocation(String technology, String jobLevel, String location, Pageable pageable);
-	Slice<JobDTO> findJobRelevants(List<String> technologies, Pageable pageable);
+	Slice<JobDTO> findJobRelevants(List<String> technologies, String jobId, Pageable pageable);
 	
-	Slice<JobDTO> filterAdvanceJobs(AdvanceFilterRequest searchRequest, Pageable pageable);
+	Page<JobDTO> filterAdvanceJobs(AdvanceFilterRequest searchRequest, Pageable pageable);
 }

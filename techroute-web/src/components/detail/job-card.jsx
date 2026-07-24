@@ -1,7 +1,9 @@
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import { MapPin, Clock, Heart } from "lucide-react";
+import { AuthContext } from "../context/auth.context";
 
-function JobDetailCard({ job, isDetail, onClickDetail, onApply }) {
+function JobDetailCard({ job, isDetail, onClickDetail, redirectLogin, onApply }) {
+  const {auth} = useContext(AuthContext);
   const [isFavorite, setIsFavorite] = useState(false);
 
   return (
@@ -13,10 +15,19 @@ function JobDetailCard({ job, isDetail, onClickDetail, onApply }) {
         {job?.title || "Senior Java Backend Engineer"}
       </div>
       <div className="text-gray-500 text-xs flex flex-row items-center gap-1.5 mb-3">
-        <span>
-          ${job?.minSalary?.toLocaleString()} - $
-          {job?.maxSalary?.toLocaleString()} / month
-        </span>
+        {auth.isAuthenticated ? (
+          <span>
+            ${job.minSalary?.toLocaleString()} - $
+            {job.maxSalary?.toLocaleString()} / month
+          </span>
+        ) : (
+          <button
+            className="py-1 px-2 rounded-3xl cursor-pointer text-blue-600"
+            onClick={redirectLogin}
+          >
+            Login to view Salary
+          </button>
+        )}
         <span className="w-1 h-1 rounded-full bg-gray-400" />
         <span>{job?.jobLevel || "Senior"} Level</span>
         <span className="w-1 h-1 rounded-full bg-gray-400" />

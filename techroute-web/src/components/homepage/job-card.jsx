@@ -1,8 +1,11 @@
 import { MapPin, Heart } from "lucide-react";
-import { useState } from "react";
+import { useContext, useState } from "react";
+import { AuthContext } from "../../components/context/auth.context";
+import { redirect } from "react-router-dom";
 
-const JobCard = ({ job, onClickDetail, onClickJobActive }) => {
+const JobCard = ({ job, onClickDetail, onClickJobActive,redirectLogin }) => {
   const [isFavorite, setIsFavorite] = useState(false);
+  const { auth } = useContext(AuthContext);
 
   return (
     <div className="w-full bg-white p-3 rounded-xl border border-[#2F00FF] hover:scale-102 hover:opacity-70 cursor-pointer hover:bg-[#5b5ec725] z-0">
@@ -11,10 +14,14 @@ const JobCard = ({ job, onClickDetail, onClickJobActive }) => {
       </div>
       <div onClick={onClickJobActive}>
         <div className="text-gray-500 text-xs flex flex-row flex-wrap items-center gap-1.5 mb-3">
-          <span>
-            ${job.minSalary?.toLocaleString()} - $
-            {job.maxSalary?.toLocaleString()} / month
-          </span>
+          {auth.isAuthenticated ? (
+            <span>
+              ${job.minSalary?.toLocaleString()} - $
+              {job.maxSalary?.toLocaleString()} / month
+            </span>
+          ) : (
+            <button className="py-1 px-2 rounded-3xl cursor-pointer text-blue-600" onClick={redirectLogin}>Login to view Salary</button>
+          )}
 
           <span className="w-1 h-1 rounded-full bg-gray-400" />
 

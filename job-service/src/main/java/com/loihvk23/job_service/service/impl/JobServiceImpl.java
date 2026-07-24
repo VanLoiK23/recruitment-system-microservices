@@ -5,9 +5,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
-import org.springframework.data.domain.SliceImpl;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
@@ -129,7 +130,7 @@ public class JobServiceImpl implements JobService {
 	}
 
 	@Override
-	public Slice<JobDTO> filterAdvanceJobs(AdvanceFilterRequest searchRequest, Pageable pageable) {
+	public Page<JobDTO> filterAdvanceJobs(AdvanceFilterRequest searchRequest, Pageable pageable) {
 
 		Query query = new Query();
 		List<Criteria> criterias = new ArrayList<Criteria>();
@@ -177,6 +178,8 @@ public class JobServiceImpl implements JobService {
 			query.addCriteria(new Criteria().andOperator(criterias.toArray(new Criteria[0])));
 		}
 
+		long total = mongoTemplate.count(query, JobDocument.class);
+		
 		query.with(pageable);
 		query.limit(pageable.getPageSize() + 1);
 
@@ -188,12 +191,12 @@ public class JobServiceImpl implements JobService {
 		}
 
 		List<JobDTO> jobDTOs = jobDocuments.stream().map(jobMapper::toDTO).toList();
-		return new SliceImpl<>(jobDTOs, pageable, hasNext);
+		return new PageImpl<>(jobDTOs, pageable, total);
 	}
 
 	@Override
-	public Slice<JobDTO> findJobRelevants(List<String> technologies, Pageable pageable) {
-		Slice<JobDocument> jobDocumentSlices = jobRepository.findByTechnologies(technologies, pageable);
+	public Slice<JobDTO> findJobRelevants(List<String> technologies, String jobId, Pageable pageable) {
+		Slice<JobDocument> jobDocumentSlices = jobRepository.findByTechnologiesInAndIdNot(technologies, jobId, pageable);
 
 		Slice<JobDTO> jobDtos = jobDocumentSlices.map(jobMapper::toDTO);
 

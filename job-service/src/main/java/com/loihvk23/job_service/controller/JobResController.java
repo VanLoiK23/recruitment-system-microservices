@@ -3,6 +3,7 @@ package com.loihvk23.job_service.controller;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
@@ -55,13 +56,13 @@ public class JobResController {
 
 	@GetMapping("/relevant")
 	public ResponseEntity<?> getJobRelevants(@RequestParam(name = "technologies") List<String> technologies,
-			@RequestParam(name = "page", defaultValue = "1") int page,
+			@RequestParam(name = "jobId") String jobId, @RequestParam(name = "page", defaultValue = "1") int page,
 			@RequestParam(name = "limit", defaultValue = "7") int limit,
 			@RequestParam(name = "sortBy", defaultValue = "createdAt") String sortBy) {
 
 		Pageable pageable = PageRequest.of(page - 1, limit, Sort.by(Sort.Direction.DESC, sortBy));
 
-		Slice<JobDTO> jobSlice = jobService.findJobRelevants(technologies, pageable);
+		Slice<JobDTO> jobSlice = jobService.findJobRelevants(technologies, jobId, pageable);
 
 		return ResponseEntity.ok(jobSlice);
 	}
@@ -114,14 +115,14 @@ public class JobResController {
 			sortBy = arr[1];
 			if (direction.equals("asc")) {
 				sort = Sort.by(Sort.Direction.ASC, sortBy);
-			}else {
+			} else {
 				sort = Sort.by(Sort.Direction.DESC, sortBy);
 			}
 		}
 		Pageable pageable = PageRequest.of(page - 1, limit, sort);
 
-		Slice<JobDTO> jobSlice = jobService.filterAdvanceJobs(searchRequest, pageable);
+		Page<JobDTO> jobPage = jobService.filterAdvanceJobs(searchRequest, pageable);
 
-		return ResponseEntity.ok(jobSlice);
+		return ResponseEntity.ok(jobPage);
 	}
 }

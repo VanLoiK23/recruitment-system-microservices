@@ -13,7 +13,7 @@ import com.loihvk23.job_service.document.JobDocument;
 public interface JobRepository extends MongoRepository<JobDocument, String> {
 	List<JobDocument> findByRecruiterEmailAndTitleAndLocationAndStatus(String recruiterEmail, String title, String location, String status);
 	
-	Slice<JobDocument> findByTechnologies(List<String> technologies, Pageable pageable);
+	Slice<JobDocument> findByTechnologiesInAndIdNot(List<String> technologies, String jobId, Pageable pageable);
 	
 	Slice<JobDocument> findByRecruiterEmail(String recruiterEmail, Pageable pageable);
 	

@@ -34,7 +34,8 @@ const AuthPage = () => {
       isAuthenticated: true,
       user: {
         email: "loi@gmail.com",
-        role: "candidate"
+        role: "candidate",
+        fullName: "HuynhLOi"
       }
     });
     toast.success("Login successfully!");

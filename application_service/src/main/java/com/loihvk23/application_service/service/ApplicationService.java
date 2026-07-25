@@ -7,14 +7,17 @@ import org.springframework.data.domain.Slice;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.loihvk23.application_service.dto.ApplicationDTO;
+import com.loihvk23.application_service.dto.CvDTO;
 import com.loihvk23.application_service.dto.request.ApplicationRequest;
 
 public interface ApplicationService {
-	ApplicationDTO postApplicationApplyJob(ApplicationRequest request, MultipartFile file, String emailCandidate) throws IOException;
+	ApplicationDTO postApplicationApplyJob(ApplicationRequest request, String emailCandidate);
+
+	CvDTO uploadCv(MultipartFile request, String emailCandidate) throws IOException;
 
 	ApplicationDTO updateStatusApplication(Long applicationId, String emailRecruiter, String status);
 
-	ApplicationDTO findDetailByCandidateOrRecruiter(Long applicationId, String email,String role);
+	ApplicationDTO findDetailByCandidateOrRecruiter(Long applicationId, String email, String role);
 
 	void deleteApplicationById(Long applicationId, String emailCandidate);
 

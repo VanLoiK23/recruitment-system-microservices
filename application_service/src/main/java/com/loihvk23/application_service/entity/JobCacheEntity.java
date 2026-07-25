@@ -1,6 +1,5 @@
 package com.loihvk23.application_service.entity;
 
-
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;

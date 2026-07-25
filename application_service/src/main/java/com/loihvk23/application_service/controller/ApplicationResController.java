@@ -1,6 +1,7 @@
 package com.loihvk23.application_service.controller;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.data.domain.PageRequest;
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
@@ -25,8 +27,10 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.loihvk23.application_service.dto.ApplicationDTO;
+import com.loihvk23.application_service.dto.CvDTO;
 import com.loihvk23.application_service.dto.request.ApplicationRequest;
 import com.loihvk23.application_service.service.ApplicationService;
+import com.loihvk23.application_service.service.CvService;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -36,6 +40,8 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class ApplicationResController {
 	private final ApplicationService applicationService;
+	
+	private final CvService cvService;
 
 	@GetMapping("/job/{jobId}")
 	public ResponseEntity<?> getApplicationsByJob(@PathVariable(name = "jobId") String jobId,
@@ -89,15 +95,37 @@ public class ApplicationResController {
 		return ResponseEntity.ok(applicationDTO);
 	}
 
-	@PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-	public ResponseEntity<?> postNewApplicationApply(
-			@RequestPart("request") @Valid ApplicationRequest applicationRequest,
-			@RequestPart("file") MultipartFile file, @AuthenticationPrincipal UserDetails userDetails)
-			throws IOException {
+	@PostMapping(value = "/upload",consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	public ResponseEntity<?> uploadCV(@RequestPart("file") MultipartFile file, @AuthenticationPrincipal UserDetails userDetails)
+			throws IOException, IllegalAccessException {
+		if(file == null || file.isEmpty()) {
+			throw new IllegalAccessException("File upload is required");
+		}
+		
 		String emailCandidate = userDetails.getUsername();
 
-		ApplicationDTO applicationDTO = applicationService.postApplicationApplyJob(applicationRequest, file,
-				emailCandidate);
+		CvDTO cvResponse = applicationService.uploadCv(file, emailCandidate);
+
+		return ResponseEntity.status(HttpStatus.ACCEPTED).body(cvResponse);
+	}
+	
+	@GetMapping("/cv")
+	public ResponseEntity<?> getCvList(@AuthenticationPrincipal UserDetails userDetails){
+		String emailCandidate = userDetails.getUsername();
+		
+		List<CvDTO> cvDTOs = cvService.getCvs(emailCandidate);
+		
+		return ResponseEntity.ok(cvDTOs);
+	}
+
+	@PostMapping
+	public ResponseEntity<?> postNewApplicationApply(
+			@RequestBody @Valid ApplicationRequest applicationRequest,
+			@AuthenticationPrincipal UserDetails userDetails)
+			{
+		String emailCandidate = userDetails.getUsername();
+
+		ApplicationDTO applicationDTO = applicationService.postApplicationApplyJob(applicationRequest, emailCandidate);
 
 		return ResponseEntity.status(HttpStatus.CREATED).body(applicationDTO);
 	}

@@ -120,11 +120,10 @@ const HomePage = () => {
       {showApplyPopup && (
         <ApplyJobModal
           auth={auth}
-          job={jobActive}
+          job={jobs[jobActive]}
           onClose={() => {
             setShowApplyPopup(false);
           }}
-          uploadCV={() => {}}
         />
       )}
       <div className="p-0 m-0 w-full flex flex-col items-center bg-linear-[to_bottom,#EEF0FC_0%,#F2F3FC_31%,white_100%]">

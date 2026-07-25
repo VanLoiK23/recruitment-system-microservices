@@ -17,4 +17,13 @@ public class ApplicationRequest {
 	@NotBlank(message = "Info does not fill up")
 	@Email(message = "Some field of request doesn't correct")
 	private String recruiterEmail;
+	
+	@NotBlank(message = "Desc is required")
+	private String description;
+	
+	@NotBlank(message = "Phone is required")
+	private String phone;
+	
+	@NotBlank(message = "Fullname is required")
+	private String fullName;
 }

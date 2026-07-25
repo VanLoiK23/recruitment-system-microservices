@@ -1,10 +1,33 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import CloseButton from "../button/button-close";
 import ReactQuill from "react-quill-new";
-import "react-quill-new/dist/quill.snow.css"; 
+import "react-quill-new/dist/quill.snow.css";
+import { toast } from "react-toastify";
+import axios from "../../utils/axios.customize";
+import { Eye } from "lucide-react";
+import CircleLoading from "../animation/animate-loading";
 
-const ApplyJobModal = ({ auth, job, onClose, uploadCV }) => {
+const ApplyJobModal = ({ auth, job, onClose }) => {
   const [coverLetter, setCoverLetter] = useState("");
+  const [infoApply, setInfoApply] = useState({
+    fullName: auth?.user?.fullName || "",
+    email: auth?.user?.email || "",
+    phone: "",
+    recruiterEmail: job.recruiterEmail,
+    jobId: job.id,
+  });
+
+  const [cvList, setCvList] = useState([]);
+
+  const [selectedCvId, setSelectedCvId] = useState(
+    cvList.length > 0 ? cvList[cvList.length - 1].id : null
+  );
+
+  const fileInputRef = useRef(null);
+
+  const [selectedFile, setSelectedFile] = useState(null);
+
+  const [loading, setLoading] = useState(false);
 
   const getWordCount = (htmlText) => {
     const plainText = htmlText.replace(/<[^>]+>/g, "").trim();
@@ -16,6 +39,111 @@ const ApplyJobModal = ({ auth, job, onClose, uploadCV }) => {
       ["bold", "italic", "underline"],
       [{ list: "bullet" }, { list: "ordered" }],
     ],
+  };
+
+  const handleButtonClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        toast.warn("File's size must be less than 5MB");
+        return;
+      }
+      setSelectedFile(file);
+      uploadCv();
+    } else {
+      toast.warn("No file selected");
+    }
+  };
+
+  useEffect(() => {
+    const loadListCv = async () => {
+      try {
+        const data = await axios.get("applications/cv");
+
+        if (data) {
+          setCvList(data);
+        }
+      } catch (err) {
+        toast.error(err.message);
+        console.error(`Status code from Backend [${err.code}]:`, err.message);
+      }
+    };
+    loadListCv();
+  }, [job]);
+
+  const uploadCv = async () => {
+    if (!selectedFile) {
+      toast.error("Vui lòng chọn file CV trước!");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", selectedFile);
+
+    setLoading(true);
+    try {
+      const data = await axios.post("applications/upload", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      if (data) {
+        setCvList([...cvList, data]);
+        setSelectedCvId(
+          cvList.length > 0 ? cvList[cvList.length - 1].id : null
+        );
+      }
+    } catch (err) {
+      toast.error(err.message);
+      console.error(`Status code from Backend [${err.code}]:`, err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const onApply = async () => {
+    if(!infoApply.email){
+      toast.warn("Email is required");
+      return;
+    }
+
+    if(!infoApply.fullName){
+      toast.warn("Fullname is required");
+      return;
+    }
+
+    if(!infoApply.phone){
+      toast.warn("Phone is required");
+      return;
+    }
+
+    if(infoApply.phone.length!==10){
+      toast.warn("Format phone is not correct");
+      return;
+    }
+
+    try {
+      const data = await axios.post("applications", {
+        ...infoApply,
+        cvUrl: cvList[selectedCvId]?.fileUrl || "user",
+        description: coverLetter,
+      });
+
+      if (data) {
+        toast.success("Apply job successfully !");
+      } else {
+        toast.warn("Apply job failed");
+      }
+    } catch (err) {
+      toast.error(err.message);
+      console.error(`Status code from Backend [${err.code}]:`, err.message);
+    }
   };
 
   return (
@@ -47,7 +175,11 @@ const ApplyJobModal = ({ auth, job, onClose, uploadCV }) => {
                 </label>
                 <input
                   type="text"
-                  defaultValue={`${auth?.user?.fullName || ""}`}
+                  onChange={(e) => {
+                    setInfoApply({ ...infoApply, fullName: e.target.value });
+                  }}
+                  required
+                  value={infoApply.fullName}
                   className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                 />
               </div>
@@ -58,8 +190,12 @@ const ApplyJobModal = ({ auth, job, onClose, uploadCV }) => {
                     Phone number <span className="text-red-500">*</span>
                   </label>
                   <input
-                    type="text"
-                    defaultValue="0999999999"
+                    type="number"
+                    onChange={(e) => {
+                      setInfoApply({ ...infoApply, phone: e.target.value });
+                    }}
+                    required
+                    placeholder="0999999999"
                     className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                   />
                 </div>
@@ -69,7 +205,11 @@ const ApplyJobModal = ({ auth, job, onClose, uploadCV }) => {
                   </label>
                   <input
                     type="email"
-                    defaultValue={`${auth?.user?.email || ""}`}
+                    onChange={(e) => {
+                      setInfoApply({ ...infoApply, email: e.target.value });
+                    }}
+                    required
+                    value={infoApply.email}
                     className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                   />
                 </div>
@@ -81,51 +221,134 @@ const ApplyJobModal = ({ auth, job, onClose, uploadCV }) => {
             <h3 className="text-lg font-semibold text-blue-600 mb-4">
               Current resumes:
             </h3>
-            <div className="bg-[#f4f5f5] border border-gray-200 rounded-lg p-4 flex items-start gap-3">
-              <input
-                type="radio"
-                name="resume"
-                defaultChecked
-                className="mt-1 w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
-              />
-              <div className="flex-1">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                  <div className="flex items-center gap-3">
-                    <span className="font-medium text-gray-900">
-                      {`${auth?.user?.fullName || ""}`}
-                    </span>
-                    <span className="bg-red-50 text-red-500 text-xs font-semibold px-2 py-0.5 rounded">
-                      10%
-                    </span>
+            <div className="flex flex-col justify-center gap-3">
+              {cvList.map((cv, index) => {
+                const isSelected = selectedCvId === cv.id;
+                return (
+                  <div
+                    key={cv.id || index}
+                    className={`border rounded-lg p-4 flex items-start gap-3 transition-colors ${
+                      isSelected
+                        ? "bg-blue-50/50 border-blue-400"
+                        : "bg-[#f4f5f5] border-gray-200"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="resume"
+                      value={cv.id}
+                      checked={isSelected}
+                      onChange={() => setSelectedCvId(cv.id)}
+                      className="mt-1 w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500 cursor-pointer"
+                    />
+                    <div className="flex-1">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <span className="font-medium text-gray-900">
+                          {`${cv.fileName || ""}`}
+                        </span>
+                        <div className="flex items-center gap-3 text-xs text-gray-400">
+                          <span className="font-bold">
+                            Upload from computer
+                          </span>
+                          <span>{cv.uploadedAt}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div>
+                      <a
+                        href={cv.fileUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-gray-500"
+                      >
+                        <Eye className="h-4 w-4" />
+                      </a>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-3 text-xs text-gray-400">
-                    <span>
-                      user_profile_apply_modal_last_updated_at 22:47 13/06/2024
-                    </span>
+                );
+              })}
+              <div
+                className={`border rounded-lg p-4 flex items-start gap-3 transition-colors ${
+                  selectedCvId === "user"
+                    ? "bg-blue-50/50 border-blue-400"
+                    : "bg-[#f4f5f5] border-gray-200"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="resume"
+                  checked={selectedCvId === "user"}
+                  onChange={() => setSelectedCvId("user")}
+                  className="mt-1 w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                />
+                <div className="flex-1">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div className="flex items-center gap-3">
+                      <span className="font-medium text-gray-900">
+                        {`${auth?.user?.fullName || ""}`}
+                      </span>
+                      <span className="bg-red-50 text-red-500 text-xs font-semibold px-2 py-0.5 rounded">
+                        10%
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3 text-xs text-gray-400">
+                      <span>
+                        user_profile_apply_modal_last_updated_at 22:47
+                        13/06/2024
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-            <div className="mt-5 flex items-center gap-4" onClick={uploadCV}>
-              <button className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg font-medium flex items-center gap-2 transition-all shadow-sm">
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
+            <div>
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileChange}
+                accept=".pdf,.doc,.docx"
+                className="hidden"
+              />
+
+              <div className="mt-5 flex items-center gap-4">
+                <button
+                  type="button"
+                  onClick={handleButtonClick}
+                  disabled={loading}
+                  className={`text-white px-5 py-2.5 rounded-lg font-medium flex items-center gap-2 transition-all shadow-sm
+                    ${
+                      loading
+                        ? "cursor-not-allowed bg-gray-500"
+                        : "cursor-pointer bg-blue-600 hover:bg-blue-700"
+                    }
+                    `}
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
-                  />
-                </svg>
-                Upload new CV
-              </button>
-              <span className="text-sm text-gray-500">
-                Support *.doc, *.docx, *.pdf, and {"<"} 5MB
-              </span>
+                  {loading ? (
+                    <CircleLoading />
+                  ) : (
+                    <span className="flex gap-3">
+                      <svg
+                        className="w-5 h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
+                        />
+                      </svg>
+                      Upload new CV
+                    </span>
+                  )}
+                </button>
+
+                <span className="text-sm text-gray-500">
+                  {`Support *.doc, *.docx, *.pdf, and < 5MB`}
+                </span>
+              </div>
             </div>
           </section>
 
@@ -159,9 +382,8 @@ const ApplyJobModal = ({ auth, job, onClose, uploadCV }) => {
             Cancel
           </button>
           <button
-            onClick={() =>
-              console.log("Nội dung Cover Letter là:", coverLetter)
-            }
+            type="submit"
+            onClick={onApply}
             className="px-8 py-2.5 font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-md transition-all"
           >
             Send CV

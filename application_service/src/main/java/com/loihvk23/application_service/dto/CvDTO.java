@@ -9,24 +9,16 @@ import lombok.NoArgsConstructor;
 
 @Data
 @Builder
-@AllArgsConstructor
 @NoArgsConstructor
-public class ApplicationDTO {
-	private Long id;
-
-	private String jobId;
-	
-	private String fullName;
-	
-	private String phone;
+@AllArgsConstructor
+public class CvDTO {
+	private String id;
 
 	private String candidateEmail;
-	
-	private String cvUrl;
 
-	private String status;
+	private String fileName;
 
-	private String description;
+	private String fileUrl;
 
-	private LocalDateTime createdAt;
+	private LocalDateTime uploadedAt;
 }

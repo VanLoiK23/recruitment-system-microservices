@@ -20,15 +20,24 @@ public class ApplicationEntity {
 
 	@Column(nullable = false)
 	private String jobId;
+	
+	@Column(nullable = false)
+	private String fullName;
 
 	@Column(nullable = false)
 	private String candidateEmail;
+	
+	@Column(nullable = false)
+	private String phone;
 
 	@Column(nullable = false)
 	private String cvUrl;
 	
 	@Column(nullable = false)
 	private String status;
+	
+	@Column(nullable = false)
+	private String description;
 
 	@Column(nullable = true)
 	private LocalDateTime createdAt;

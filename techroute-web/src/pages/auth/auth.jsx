@@ -30,47 +30,47 @@ const AuthPage = () => {
   //handle logic Login
   const handleLogin = async (e) => {
     e.preventDefault();
-    setAuth({
-      isAuthenticated: true,
-      user: {
-        email: "loi@gmail.com",
-        role: "candidate",
-        fullName: "HuynhLOi"
-      }
-    });
-    toast.success("Login successfully!");
-    navigate("/");
-    // if (!userInfo.email) {
-    //   toast.warn("Email is required");
-    //   return;
-    // }
-    // if (!userInfo.password) {
-    //   toast.warn("Password is required");
-    //   return;
-    // }
-
-    // setLoading(true);
-    // try {
-    //   const data = await axios.post("auth/login", { ...userInfo, isRemember });
-
-    //   if (data.accessToken) {
-    //     sessionStorage.setItem("access_token", data.accessToken);
-
-    //     setAuth({
-    //       isAuthenticated: true,
-    //       user: data.user
-    //     });
-    //     toast.success("Login successfully!");
-    //     navigate("/");
-    //   } else {
-    //     toast.warn("Username or password incorrect!");
+    // setAuth({
+    //   isAuthenticated: true,
+    //   user: {
+    //     email: "loi@gmail.com",
+    //     role: "candidate",
+    //     fullName: "HuynhLOi"
     //   }
-    // } catch (err) {
-    //   toast.error(err.message);
-    //   console.error(`Status code from Backend [${err.code}]:`, err.message);
-    // } finally {
-    //   setLoading(false);
-    // }
+    // });
+    // toast.success("Login successfully!");
+    // navigate("/");
+    if (!userInfo.email) {
+      toast.warn("Email is required");
+      return;
+    }
+    if (!userInfo.password) {
+      toast.warn("Password is required");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const data = await axios.post("auth/login", { ...userInfo, isRemember });
+
+      if (data.accessToken) {
+        sessionStorage.setItem("access_token", data.accessToken);
+
+        setAuth({
+          isAuthenticated: true,
+          user: data.user
+        });
+        toast.success("Login successfully!");
+        navigate("/");
+      } else {
+        toast.warn("Username or password incorrect!");
+      }
+    } catch (err) {
+      toast.error(err.message);
+      console.error(`Status code from Backend [${err.code}]:`, err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   //handle logic Sign up

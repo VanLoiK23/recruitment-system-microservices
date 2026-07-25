@@ -12,6 +12,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.loihvk23.application_service.StatusEnum;
 import com.loihvk23.application_service.dto.ApplicationDTO;
+import com.loihvk23.application_service.dto.CvDTO;
 import com.loihvk23.application_service.dto.JobCacheDTO;
 import com.loihvk23.application_service.dto.request.ApplicationRequest;
 import com.loihvk23.application_service.entity.ApplicationEntity;
@@ -19,6 +20,7 @@ import com.loihvk23.application_service.exception.ResourceNotFoundException;
 import com.loihvk23.application_service.mapper.ApplicationMapper;
 import com.loihvk23.application_service.repository.ApplicationRepository;
 import com.loihvk23.application_service.service.ApplicationService;
+import com.loihvk23.application_service.service.CvService;
 import com.loihvk23.application_service.service.FileStorageService;
 import com.loihvk23.application_service.service.JobCacheService;
 
@@ -38,21 +40,18 @@ public class ApplicationServiceImpl implements ApplicationService {
 
 	private final FileStorageService fileStorageService;
 
+	private final CvService cvService;
+
 	@Override
 	@Transactional // if one of actions does not success then roll-back all
-	public ApplicationDTO postApplicationApplyJob(ApplicationRequest applicationRequest, MultipartFile file,
-			String emailCandidate) throws IOException {
+	public ApplicationDTO postApplicationApplyJob(ApplicationRequest applicationRequest, String emailCandidate) {
 		JobCacheDTO jobCacheDTO = jobCacheService.findJobById(applicationRequest.getJobId());
 
 		if (jobCacheDTO == null) {
 			throw new ResourceNotFoundException("The Job you are applying does not exist!");
 		}
 
-		if (!jobCacheDTO.getRecruiterEmail().equalsIgnoreCase(applicationRequest.getRecruiterEmail())) {
-			throw new IllegalArgumentException("Recruiter's email does not match the job requirements . Try again !!");
-		}
-		
-		if(!jobCacheDTO.getStatus().equalsIgnoreCase("opening")) {
+		if (!jobCacheDTO.getStatus().equalsIgnoreCase("opening")) {
 			throw new IllegalArgumentException("The Job you are applying does not open . Try again !!");
 		}
 
@@ -69,20 +68,35 @@ public class ApplicationServiceImpl implements ApplicationService {
 			}
 		}
 
+		if (applicationRequest.getCvUrl().isEmpty()) {
+			throw new IllegalArgumentException("Url cv is required !!");
+		}
+
+		ApplicationDTO applicationDTO = ApplicationDTO.builder().jobId(applicationRequest.getJobId())
+				.cvUrl(applicationRequest.getCvUrl()).status("PENDING").createdAt(LocalDateTime.now())
+				.description(applicationRequest.getDescription()).candidateEmail(emailCandidate)
+				.fullName(applicationRequest.getFullName()).phone(applicationRequest.getPhone()).build();
+
+		ApplicationEntity applicationEntity = applicationRepository.save(applicationMapper.toEntity(applicationDTO));
+
+		return applicationMapper.toDTO(applicationEntity);
+	}
+
+	@Override
+	@Transactional
+	public CvDTO uploadCv(MultipartFile file, String emailCandidate) throws IOException {
+		LocalDateTime dateTime = LocalDateTime.now();
 		String urlCv = fileStorageService.uploadCV(file);
 
 		if (urlCv == null || urlCv.isEmpty()) {
 			throw new IllegalArgumentException("Upload file CV failed. Try again !!");
 		}
-		applicationRequest.setCvUrl(urlCv);
+		CvDTO cvDTO = CvDTO.builder().candidateEmail(emailCandidate).fileName(file.getOriginalFilename()).uploadedAt(dateTime)
+				.fileUrl(urlCv).build();
 
-		ApplicationDTO applicationDTO = ApplicationDTO.builder().jobId(applicationRequest.getJobId())
-				.cvUrl(applicationRequest.getCvUrl()).status("PENDING").createdAt(LocalDateTime.now())
-				.candidateEmail(emailCandidate).build();
+		CvDTO savCvdto = cvService.save(cvDTO);
 
-		ApplicationEntity applicationEntity = applicationRepository.save(applicationMapper.toEntity(applicationDTO));
-
-		return applicationMapper.toDTO(applicationEntity);
+		return savCvdto;
 	}
 
 	// if non valid throw exception

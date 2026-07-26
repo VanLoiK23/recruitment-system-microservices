@@ -16,7 +16,7 @@ export default function App() {
 
   // Logout
   const handleLogout = () => {
-    sessionStorage.removeItem("access_token");
+    localStorage.removeItem("access_token");
     setAuth({
         isAuthenticated: false,
         user: { email: "", role: ""}

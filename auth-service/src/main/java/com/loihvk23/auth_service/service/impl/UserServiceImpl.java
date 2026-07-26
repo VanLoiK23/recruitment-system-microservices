@@ -24,6 +24,7 @@ import com.loihvk23.auth_service.repository.UserRepository;
 import com.loihvk23.auth_service.service.EmailService;
 import com.loihvk23.auth_service.service.UserService;
 
+import io.jsonwebtoken.Claims;
 import jakarta.persistence.EntityExistsException;
 import lombok.RequiredArgsConstructor;
 
@@ -124,7 +125,7 @@ public class UserServiceImpl implements UserService {
 
 		return emailService.sendResetEmail(email, resetToken);
 	}
-
+	
 	@Override
 	public boolean resetPassword(String token, String password) {
 		String key = "RESET_" + token;

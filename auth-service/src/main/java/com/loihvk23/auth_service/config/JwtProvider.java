@@ -63,7 +63,7 @@ public class JwtProvider {
 		Date now = new Date();
 		Date expiryDate = new Date(now.getTime() + JWT_EXPIRATION);
 
-		return Jwts.builder().subject(user.getEmail()).claim("role", user.getRole()).issuedAt(now)
+		return Jwts.builder().subject(user.getEmail()).claim("role", user.getRole()).claim("fullName", user.getFullName()).issuedAt(now)
 				.expiration(expiryDate).signWith(getSigningKey()).compact();
 	}
 

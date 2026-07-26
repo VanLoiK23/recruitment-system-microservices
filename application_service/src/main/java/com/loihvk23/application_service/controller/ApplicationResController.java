@@ -40,7 +40,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class ApplicationResController {
 	private final ApplicationService applicationService;
-	
+
 	private final CvService cvService;
 
 	@GetMapping("/job/{jobId}")
@@ -95,34 +95,32 @@ public class ApplicationResController {
 		return ResponseEntity.ok(applicationDTO);
 	}
 
-	@PostMapping(value = "/upload",consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-	public ResponseEntity<?> uploadCV(@RequestPart("file") MultipartFile file, @AuthenticationPrincipal UserDetails userDetails)
-			throws IOException, IllegalAccessException {
-		if(file == null || file.isEmpty()) {
+	@PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	public ResponseEntity<?> uploadCV(@RequestPart("file") MultipartFile file,
+			@AuthenticationPrincipal UserDetails userDetails) throws IOException, IllegalAccessException {
+		if (file == null || file.isEmpty()) {
 			throw new IllegalAccessException("File upload is required");
 		}
-		
+
 		String emailCandidate = userDetails.getUsername();
 
 		CvDTO cvResponse = applicationService.uploadCv(file, emailCandidate);
 
 		return ResponseEntity.status(HttpStatus.ACCEPTED).body(cvResponse);
 	}
-	
+
 	@GetMapping("/cv")
-	public ResponseEntity<?> getCvList(@AuthenticationPrincipal UserDetails userDetails){
+	public ResponseEntity<?> getCvList(@AuthenticationPrincipal UserDetails userDetails) {
 		String emailCandidate = userDetails.getUsername();
-		
+
 		List<CvDTO> cvDTOs = cvService.getCvs(emailCandidate);
-		
+
 		return ResponseEntity.ok(cvDTOs);
 	}
 
 	@PostMapping
-	public ResponseEntity<?> postNewApplicationApply(
-			@RequestBody @Valid ApplicationRequest applicationRequest,
-			@AuthenticationPrincipal UserDetails userDetails)
-			{
+	public ResponseEntity<?> postNewApplicationApply(@RequestBody @Valid ApplicationRequest applicationRequest,
+			@AuthenticationPrincipal UserDetails userDetails) {
 		String emailCandidate = userDetails.getUsername();
 
 		ApplicationDTO applicationDTO = applicationService.postApplicationApplyJob(applicationRequest, emailCandidate);
@@ -139,6 +137,19 @@ public class ApplicationResController {
 				status);
 
 		return ResponseEntity.ok(applicationDTO);
+	}
+
+	@GetMapping("/check-apply")
+	public ResponseEntity<?> checkJobApply(@RequestParam(name = "jobId") String jobId,
+			@AuthenticationPrincipal UserDetails userDetails) {
+		if (jobId == null || jobId.isBlank()) {
+			throw new IllegalArgumentException("Job Id is required");
+		}
+		String emailCandidate = userDetails.getUsername();
+
+		boolean checkApply = applicationService.checkJobApply(jobId, emailCandidate);
+
+		return ResponseEntity.ok(Map.of("isApply", checkApply));
 	}
 
 	@DeleteMapping("/{id}")

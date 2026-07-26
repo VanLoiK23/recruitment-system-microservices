@@ -14,6 +14,8 @@ public interface ApplicationService {
 	ApplicationDTO postApplicationApplyJob(ApplicationRequest request, String emailCandidate);
 
 	CvDTO uploadCv(MultipartFile request, String emailCandidate) throws IOException;
+	
+	boolean checkJobApply(String jobId,String emailCandidate);
 
 	ApplicationDTO updateStatusApplication(Long applicationId, String emailRecruiter, String status);
 

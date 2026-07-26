@@ -21,6 +21,6 @@ public interface UserService {
 	boolean generateTokenAndSendMailReset(String email);
 	
 	boolean resetPassword(String token,String password);
-	
+		
 	UserDTO findUserById(int id) throws AuthenticationException;
 }

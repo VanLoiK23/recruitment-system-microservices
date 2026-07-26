@@ -8,10 +8,14 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.CookieValue;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.loihvk23.auth_service.config.JwtProvider;
@@ -114,6 +118,15 @@ public class AuthResController {
 		String accessToken = jwtProvider.generateAccessTokenFromUser(refreshToken.getUser());
 
 		return ResponseEntity.ok(Map.of("accessToken", accessToken));
+	}
+
+	@GetMapping("account")
+	public ResponseEntity<?> getInfoAccountByAccessToken(@AuthenticationPrincipal UserDetails userDetails)
+			throws AuthenticationException {
+		String email = userDetails.getUsername();
+		UserDTO userDTO = userService.findUserByEmail(email);
+
+		return ResponseEntity.ok(Map.of("user", userDTO));
 	}
 
 	@PostMapping("logout")

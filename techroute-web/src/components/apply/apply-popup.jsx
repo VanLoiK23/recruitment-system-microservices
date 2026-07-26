@@ -7,7 +7,7 @@ import axios from "../../utils/axios.customize";
 import { Eye } from "lucide-react";
 import CircleLoading from "../animation/animate-loading";
 
-const ApplyJobModal = ({ auth, job, onClose }) => {
+const ApplyJobModal = ({ auth, job, onClose, updateApplySuccess }) => {
   const [coverLetter, setCoverLetter] = useState("");
   const [infoApply, setInfoApply] = useState({
     fullName: auth?.user?.fullName || "",
@@ -19,9 +19,7 @@ const ApplyJobModal = ({ auth, job, onClose }) => {
 
   const [cvList, setCvList] = useState([]);
 
-  const [selectedCvId, setSelectedCvId] = useState(
-    cvList.length > 0 ? cvList[cvList.length - 1].id : null
-  );
+  const [selectedCvId, setSelectedCvId] = useState("user");
 
   const fileInputRef = useRef(null);
 
@@ -108,22 +106,22 @@ const ApplyJobModal = ({ auth, job, onClose }) => {
   };
 
   const onApply = async () => {
-    if(!infoApply.email){
+    if (!infoApply.email) {
       toast.warn("Email is required");
       return;
     }
 
-    if(!infoApply.fullName){
+    if (!infoApply.fullName) {
       toast.warn("Fullname is required");
       return;
     }
 
-    if(!infoApply.phone){
+    if (!infoApply.phone) {
       toast.warn("Phone is required");
       return;
     }
 
-    if(infoApply.phone.length!==10){
+    if (infoApply.phone.length !== 10) {
       toast.warn("Format phone is not correct");
       return;
     }
@@ -131,12 +129,15 @@ const ApplyJobModal = ({ auth, job, onClose }) => {
     try {
       const data = await axios.post("applications", {
         ...infoApply,
-        cvUrl: cvList[selectedCvId]?.fileUrl || "user",
+        cvUrl:
+          cvList.filter((cv) => cv.id === selectedCvId)[0]?.fileUrl || "user",
         description: coverLetter,
       });
 
       if (data) {
         toast.success("Apply job successfully !");
+        updateApplySuccess(true);
+        onClose();
       } else {
         toast.warn("Apply job failed");
       }
@@ -190,9 +191,14 @@ const ApplyJobModal = ({ auth, job, onClose }) => {
                     Phone number <span className="text-red-500">*</span>
                   </label>
                   <input
-                    type="number"
+                    type="tel" 
+                    value={infoApply.phone || ""}
                     onChange={(e) => {
-                      setInfoApply({ ...infoApply, phone: e.target.value });
+                      const onlyNumbers = e.target.value.replace(/\D/g, "");
+
+                      if (onlyNumbers.length <= 11) {
+                        setInfoApply({ ...infoApply, phone: onlyNumbers });
+                      }
                     }}
                     required
                     placeholder="0999999999"
@@ -238,7 +244,9 @@ const ApplyJobModal = ({ auth, job, onClose }) => {
                       name="resume"
                       value={cv.id}
                       checked={isSelected}
-                      onChange={() => setSelectedCvId(cv.id)}
+                      onChange={() => {
+                        setSelectedCvId(cv.id);
+                      }}
                       className="mt-1 w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500 cursor-pointer"
                     />
                     <div className="flex-1">
@@ -384,7 +392,14 @@ const ApplyJobModal = ({ auth, job, onClose }) => {
           <button
             type="submit"
             onClick={onApply}
-            className="px-8 py-2.5 font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-md transition-all"
+            disabled={loading}
+            className={`px-8 py-2.5 font-semibold text-white rounded-lg shadow-md transition-all
+              ${
+                loading
+                  ? "cursor-not-allowed bg-gray-500"
+                  : "cursor-pointer bg-blue-600 hover:bg-blue-700"
+              }
+              `}
           >
             Send CV
           </button>

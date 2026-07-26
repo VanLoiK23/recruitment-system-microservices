@@ -38,6 +38,7 @@ const AuthPage = () => {
     //     fullName: "HuynhLOi"
     //   }
     // });
+    // localStorage.setItem("access_token", '12121adsd');
     // toast.success("Login successfully!");
     // navigate("/");
     if (!userInfo.email) {
@@ -54,7 +55,7 @@ const AuthPage = () => {
       const data = await axios.post("auth/login", { ...userInfo, isRemember });
 
       if (data.accessToken) {
-        sessionStorage.setItem("access_token", data.accessToken);
+        localStorage.setItem("access_token", data.accessToken);
 
         setAuth({
           isAuthenticated: true,
@@ -76,6 +77,11 @@ const AuthPage = () => {
   //handle logic Sign up
   useEffect(() => {
     const rawData = sessionStorage.getItem("userInfo");
+    const accessToken = localStorage.getItem("access_token");
+
+    if(accessToken){
+      navigate("/");
+    }
 
     if (rawData) {
       try {

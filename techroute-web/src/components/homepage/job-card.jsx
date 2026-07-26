@@ -3,12 +3,14 @@ import { useContext, useState } from "react";
 import { AuthContext } from "../../components/context/auth.context";
 import { redirect } from "react-router-dom";
 
-const JobCard = ({ job, onClickDetail, onClickJobActive,redirectLogin }) => {
+const JobCard = ({ job, onClickDetail, onClickJobActive,redirectLogin,isActive }) => {
   const [isFavorite, setIsFavorite] = useState(false);
   const { auth } = useContext(AuthContext);
 
   return (
-    <div className="w-full bg-white p-3 rounded-xl border border-[#2F00FF] hover:scale-102 hover:opacity-70 cursor-pointer hover:bg-[#5b5ec725] z-0">
+    <div className={`w-full p-3 rounded-xl border border-[#2F00FF] hover:scale-102 hover:opacity-70 cursor-pointer hover:bg-[#5b5ec725] z-0
+     ${isActive?("bg-[#5b5ec725]"):"bg-white"}
+    `}>
       <div className="font-bold font-idiqlat mb-3" onClick={onClickDetail}>
         {job.title}
       </div>

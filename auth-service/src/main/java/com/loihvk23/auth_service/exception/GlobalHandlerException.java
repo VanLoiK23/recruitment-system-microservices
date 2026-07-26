@@ -110,7 +110,7 @@ public class GlobalHandlerException {
 				.timestamp(LocalDateTime.now())
 				.status(HttpStatus.UNAUTHORIZED.value())
 				.error(HttpStatus.UNAUTHORIZED.getReasonPhrase())
-				.message("Password incorrect. Try again!")
+				.message("Email or Password incorrect. Try again!")
 				.build();
 				
 		return new ResponseEntity<>(errorResponse, HttpStatus.UNAUTHORIZED);

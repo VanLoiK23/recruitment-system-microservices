@@ -39,6 +39,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 		}
 
 		String jwtToken = authHeader.substring(7);
+		
+		System.out.println("Access token "+jwtToken);
 
 		if (jwtProvider.validateToken(jwtToken)) {
 			Claims claims = jwtProvider.getClaimsFromAccessToken(jwtToken);

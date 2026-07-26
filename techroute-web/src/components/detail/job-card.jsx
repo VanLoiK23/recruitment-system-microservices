@@ -1,10 +1,40 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { MapPin, Clock, Heart } from "lucide-react";
 import { AuthContext } from "../context/auth.context";
-
-function JobDetailCard({ job, isDetail, onClickDetail, redirectLogin, onApply }) {
-  const {auth} = useContext(AuthContext);
+import axios from "../../utils/axios.customize";
+import { toast } from "react-toastify";
+function JobDetailCard({
+  job,
+  isDetail,
+  onClickDetail,
+  redirectLogin,
+  onApply,
+  apply
+}) {
+  const { auth } = useContext(AuthContext);
   const [isFavorite, setIsFavorite] = useState(false);
+  const [isApply, setIsApply] = useState(false);
+
+  useEffect(() => {
+    const checkedApply = async () => {
+      try {
+        const data = await axios.get(
+          `applications/check-apply?jobId=${job.id}`
+        );
+
+        if (data) {
+          setIsApply(data.isApply);
+        }
+      } catch (err) {
+        toast.error(err.message);
+        console.error(`Status code from Backend [${err.code}]:`, err.message);
+      }
+    };
+
+    if (job && auth.isAuthenticated) {
+      checkedApply();
+    }
+  }, [job,apply]);
 
   return (
     <div className="flex flex-col justify-center w-full bg-white p-4 rounded-xl border border-[#2F00FF]/30">
@@ -17,8 +47,8 @@ function JobDetailCard({ job, isDetail, onClickDetail, redirectLogin, onApply })
       <div className="text-gray-500 text-xs flex flex-row items-center gap-1.5 mb-3">
         {auth.isAuthenticated ? (
           <span>
-            ${job.minSalary?.toLocaleString()} - $
-            {job.maxSalary?.toLocaleString()} / month
+            ${job?.minSalary?.toLocaleString()} - $
+            {job?.maxSalary?.toLocaleString()} / month
           </span>
         ) : (
           <button
@@ -74,12 +104,16 @@ function JobDetailCard({ job, isDetail, onClickDetail, redirectLogin, onApply })
               }`}
             />
           </button>
-          <button
-            onClick={onApply}
-            className="h-9 px-6 rounded-xl bg-[#1677FF] text-white text-xs font-bold transition-all duration-200 hover:scale-105 hover:bg-[#1631ff] active:scale-95 cursor-pointer uppercase tracking-wider"
-          >
-            Apply Now
-          </button>
+          {isApply ? (
+            <div className="text-sm text-[#5B5FC7] font-bold">You have applied for this job</div>
+          ) : (
+            <button
+              onClick={onApply}
+              className="h-9 px-6 rounded-xl bg-[#1677FF] text-white text-xs font-bold transition-all duration-200 hover:scale-105 hover:bg-[#1631ff] active:scale-95 cursor-pointer uppercase tracking-wider"
+            >
+              Apply Now
+            </button>
+          )}
         </div>
       </div>
     </div>

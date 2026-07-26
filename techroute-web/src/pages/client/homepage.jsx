@@ -61,6 +61,12 @@ const HomePage = () => {
     setShowApplyPopup(true);
   };
 
+  const [isApply,setIsApply] = useState(false);
+
+  const updateOnApply = (data)=>{
+    setIsApply(data);
+  }
+
   useEffect(() => {
     const fetchFilteredJobs = async () => {
       setLoading(true);
@@ -124,6 +130,7 @@ const HomePage = () => {
           onClose={() => {
             setShowApplyPopup(false);
           }}
+          updateApplySuccess={updateOnApply}
         />
       )}
       <div className="p-0 m-0 w-full flex flex-col items-center bg-linear-[to_bottom,#EEF0FC_0%,#F2F3FC_31%,white_100%]">
@@ -237,8 +244,10 @@ const HomePage = () => {
                   }}
                   onClickJobActive={() => {
                     setJobActive(index);
+                    setIsApply(false);//set default
                   }}
                   redirectLogin={redirectLogin}
+                  isActive={index===jobActive}
                 />
               ))}
               <div className="flex items-center justify-around gap-2">
@@ -299,6 +308,7 @@ const HomePage = () => {
               }}
               redirectLogin={redirectLogin}
               onApply={onApply}
+              isApply={isApply}
             />
           </div>
         ) : (

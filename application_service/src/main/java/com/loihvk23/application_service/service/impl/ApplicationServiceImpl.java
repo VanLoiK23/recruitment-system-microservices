@@ -91,12 +91,30 @@ public class ApplicationServiceImpl implements ApplicationService {
 		if (urlCv == null || urlCv.isEmpty()) {
 			throw new IllegalArgumentException("Upload file CV failed. Try again !!");
 		}
-		CvDTO cvDTO = CvDTO.builder().candidateEmail(emailCandidate).fileName(file.getOriginalFilename()).uploadedAt(dateTime)
-				.fileUrl(urlCv).build();
+		CvDTO cvDTO = CvDTO.builder().candidateEmail(emailCandidate).fileName(file.getOriginalFilename())
+				.uploadedAt(dateTime).fileUrl(urlCv).build();
 
 		CvDTO savCvdto = cvService.save(cvDTO);
 
 		return savCvdto;
+	}
+
+	@Override
+	public boolean checkJobApply(String jobId, String emailCandidate) {
+		JobCacheDTO jobCacheDTO = jobCacheService.findJobById(jobId);
+
+		if (jobCacheDTO == null) {
+			throw new ResourceNotFoundException("Job isn't exist!");
+		}
+
+		List<ApplicationEntity> applicationEntities = applicationRepository.findByCandidateEmailAndJobId(emailCandidate,
+				jobId);
+
+		if (applicationEntities != null && !applicationEntities.isEmpty()) {
+			return true;
+		}
+
+		return false;
 	}
 
 	// if non valid throw exception

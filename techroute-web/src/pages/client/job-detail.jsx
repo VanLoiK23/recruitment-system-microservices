@@ -15,8 +15,9 @@ import JobDetailCard from "../../components/detail/job-card";
 import axios from "../../utils/axios.customize";
 import { toast } from "react-toastify";
 import { AuthContext } from "../../components/context/auth.context";
+import ApplyJobModal from "../../components/apply/apply-popup";
 const JobDetailPage = () => {
-  const {auth} = useContext(AuthContext);
+  const { auth } = useContext(AuthContext);
   const [isFavorite, setIsFavorite] = useState(false);
 
   const { id } = useParams();
@@ -30,13 +31,24 @@ const JobDetailPage = () => {
 
   const [loading, setLoading] = useState(false);
 
+  const [isApply, setIsApply] = useState(false);
+  const [showApplyPopup, setShowApplyPopup] = useState(false);
+
   const jobRef = useRef();
 
   const navigate = useNavigate();
 
-  const redirectLogin = ()=>{
+  const jobSummary = job?.description ? job.description : "";
+
+  const jobRoles = job?.roles ? job.roles : [];
+
+  const jobRequirements = job?.requirements ? job.requirements : [];
+
+  const jobBenefits = job?.benefits ? job.benefits : [];
+
+  const redirectLogin = () => {
     navigate("/auth");
-  }
+  };
 
   useEffect(() => {
     const fetchJob = async () => {
@@ -93,6 +105,27 @@ const JobDetailPage = () => {
     }
   }, [job.id, pageActive]);
 
+  useEffect(() => {
+    const checkedApply = async () => {
+      try {
+        const data = await axios.get(
+          `applications/check-apply?jobId=${job.id}`
+        );
+
+        if (data) {
+          setIsApply(data.isApply);
+        }
+      } catch (err) {
+        toast.error(err.message);
+        console.error(`Status code from Backend [${err.code}]:`, err.message);
+      }
+    };
+
+    if (job.id && auth.isAuthenticated) {
+      checkedApply();
+    }
+  }, [job.id]);
+
   const onChangePage = (page, isPrev) => {
     if (isPrev) {
       if (previous) {
@@ -105,19 +138,46 @@ const JobDetailPage = () => {
     }
   };
 
-  const jobSummary = job?.description ? job.description : "";
+  const updateOnApply = (data)=>{
+    setIsApply(data);
+  }
 
-  const jobRoles = job?.roles ? job.roles : [];
-
-  const jobRequirements = job?.requirements ? job.requirements : [];
-
-  const jobBenefits = job?.benefits ? job.benefits : [];
+  const onApply = () => {
+    if (!auth.isAuthenticated) {
+      toast.warn("Pls Login before apply this job !");
+      redirectLogin();
+      return;
+    }
+    setShowApplyPopup(true);
+  };
 
   return (
     <div className="min-h-screen w-full bg-white relative font-sans">
       <div className="absolute top-[170px] left-[-102px] w-[291px] h-[264px] rounded-full bg-[#00C3FF] opacity-50 blur-[159px] pointer-events-none z-0" />{" "}
       <div className="hidden md:block absolute top-[300px] right-[80px] w-[250px] h-[250px] rounded-full bg-[#00C3FF] opacity-50 blur-[159px] pointer-events-none z-0" />
       <div className="absolute bottom-[300px] right-[0px] w-[200px] h-[200px] rounded-full bg-[#00C3FF] opacity-50 blur-[159px] pointer-events-none z-1" />
+      <div
+        className={`w-full h-full z-40 absolute inset-0 transition-opacity duration-200
+        ${
+          showApplyPopup
+            ? "bg-gray-500 opacity-40  block"
+            : "bg-transparent hidden"
+        }
+        `}
+        onClick={() => {
+          setShowApplyPopup(false);
+        }}
+      ></div>
+      {showApplyPopup && (
+        <ApplyJobModal
+          auth={auth}
+          job={job}
+          onClose={() => {
+            setShowApplyPopup(false);
+          }}
+          updateApplySuccess={updateOnApply}
+        />
+      )}
       <div
         className={`w-[95%] md:w-[93%] mx-2 md:mx-auto  my-5 transition-opacity duration-300 scroll-mt-20 
         ${loading ? "opacity-20 pointer-events-none" : "opacity-100"} `}
@@ -202,9 +262,18 @@ const JobDetailPage = () => {
                       }`}
                     />
                   </button>
-                  <button className="h-9 px-6 rounded-xl bg-[#1677FF] text-white text-xs font-bold transition-all duration-200 hover:scale-105 hover:bg-[#1631ff] active:scale-95 cursor-pointer uppercase tracking-wider">
-                    Apply Now
-                  </button>
+                  {isApply ? (
+                    <div className="text-sm text-[#5B5FC7] font-bold">
+                      You have applied for this job
+                    </div>
+                  ) : (
+                    <button
+                      onClick={onApply}
+                      className="h-9 px-6 rounded-xl bg-[#1677FF] text-white text-xs font-bold transition-all duration-200 hover:scale-105 hover:bg-[#1631ff] active:scale-95 cursor-pointer uppercase tracking-wider"
+                    >
+                      Apply Now
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -308,8 +377,9 @@ const JobDetailPage = () => {
         <div className="font-bold font-roboto text-xl text-gray-900 mb-2">
           {jobsRelevant?.length > 0 ? "More jobs for you" : "No job relevant"}
         </div>
-        {jobsRelevant.map((jobRelevant) => (
+        {jobsRelevant.map((jobRelevant, index) => (
           <JobDetailCard
+            key={index}
             job={jobRelevant}
             isDetail={true}
             onClickDetail={() => {

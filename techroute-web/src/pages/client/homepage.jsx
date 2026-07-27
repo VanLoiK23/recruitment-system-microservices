@@ -67,6 +67,19 @@ const HomePage = () => {
     setIsApply(data);
   }
 
+  const saveJob = async(jobId)=>{
+    try {
+      const data = await axios.post(`jobs/${jobId}/saveJob`);
+
+      if(data){
+        console.log(data);
+      }
+    } catch (err) {
+      toast.error(err.message);
+      console.error(`Status code from Backend [${err.code}]:`, err.message);
+    }
+  }
+
   useEffect(() => {
     const fetchFilteredJobs = async () => {
       setLoading(true);
@@ -247,6 +260,9 @@ const HomePage = () => {
                     setIsApply(false);//set default
                   }}
                   redirectLogin={redirectLogin}
+                  saveJob={(jobId)=>{
+                    saveJob(jobId)
+                  }}
                   isActive={index===jobActive}
                 />
               ))}
@@ -307,6 +323,9 @@ const HomePage = () => {
                 navigate("/jobs/" + jobs[jobActive].id);
               }}
               redirectLogin={redirectLogin}
+              saveJob={(jobId)=>{
+                saveJob(jobId);
+              }}
               onApply={onApply}
               isApply={isApply}
             />

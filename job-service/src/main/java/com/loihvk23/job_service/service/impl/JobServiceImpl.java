@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.boot.autoconfigure.batch.BatchProperties.Job;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -12,6 +13,7 @@ import org.springframework.data.domain.Slice;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -201,6 +203,13 @@ public class JobServiceImpl implements JobService {
 		Slice<JobDTO> jobDtos = jobDocumentSlices.map(jobMapper::toDTO);
 
 		return jobDtos;
+	}
+
+	@Override
+	public void incrementApplicantCount(String jobId) {
+	    Query query = new Query(Criteria.where("id").is(jobId));
+	    Update update = new Update().inc("applicantCount", 1);
+	    mongoTemplate.updateFirst(query, update, JobDocument.class);
 	}
 
 }

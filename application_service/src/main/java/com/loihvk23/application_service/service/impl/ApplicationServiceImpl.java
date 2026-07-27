@@ -5,16 +5,19 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Stream;
 
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.loihvk23.application_service.StatusEnum;
+import com.loihvk23.application_service.config.RabbitMQConfig;
 import com.loihvk23.application_service.dto.ApplicationDTO;
 import com.loihvk23.application_service.dto.CvDTO;
 import com.loihvk23.application_service.dto.JobCacheDTO;
 import com.loihvk23.application_service.dto.request.ApplicationRequest;
+import com.loihvk23.application_service.dto.request.JobEvent;
 import com.loihvk23.application_service.entity.ApplicationEntity;
 import com.loihvk23.application_service.exception.ResourceNotFoundException;
 import com.loihvk23.application_service.mapper.ApplicationMapper;
@@ -39,6 +42,8 @@ public class ApplicationServiceImpl implements ApplicationService {
 	private final JobCacheService jobCacheService;
 
 	private final FileStorageService fileStorageService;
+
+	private final RabbitTemplate rabbitTemplate;
 
 	private final CvService cvService;
 
@@ -78,6 +83,9 @@ public class ApplicationServiceImpl implements ApplicationService {
 				.fullName(applicationRequest.getFullName()).phone(applicationRequest.getPhone()).build();
 
 		ApplicationEntity applicationEntity = applicationRepository.save(applicationMapper.toEntity(applicationDTO));
+
+		JobEvent jobEvent = JobEvent.builder().id(applicationRequest.getJobId()).build();
+		rabbitTemplate.convertAndSend(RabbitMQConfig.JOB_EXCHANGE, RabbitMQConfig.JOB_EVENT_APPLY, jobEvent);
 
 		return applicationMapper.toDTO(applicationEntity);
 	}

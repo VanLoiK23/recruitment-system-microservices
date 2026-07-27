@@ -1,13 +1,13 @@
-import React, { useState } from "react";
+import React from "react";
 import JobDetailCard from "../detail/job-card";
 function JobDetailView({
   job,
   onClickDetail,
   redirectLogin,
+  saveJob,
   onApply,
   isApply,
 }) {
-  const [isFavorite, setIsFavorite] = useState(false);
 
   const roles = job?.roles || [
     "Tham gia các dự án sử dụng ngôn ngữ lập trình Java và các công nghệ liên quan...",
@@ -32,6 +32,9 @@ function JobDetailView({
         job={job}
         onClickDetail={onClickDetail}
         redirectLogin={redirectLogin}
+        saveJob={(jobId)=>{
+          saveJob(jobId);
+        }}
         onApply={onApply}
         apply={isApply}
       />

@@ -23,8 +23,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.loihvk23.job_service.dto.JobDTO;
+import com.loihvk23.job_service.dto.SavedJobDTO;
 import com.loihvk23.job_service.dto.request.AdvanceFilterRequest;
 import com.loihvk23.job_service.service.JobService;
+import com.loihvk23.job_service.service.SavedJobService;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -35,6 +37,8 @@ import lombok.RequiredArgsConstructor;
 public class JobResController {
 
 	private final JobService jobService;
+
+	private final SavedJobService savedJobService;
 
 	@GetMapping
 	public ResponseEntity<?> getListJobs(@RequestParam(name = "page", defaultValue = "1") int page,
@@ -124,5 +128,45 @@ public class JobResController {
 		Page<JobDTO> jobPage = jobService.filterAdvanceJobs(searchRequest, pageable);
 
 		return ResponseEntity.ok(jobPage);
+	}
+
+	@PostMapping("/{jobId}/saveJob")
+	public ResponseEntity<?> saveJob(@PathVariable("jobId") String jobId,
+			@AuthenticationPrincipal UserDetails userDetails) {
+		if (jobId == null) {
+			throw new IllegalArgumentException("Job Id is required");
+		}
+		String email = userDetails.getUsername();
+
+		savedJobService.saveJob(jobId, email);
+
+		return ResponseEntity.ok(Map.of("isSuccess", true));
+	}
+
+	@GetMapping("/{jobId}/is-saved")
+	public ResponseEntity<?> checkJobSaved(@PathVariable("jobId") String jobId,
+			@AuthenticationPrincipal UserDetails userDetails) {
+		if (jobId == null) {
+			throw new IllegalArgumentException("Job Id is required");
+		}
+		String email = userDetails.getUsername();
+
+		boolean isSaved = savedJobService.checkJobIsSaved(jobId, email);
+
+		return ResponseEntity.ok(Map.of("isSaved", isSaved));
+	}
+
+	@GetMapping("/saved")
+	public ResponseEntity<?> getMyJobSaved(@RequestParam(name = "page", defaultValue = "1") int page,
+			@RequestParam(name = "limit", defaultValue = "7") int limit,
+			@RequestParam(name = "sortBy", defaultValue = "createdAt") String sortBy,
+			@AuthenticationPrincipal UserDetails userDetails) {
+		String email = userDetails.getUsername();
+
+		Pageable pageable = PageRequest.of(page - 1, limit, Sort.by(Sort.Direction.DESC, sortBy));
+
+		Slice<SavedJobDTO> jobs = savedJobService.findSavedJobsByUser(email, pageable);
+
+		return ResponseEntity.ok(jobs);
 	}
 }

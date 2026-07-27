@@ -19,6 +19,8 @@ public class RabbitMQConfig {
 
 	public static final String JOB_ALL_EVENTS_PATTERN = "job.event.#";
 	
+	public static final String JOB_EVENT_APPLY = "job.apply";
+	
 	@Bean
 	public TopicExchange jobExchange() {
 		return new TopicExchange(JOB_EXCHANGE);

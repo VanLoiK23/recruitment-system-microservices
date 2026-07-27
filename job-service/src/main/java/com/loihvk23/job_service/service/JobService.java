@@ -33,4 +33,6 @@ public interface JobService {
 	Slice<JobDTO> findJobRelevants(List<String> technologies, String jobId, Pageable pageable);
 	
 	Page<JobDTO> filterAdvanceJobs(AdvanceFilterRequest searchRequest, Pageable pageable);
+	
+	void incrementApplicantCount(String jobId);
 }

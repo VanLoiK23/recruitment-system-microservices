@@ -241,13 +241,13 @@ const JobDetailPage = () => {
               <div className="hidden md:flex flex-row flex-wrap max-w-[70%] items-center py-1 px-3 text-gray-400 text-xs font-medium gap-2">
                 {job.createdAt}
                 <span className="w-1 h-1 rounded-full bg-gray-400" />
-                <span>{job.applicants}&nbsp;Applicants</span>
+                <span>{job.applicantCount}&nbsp;Applicants</span>
               </div>
               <div className="flex flex-col justify-center">
                 <div className="flex md:hidden flex-row whitespace-nowrap w-full items-center py-1 px-3 text-gray-400 text-xs font-medium gap-2">
                   {job.createdAt}
                   <span className="w-1 h-1 rounded-full bg-gray-400" />
-                  <span>{job.applicants}&nbsp;Applicants</span>
+                  <span>{job.applicantCount}&nbsp;Applicants</span>
                 </div>
                 <div className="flex flex-row items-center gap-2 shrink-0 whitespace-nowrap pt-1">
                   <button

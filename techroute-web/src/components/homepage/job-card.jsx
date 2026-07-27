@@ -1,16 +1,57 @@
 import { MapPin, Heart } from "lucide-react";
-import { useContext, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { AuthContext } from "../../components/context/auth.context";
 import { redirect } from "react-router-dom";
+import axios from "../../utils/axios.customize";
+import { toast } from "react-toastify";
 
-const JobCard = ({ job, onClickDetail, onClickJobActive,redirectLogin,isActive }) => {
+const JobCard = ({
+  job,
+  onClickDetail,
+  onClickJobActive,
+  saveJob,
+  redirectLogin,
+  isActive,
+}) => {
   const [isFavorite, setIsFavorite] = useState(false);
   const { auth } = useContext(AuthContext);
 
+  useEffect(() => {
+    const checkJobSave = async () => {
+      try {
+        const data = await axios.get(`jobs/${job.id}/is-saved`);
+
+        if (data) {
+          setIsFavorite(data.isSaved);
+        }
+      } catch (err) {
+        toast.error(err.message);
+        console.error(`Status code from Backend [${err.code}]:`, err.message);
+      }
+    };
+
+    if (job && auth.isAuthenticated) {
+      checkJobSave();
+    }
+  }, [job]);
+
   return (
-    <div className={`w-full p-3 rounded-xl border border-[#2F00FF] hover:scale-102 hover:opacity-70 cursor-pointer hover:bg-[#5b5ec725] z-0
-     ${isActive?("bg-[#5b5ec725]"):"bg-white"}
-    `}>
+    <div
+      className={`relative w-full p-3.5 rounded-xl border transition-all duration-200 cursor-pointer hover:scale-[1.02] z-0
+    ${
+      job?.hotJob
+        ? "border-red-600 bg-red-50/50 hover:bg-red-100/60 shadow-sm shadow-red-100"
+        : "border-[#2F00FF] bg-white hover:bg-[#5b5ec725]"
+    }
+    ${isActive ? (job?.hotJob ? "bg-red-100/80" : "bg-[#5b5ec725]") : ""}
+  `}
+    >
+      {job?.hotJob && (
+        <div className="absolute -top-2.5 right-3 flex items-center gap-1 py-0.5 px-2.5 rounded-full bg-gradient-to-r from-red-600 to-orange-500 text-white text-[10px] font-bold border border-red-200 uppercase tracking-wider shadow-md animate-pulse">
+          <Flame className="w-3 h-3 fill-yellow-300 stroke-yellow-300" />
+          <span>Hot Job</span>
+        </div>
+      )}
       <div className="font-bold font-idiqlat mb-3" onClick={onClickDetail}>
         {job.title}
       </div>
@@ -22,7 +63,12 @@ const JobCard = ({ job, onClickDetail, onClickJobActive,redirectLogin,isActive }
               {job.maxSalary?.toLocaleString()} / month
             </span>
           ) : (
-            <button className="py-1 px-2 rounded-3xl cursor-pointer text-blue-600" onClick={redirectLogin}>Login to view Salary</button>
+            <button
+              className="py-1 px-2 rounded-3xl cursor-pointer text-blue-600"
+              onClick={redirectLogin}
+            >
+              Login to view Salary
+            </button>
           )}
 
           <span className="w-1 h-1 rounded-full bg-gray-400" />
@@ -55,6 +101,7 @@ const JobCard = ({ job, onClickDetail, onClickJobActive,redirectLogin,isActive }
           onClick={(e) => {
             e.preventDefault();
             setIsFavorite(!isFavorite);
+            saveJob(job.id);
           }}
           className="w-5 h-5 rounded-full bg-[#EFEFEF] flex items-center justify-center transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer focus:outline-none select-none"
         >

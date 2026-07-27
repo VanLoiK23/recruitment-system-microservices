@@ -53,6 +53,8 @@ public class JobDocument {
     private boolean hotJob; 
 
     private String location; 
+    
+    private Long applicantCount;
 
     @CreatedDate
     private LocalDateTime createdAt;

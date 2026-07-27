@@ -8,8 +8,9 @@ function JobDetailCard({
   isDetail,
   onClickDetail,
   redirectLogin,
+  saveJob,
   onApply,
-  apply
+  apply,
 }) {
   const { auth } = useContext(AuthContext);
   const [isFavorite, setIsFavorite] = useState(false);
@@ -34,7 +35,28 @@ function JobDetailCard({
     if (job && auth.isAuthenticated) {
       checkedApply();
     }
-  }, [job,apply]);
+  }, [job, apply]);
+
+  useEffect(() => {
+    const checkJobSave = async () => {
+      try {
+        const data = await axios.get(
+          `jobs/${job.id}/is-saved`
+        );
+
+        if (data) {
+          setIsFavorite(data.isSaved);
+        }
+      } catch (err) {
+        toast.error(err.message);
+        console.error(`Status code from Backend [${err.code}]:`, err.message);
+      }
+    };
+
+    if (job && auth.isAuthenticated) {
+      checkJobSave();
+    }
+  }, [job]);
 
   return (
     <div className="flex flex-col justify-center w-full bg-white p-4 rounded-xl border border-[#2F00FF]/30">
@@ -93,7 +115,10 @@ function JobDetailCard({
 
         <div className="flex flex-row items-center gap-2 shrink-0 whitespace-nowrap pt-1">
           <button
-            onClick={() => setIsFavorite(!isFavorite)}
+            onClick={() => {
+              setIsFavorite(!isFavorite);
+              saveJob(job.id);
+            }}
             className="w-8 h-8 rounded-full bg-[#EFEFEF] flex items-center justify-center transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer focus:outline-none"
           >
             <Heart
@@ -105,7 +130,9 @@ function JobDetailCard({
             />
           </button>
           {isApply ? (
-            <div className="text-sm text-[#5B5FC7] font-bold">You have applied for this job</div>
+            <div className="text-sm text-[#5B5FC7] font-bold">
+              You have applied for this job
+            </div>
           ) : (
             <button
               onClick={onApply}

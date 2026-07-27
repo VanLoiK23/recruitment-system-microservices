@@ -62,6 +62,8 @@ public class JobDTO {
     private String location; 
 	
 	private boolean hotJob; 
+	
+    private Long applicantCount;
 
     private LocalDateTime createdAt;
 }

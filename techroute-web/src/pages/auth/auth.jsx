@@ -30,17 +30,17 @@ const AuthPage = () => {
   //handle logic Login
   const handleLogin = async (e) => {
     e.preventDefault();
-    // setAuth({
-    //   isAuthenticated: true,
-    //   user: {
-    //     email: "loi@gmail.com",
-    //     role: "candidate",
-    //     fullName: "HuynhLOi"
-    //   }
-    // });
-    // localStorage.setItem("access_token", '12121adsd');
-    // toast.success("Login successfully!");
-    // navigate("/");
+    setAuth({
+      isAuthenticated: true,
+      user: {
+        email: "loi@gmail.com",
+        role: "candidate",
+        fullName: "HuynhLOi"
+      }
+    });
+    localStorage.setItem("access_token", '12121adsd');
+    toast.success("Login successfully!");
+    navigate("/");
     if (!userInfo.email) {
       toast.warn("Email is required");
       return;

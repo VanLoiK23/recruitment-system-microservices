@@ -19,6 +19,7 @@ import skills from "../../components/profile/Skill-list";
 import { toast } from "react-toastify";
 import cities from "../../components/city-province";
 import { AuthContext } from "../../components/context/auth.context";
+import axios from "../../utils/axios.customize";
 
 const EditProfileModal = ({ isOpen, onClose, data, onSave }) => {
   const [formData, setFormData] = useState(data);
@@ -47,16 +48,16 @@ const EditProfileModal = ({ isOpen, onClose, data, onSave }) => {
 
     const newErrors = [];
 
-    if (!formData.name?.trim()) {
-      newErrors.push("name");
+    if (!formData.fullName?.trim()) {
+      newErrors.push("fullName");
     }
 
-    if (!formData.jobTitle?.trim()) {
-      newErrors.push("jobTitle");
+    if (!formData.jobPosition?.trim()) {
+      newErrors.push("jobPosition");
     }
 
-    if (!formData.province) {
-      newErrors.push("province");
+    if (!formData.cityProvince) {
+      newErrors.push("cityProvince");
     }
 
     if (!formData.phone?.trim()) {
@@ -98,16 +99,16 @@ const EditProfileModal = ({ isOpen, onClose, data, onSave }) => {
               </label>
               <input
                 type="text"
-                name="name"
-                value={formData.name}
+                name="fullName"
+                value={formData.fullName}
                 onChange={handleChange}
                 className={`w-full p-2.5 border rounded-lg text-sm focus:ring-2 focus:ring-blue-100 focus:border-blue-500 outline-none transition-all shadow-sm
                   ${
-                    errs.includes("name") ? "border-red-400" : "border-gray-300"
+                    errs.includes("fullName") ? "border-red-400" : "border-gray-300"
                   }
                   `}
               />
-              {errs.includes("name") && (
+              {errs.includes("fullName") && (
                 <div className="text-sm text-red-500">
                   Please enter your name
                 </div>
@@ -121,19 +122,19 @@ const EditProfileModal = ({ isOpen, onClose, data, onSave }) => {
               </label>
               <input
                 type="text"
-                name="jobTitle"
-                value={formData.jobTitle}
+                name="jobPosition"
+                value={formData.jobPosition}
                 onChange={handleChange}
                 placeholder="Exp: Back- end developer"
                 className={`w-full p-2.5 border rounded-lg text-sm focus:ring-2 focus:ring-blue-100 focus:border-blue-500 outline-none transition-all shadow-sm
                   ${
-                    errs.includes("jobTitle")
+                    errs.includes("jobPosition")
                       ? "border-red-400"
                       : "border-gray-300"
                   }
                   `}
               />
-              {errs.includes("jobTitle") && (
+              {errs.includes("jobPosition") && (
                 <div className="text-sm text-red-500">
                   Please enter your position
                 </div>
@@ -146,12 +147,12 @@ const EditProfileModal = ({ isOpen, onClose, data, onSave }) => {
                 <span className="text-red-500">*</span>
               </label>
               <select
-                name="province"
-                value={formData.province}
+                name="cityProvince"
+                value={formData.cityProvince}
                 onChange={handleChange}
                 className={`w-full p-2.5 border rounded-lg text-sm focus:ring-2 focus:ring-blue-100 focus:border-blue-500 outline-none transition-all shadow-sm
                   ${
-                    errs.includes("province")
+                    errs.includes("cityProvince")
                       ? "border-red-400"
                       : "border-gray-300"
                   }
@@ -166,7 +167,7 @@ const EditProfileModal = ({ isOpen, onClose, data, onSave }) => {
                   </option>
                 ))}
               </select>
-              {errs.includes("province") && (
+              {errs.includes("cityProvince") && (
                 <div className="text-sm text-red-500">
                   Please enter your current province/city
                 </div>
@@ -175,7 +176,7 @@ const EditProfileModal = ({ isOpen, onClose, data, onSave }) => {
 
             <div>
               <label className="flex items-center gap-2 text-sm font-medium text-gray-600 mb-1.5">
-                <FiPhone className="text-gray-400" /> Phone{" "}
+                <FiPhone className="text-gray-400" /> Phone
                 <span className="text-red-500">*</span>
               </label>
               <input
@@ -221,8 +222,8 @@ const EditProfileModal = ({ isOpen, onClose, data, onSave }) => {
               </label>
               <input
                 type="number"
-                name="experience"
-                value={formData.experience || 0}
+                name="yearsOfExperience"
+                value={formData.yearsOfExperience || 0}
                 onChange={handleChange}
                 min="0"
                 className="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-100 focus:border-blue-500 outline-none transition-all shadow-sm"
@@ -249,8 +250,8 @@ const EditProfileModal = ({ isOpen, onClose, data, onSave }) => {
               </label>
               <input
                 type="email"
-                name="email"
-                value={formData.email}
+                name="emailCandidate"
+                value={formData.emailCandidate}
                 onChange={handleChange}
                 className="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-100 focus:border-blue-500 outline-none transition-all shadow-sm"
               />
@@ -388,7 +389,13 @@ const InlineInput = ({
   />
 );
 
-const InlineRichText = ({ value, onChange, placeholder, className }) => {
+const InlineRichText = ({
+  value,
+  onChange,
+  placeholder,
+  className,
+  onDone,
+}) => {
   const [isEditing, setIsEditing] = useState(false);
 
   if (!isEditing) {
@@ -426,7 +433,10 @@ const InlineRichText = ({ value, onChange, placeholder, className }) => {
       />
       <div className="flex justify-end p-2 bg-gray-50 border-t border-gray-200">
         <button
-          onClick={() => setIsEditing(false)}
+          onClick={() => {
+            setIsEditing(false);
+            onDone();
+          }}
           className="px-4 py-1 text-xs font-semibold bg-[#5B5FC7] text-white rounded hover:bg-[#4a4ea6] transition-colors"
         >
           Done
@@ -500,20 +510,21 @@ const ProfilePage = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   const [profileInfo, setProfileInfo] = useState({
-    name: auth?.user?.fullName || "13_Huỳnh Lợi",
-    jobTitle: "",
-    province: "",
+    fullName: auth?.user?.fullName || "13_Huỳnh Lợi",
+    jobPosition: "",
+    cityProvince: "",
     phone: "",
-    email: auth?.user?.email || "huynhvanloi956@gmail.com",
+    emailCandidate: auth?.user?.email || "huynhvanloi956@gmail.com",
     github: "",
     linkedin: "",
-    experience: 0,
+    yearsOfExperience: 0,
     address: "",
   });
 
   const [summary, setSummary] = useState("");
   const [skillSelected, setSkillSelected] = useState([]);
-  const [softSkill, setSoftSkill] = useState("");
+  const [softSkill, setSoftSkill] = useState([]);
+  const [softSkills, setSoftSkills] = useState([]);
   const [showPopUpSkill, setShowPopUpSkill] = useState(false);
 
   const [works, setWorks] = useState([]);
@@ -529,10 +540,81 @@ const ProfilePage = () => {
     "Personality Test",
   ];
 
-  const onSetSkill = (skill) => {
-    setSkillSelected((prev) =>
-      prev.includes(skill) ? prev : [...prev, skill]
-    );
+  const onSetSkill = (skill, isSort) => {
+    if (isSort) {
+      if (softSkills.includes(skill)) return;
+
+      const updatedSoftSkills = [...softSkills, skill];
+
+      setSoftSkills(updatedSoftSkills);
+
+      saveProfile({ softSkills: updatedSoftSkills });
+    } else {
+      if (skillSelected.includes(skill)) return;
+
+      const updatedSkills = [...skillSelected, skill];
+      setSkillSelected(updatedSkills);
+      saveProfile({ skills: updatedSkills });
+    }
+  };
+
+  const saveProfile = async (updatedData) => {
+    try {
+      console.log({
+        ...profileInfo,
+        summary,
+        skills: skillSelected,
+        softSkills: softSkill,
+        languages,
+        workExperiences: works,
+        educations,
+        projects,
+        ...updatedData
+      });
+      const data = await axios.post("profile", {
+        ...profileInfo,
+        summary,
+        skills: skillSelected,
+        softSkills: softSkill,
+        languages,
+        workExperiences: works,
+        educations,
+        projects,
+        ...updatedData
+      });
+
+      if (data) {
+        toast.success("Profile updated successfully!");
+      }
+    } catch (err) {
+      toast.error(err.message);
+      console.error(`Status code from Backend [${err.code}]:`, err.message);
+    }
+  };
+
+  const handleKeyDownSoftSkill = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      
+      if (!softSkill.trim()) return;
+  
+      onSetSkill(softSkill.trim(),true);
+  
+      setSoftSkill('');
+    }
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+
+      saveProfile();
+    }
+  };
+
+  const handleBlur = (e) => {
+    e.preventDefault();
+    saveProfile();
   };
 
   return (
@@ -543,7 +625,7 @@ const ProfilePage = () => {
         data={profileInfo}
         onSave={(updatedData) => {
           setProfileInfo(updatedData);
-          toast.success("Profile updated successfully!");
+          saveProfile(updatedData);
         }}
       />
 
@@ -591,7 +673,7 @@ const ProfilePage = () => {
               {profileInfo.name}
             </h2>
             <p className="text-sm text-gray-500 text-center">
-              {profileInfo.jobTitle}
+              {profileInfo.jobPosition}
             </p>
           </div>
 
@@ -657,10 +739,10 @@ const ProfilePage = () => {
                 <FiMapPin className="text-gray-400 shrink-0" />
                 <span
                   className={
-                    profileInfo.province ? "text-gray-900" : "text-gray-400"
+                    profileInfo.cityProvince ? "text-gray-900" : "text-gray-400"
                   }
                 >
-                  {profileInfo.province || "Add Province/ City"}
+                  {profileInfo.cityProvince || "Add Province/ City"}
                 </span>
               </div>
               <div className="flex items-center gap-2.5 text-sm text-gray-500">
@@ -675,7 +757,7 @@ const ProfilePage = () => {
               </div>
               <div className="flex items-center gap-2.5 text-sm text-gray-900">
                 <FiMail className="text-gray-400 shrink-0" />
-                {profileInfo.email}
+                {profileInfo.emailCandidate}
               </div>
               <div className="flex items-center gap-2.5 text-sm text-gray-900">
                 <FiGithub className="text-gray-400 shrink-0" />
@@ -708,6 +790,9 @@ const ProfilePage = () => {
                   value={summary}
                   onChange={setSummary}
                   placeholder="Click to add summary"
+                  onDone={() => {
+                    saveProfile({ summary });
+                  }}
                 />
               </div>
             </div>
@@ -723,11 +808,13 @@ const ProfilePage = () => {
                 <div className="flex flex-wrap items-center gap-2 border-b border-gray-100 pb-3">
                   {skillSelected.map((skill, index) => (
                     <span
-                      onClick={() =>
-                        setSkillSelected(
-                          skillSelected.filter((item) => item !== skill)
-                        )
-                      }
+                      onClick={() => {
+                        const newSkills = skillSelected.filter(
+                          (item) => item !== skill
+                        );
+                        setSkillSelected(newSkills);
+                        saveProfile({ skills: newSkills });
+                      }}
                       key={index}
                       className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 text-gray-700 text-sm rounded-md"
                     >
@@ -766,13 +853,32 @@ const ProfilePage = () => {
                 <label className="block text-xs font-bold text-gray-600 mb-2 uppercase tracking-wide">
                   Soft Skills ( Optional )
                 </label>
-                <input
-                  type="text"
-                  value={softSkill}
-                  onChange={(e) => setSoftSkill(e.target.value)}
-                  placeholder="Enter a soft skill and press Enter"
-                  className="w-full outline-none text-sm p-2 bg-transparent text-gray-500 border border-gray-200 rounded-md focus:border-[#5B5FC7]"
-                />
+                <div className="flex flex-wrap items-center gap-2 border-b border-gray-100 pb-3">
+                  {softSkills.map((skill, index) => (
+                    <span
+                      onClick={() => {
+                        const newSkills = softSkills.filter(
+                          (item) => item !== skill
+                        );
+                        setSoftSkills(newSkills);
+                        saveProfile({ softSkills: newSkills });
+                      }}
+                      key={index}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 text-gray-700 text-sm rounded-md"
+                    >
+                      {skill}
+                      <FiX className="w-3.5 h-3.5 cursor-pointer hover:text-red-500" />
+                    </span>
+                  ))}
+                  <input
+                    type="text"
+                    value={softSkill}
+                    onChange={(e) => setSoftSkill(e.target.value)}
+                    onKeyDown={handleKeyDownSoftSkill}
+                    placeholder="Enter a soft skill and press Enter"
+                    className="w-full outline-none text-sm p-2 bg-transparent text-gray-500 border border-gray-200 rounded-md focus:border-[#5B5FC7]"
+                  />
+                </div>
               </div>
             </div>
 

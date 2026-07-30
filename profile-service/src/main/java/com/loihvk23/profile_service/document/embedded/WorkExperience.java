@@ -1,4 +1,4 @@
-package com.loihvk23.profile_service.dto;
+package com.loihvk23.profile_service.document.embedded;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -18,27 +18,5 @@ public class WorkExperience {
     private LocalDate endDate;
     private Boolean isCurrent;
     private List<String> skills; 
-    private String desc;
-}
-
-@Data
-@Builder
-@AllArgsConstructor
-@NoArgsConstructor
-class Project {
-	private String project;
-    private LocalDate date;
-    private String desc;
-}
-
-@Data
-@Builder
-@AllArgsConstructor
-@NoArgsConstructor
-class Education {
-	private String school;
-    private String major;
-    private LocalDate startDate;
-    private LocalDate endDate;
     private String desc;
 }

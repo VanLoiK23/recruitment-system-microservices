@@ -1,6 +1,5 @@
 package com.loihvk23.profile_service.service.impl;
 
-import java.util.List;
 import java.util.Optional;
 
 import org.springframework.stereotype.Service;
@@ -23,18 +22,22 @@ public class ProfileServiceImpl implements ProfileService {
 
 	@Override
 	public ProfileDTO saveProfile(ProfileDTO profileDTO,String emailCandidate) {
-		Optional<ProfileDocument> profileDocument = profileRepository.findByEmailCandidate(emailCandidate);
+		Optional<ProfileDocument> existingOpt = profileRepository.findByEmailCandidate(emailCandidate);
 
 		//prevent duplicate profile
-		if (profileDocument.isPresent()) {
-			if(profileDTO.getId() == null|| profileDTO.getId().isEmpty()) {
-				profileDTO.setId(profileDocument.get().getId());
-			}
-		}
+		ProfileDocument documentToSave;
 
-		ProfileDocument profileSaveDocument = profileRepository.save(profileMapper.toDocument(profileDTO));
+	    if (existingOpt.isPresent()) {
+	        documentToSave = existingOpt.get();
+	        
+	        profileMapper.updateDocumentFromDTO(profileDTO, documentToSave);
+	        
+	    } else {
+	        documentToSave = profileMapper.toDocument(profileDTO);
+	        documentToSave.setEmailCandidate(emailCandidate);
+	    }
 
-		return profileMapper.toDTO(profileSaveDocument);
+		return profileMapper.toDTO(profileRepository.save(documentToSave));
 	}
 
 	@Override

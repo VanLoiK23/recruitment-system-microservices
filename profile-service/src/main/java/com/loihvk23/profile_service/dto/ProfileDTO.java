@@ -3,6 +3,10 @@ package com.loihvk23.profile_service.dto;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.loihvk23.profile_service.dto.embedded.Education;
+import com.loihvk23.profile_service.dto.embedded.Project;
+import com.loihvk23.profile_service.dto.embedded.WorkExperience;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -53,4 +57,5 @@ public class ProfileDTO {
     @Builder.Default
     private List<Project> projects = new ArrayList<>();
 }
+
 

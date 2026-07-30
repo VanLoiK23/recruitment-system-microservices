@@ -7,12 +7,16 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import com.loihvk23.profile_service.document.embedded.Education;
+import com.loihvk23.profile_service.document.embedded.Project;
+import com.loihvk23.profile_service.document.embedded.WorkExperience;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-@Document("profiles")
+@Document("candidate_profiles")
 @Data
 @Builder
 @AllArgsConstructor

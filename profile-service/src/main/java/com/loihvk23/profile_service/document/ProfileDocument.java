@@ -8,6 +8,7 @@ import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import com.loihvk23.profile_service.document.embedded.Education;
+import com.loihvk23.profile_service.document.embedded.Language;
 import com.loihvk23.profile_service.document.embedded.Project;
 import com.loihvk23.profile_service.document.embedded.WorkExperience;
 
@@ -46,6 +47,8 @@ public class ProfileDocument {
 	
 	private String summary;
 	
+	private boolean openToWork;
+	
 	@Builder.Default
 	private List<String> skills = new ArrayList();
 	
@@ -53,7 +56,7 @@ public class ProfileDocument {
 	private List<String> softSkills = new ArrayList();
 	
 	@Builder.Default
-    private List<String> languages = new ArrayList<>();
+    private List<Language> languages = new ArrayList<>();
 	
 	@Builder.Default
     private List<WorkExperience> workExperiences = new ArrayList<>();

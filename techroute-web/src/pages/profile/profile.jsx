@@ -1,4 +1,4 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import {
   FiMapPin,
   FiPhone,
@@ -104,7 +104,9 @@ const EditProfileModal = ({ isOpen, onClose, data, onSave }) => {
                 onChange={handleChange}
                 className={`w-full p-2.5 border rounded-lg text-sm focus:ring-2 focus:ring-blue-100 focus:border-blue-500 outline-none transition-all shadow-sm
                   ${
-                    errs.includes("fullName") ? "border-red-400" : "border-gray-300"
+                    errs.includes("fullName")
+                      ? "border-red-400"
+                      : "border-gray-300"
                   }
                   `}
               />
@@ -117,7 +119,7 @@ const EditProfileModal = ({ isOpen, onClose, data, onSave }) => {
 
             <div>
               <label className="flex items-center gap-2 text-sm font-medium text-gray-600 mb-1.5">
-                <FiBriefcase className="text-gray-400" /> Your job position{" "}
+                <FiBriefcase className="text-gray-400" /> Your job position
                 <span className="text-red-500">*</span>
               </label>
               <input
@@ -251,9 +253,10 @@ const EditProfileModal = ({ isOpen, onClose, data, onSave }) => {
               <input
                 type="email"
                 name="emailCandidate"
+                readOnly
                 value={formData.emailCandidate}
                 onChange={handleChange}
-                className="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-100 focus:border-blue-500 outline-none transition-all shadow-sm"
+                className="w-full p-2.5 border bg-gray-200 cursor-not-allowed border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-100 focus:border-blue-500 outline-none transition-all shadow-sm"
               />
             </div>
 
@@ -379,11 +382,15 @@ const InlineInput = ({
   placeholder,
   className,
   type = "text",
+  onBlur,
+  onKeyDown,
 }) => (
   <input
     type={type}
     value={value || ""}
+    onBlur={onBlur}
     onChange={(e) => onChange(e.target.value)}
+    onKeyDown={onKeyDown}
     placeholder={placeholder}
     className={`w-full bg-transparent border border-transparent hover:border-gray-300 focus:border-[#5B5FC7] focus:bg-white rounded px-2 py-1 -ml-2 outline-none transition-all ${className}`}
   />
@@ -395,6 +402,7 @@ const InlineRichText = ({
   placeholder,
   className,
   onDone,
+  onBlur,
 }) => {
   const [isEditing, setIsEditing] = useState(false);
 
@@ -430,6 +438,7 @@ const InlineRichText = ({
             [{ list: "bullet" }, { list: "ordered" }],
           ],
         }}
+        onBlur={() => onBlur(value)}
       />
       <div className="flex justify-end p-2 bg-gray-50 border-t border-gray-200">
         <button
@@ -446,14 +455,24 @@ const InlineRichText = ({
   );
 };
 
-const DynamicSection = ({ title, emptyText, items, setItems, renderItem }) => {
+const DynamicSection = ({
+  title,
+  emptyText,
+  items,
+  setItems,
+  renderItem,
+  updateDelete,
+}) => {
   const handleAdd = () => setItems([...items, { id: Date.now() }]);
   const handleUpdate = (id, field, value) => {
     setItems(
       items.map((item) => (item.id === id ? { ...item, [field]: value } : item))
     );
   };
-  const handleDelete = (id) => setItems(items.filter((item) => item.id !== id));
+  const handleDelete = (id) => {
+    setItems(items.filter((item) => item.id !== id));
+    updateDelete(items.filter((item) => item.id !== id));
+  };
 
   return (
     <div className="mb-4 rounded-lg border border-gray-300 bg-white shadow-sm group hover:border-[#5B5FC7] transition-colors">
@@ -463,7 +482,7 @@ const DynamicSection = ({ title, emptyText, items, setItems, renderItem }) => {
         </h3>
         <button
           onClick={handleAdd}
-          className="text-[#5B5FC7] hover:text-[#4a4ea6] transition-all rounded-full hover:bg-indigo-50 p-1 opacity-0 group-hover:opacity-100 focus:opacity-100"
+          className="text-[#5B5FC7] hover:text-[#4a4ea6] transition-all rounded-full hover:bg-indigo-50 p-1 opacity-100 min-[1500px]:opacity-0 group-hover:opacity-100 focus:opacity-100"
           title="Add new item"
         >
           <FiPlusCircle className="w-5 h-5" />
@@ -474,7 +493,7 @@ const DynamicSection = ({ title, emptyText, items, setItems, renderItem }) => {
           <p className="text-sm text-gray-500 py-1">{emptyText}</p>
         )}
         {items.map((item, index) => (
-          <div key={item.id}>
+          <div key={index}>
             {index > 0 && (
               <div className="border-t border-gray-200/60 my-3"></div>
             )}
@@ -507,6 +526,8 @@ const ProfilePage = () => {
   const [activeTab, setActiveTab] = useState("My Techroute CV");
   const [isToWork, setIsToWork] = useState(true);
 
+  const [percent, setPercent] = useState(10);
+
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   const [profileInfo, setProfileInfo] = useState({
@@ -523,7 +544,7 @@ const ProfilePage = () => {
 
   const [summary, setSummary] = useState("");
   const [skillSelected, setSkillSelected] = useState([]);
-  const [softSkill, setSoftSkill] = useState([]);
+  const [softSkill, setSoftSkill] = useState("");
   const [softSkills, setSoftSkills] = useState([]);
   const [showPopUpSkill, setShowPopUpSkill] = useState(false);
 
@@ -539,6 +560,136 @@ const ProfilePage = () => {
     "Email Management",
     "Personality Test",
   ];
+
+  const calculatePercentCompleteCv = (data) => {
+    if (!data) return 0;
+
+    let totalPercent = 0;
+
+    if (data.phone && data.phone.trim() !== "") totalPercent += 5;
+    if (data.emailCandidate && data.emailCandidate.trim() !== "")
+      totalPercent += 5;
+    if (data.jobPosition && data.jobPosition.trim() !== "") totalPercent += 10;
+
+    if (data.skills && Array.isArray(data.skills) && data.skills.length > 0) {
+      totalPercent += 15;
+    }
+    if (
+      data.workExperiences &&
+      Array.isArray(data.workExperiences) &&
+      data.workExperiences.length > 0
+    ) {
+      totalPercent += 10;
+    }
+
+    if (
+      data.educations &&
+      Array.isArray(data.educations) &&
+      data.educations.length > 0
+    ) {
+      totalPercent += 10;
+    }
+    if (
+      data.projects &&
+      Array.isArray(data.projects) &&
+      data.projects.length > 0
+    ) {
+      totalPercent += 10;
+    }
+    if (
+      data.summary &&
+      data.summary.trim() !== "" &&
+      data.summary !== "<p><br></p>"
+    ) {
+      totalPercent += 10;
+    }
+    if (data.cityProvince && data.cityProvince.trim() !== "") {
+      totalPercent += 5;
+    }
+
+    if (data.github && data.github.trim() !== "") totalPercent += 5;
+    if (data.linkedin && data.linkedin.trim() !== "") totalPercent += 5;
+    if (
+      data.languages &&
+      Array.isArray(data.languages) &&
+      data.languages.length > 0
+    ) {
+      totalPercent += 5;
+    }
+    if (
+      data.yearsOfExperience !== undefined &&
+      data.yearsOfExperience !== null &&
+      Number(data.yearsOfExperience) >= 0
+    ) {
+      totalPercent += 3;
+    }
+    if (data.address && data.address.trim() !== "") {
+      totalPercent += 1;
+    }
+    if (
+      data.softSkills &&
+      Array.isArray(data.softSkills) &&
+      data.softSkills.length > 0
+    ) {
+      totalPercent += 1;
+    }
+
+    const finalPercent = Math.min(totalPercent, 100);
+
+    setPercent(finalPercent);
+    return finalPercent;
+  };
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const data = await axios.get("profile");
+
+        if (data) {
+          setProfileInfo(data);
+          setSummary(data.summary);
+          setSkillSelected(data.skills);
+          setSoftSkills(data.softSkills);
+          if (data.workExperiences && Array.isArray(data.workExperiences)) {
+            const formattedWorks = data.workExperiences.map((item, index) => {
+              return { ...item, id: item.id || `work-${index}-${Date.now()}` };
+            });
+            setWorks(formattedWorks);
+          }
+          if (data.educations && Array.isArray(data.educations)) {
+            const formattedEducations = data.educations.map((item, index) => {
+              return {
+                ...item,
+                id: item.id || `education-${index}-${Date.now()}`,
+              };
+            });
+            setEducations(formattedEducations);
+          }
+          if (data.languages && Array.isArray(data.languages)) {
+            const formattedLanguages = data.languages.map((item, index) => {
+              return { ...item, id: item.id || `lang-${index}-${Date.now()}` };
+            });
+            setLanguages(formattedLanguages);
+          }
+          if (data.projects && Array.isArray(data.projects)) {
+            const formattedProjects = data.projects.map((item, index) => {
+              return {
+                ...item,
+                id: item.id || `project-${index}-${Date.now()}`,
+              };
+            });
+            setProjects(formattedProjects);
+          }
+          calculatePercentCompleteCv(data);
+        }
+      } catch (err) {
+        toast.error(err.message);
+        console.error(`Status code from Backend [${err.code}]:`, err.message);
+      }
+    };
+
+    fetchProfile();
+  }, []);
 
   const onSetSkill = (skill, isSort) => {
     if (isSort) {
@@ -558,29 +709,71 @@ const ProfilePage = () => {
     }
   };
 
+  const onSetItems = (items, field, update) => {
+    if (field === "workExperiences") {
+      setWorks(items);
+    } else if (field === "educations") {
+      setEducations(items);
+    } else if (field === "languages") {
+      setLanguages(items);
+    } else {
+      setProjects(items);
+    }
+    if (update) {
+      saveProfile({ [field]: items });
+    }
+  };
+
+  const onUpdateItem = (item, field) => {
+    let items;
+
+    if (field === "workExperiences") {
+      items = works;
+      items.map((i) => (i.id == item.id ? item : i));
+      setWorks(items);
+    } else if (field === "educations") {
+      items = educations;
+      items.map((i) => (i.id == item.id ? item : i));
+      setEducations(items);
+    } else if (field === "languages") {
+      items = languages;
+      items.map((i) => (i.id == item.id ? item : i));
+      setLanguages(items);
+    } else {
+      items = projects;
+      items.map((i) => (i.id == item.id ? item : i));
+      setProjects(items);
+    }
+
+    console.log(items);
+    saveProfile({ [field]: items });
+  };
+
   const saveProfile = async (updatedData) => {
     try {
       console.log({
         ...profileInfo,
         summary,
         skills: skillSelected,
-        softSkills: softSkill,
+        softSkills: softSkills,
         languages,
         workExperiences: works,
         educations,
         projects,
-        ...updatedData
+        openToWork: isToWork,
+        ...updatedData,
       });
       const data = await axios.post("profile", {
         ...profileInfo,
         summary,
         skills: skillSelected,
-        softSkills: softSkill,
+        softSkills: softSkills,
         languages,
         workExperiences: works,
         educations,
         projects,
-        ...updatedData
+        openToWork: isToWork,
+        ...updatedData,
       });
 
       if (data) {
@@ -593,41 +786,48 @@ const ProfilePage = () => {
   };
 
   const handleKeyDownSoftSkill = (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      
-      if (!softSkill.trim()) return;
-  
-      onSetSkill(softSkill.trim(),true);
-  
-      setSoftSkill('');
-    }
-  };
-
-  const handleKeyDown = (e) => {
     if (e.key === "Enter") {
       e.preventDefault();
 
-      saveProfile();
+      if (!softSkill.trim()) return;
+
+      onSetSkill(softSkill.trim(), true);
+
+      setSoftSkill("");
     }
   };
 
-  const handleBlur = (e) => {
-    e.preventDefault();
-    saveProfile();
+  const handleKeyDownLanguage = (e, currentItem) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+
+      if (!currentItem.lang || !currentItem.lang.trim()) return;
+
+      const updatedLanguages = [...languages];
+
+      setLanguages(updatedLanguages);
+
+      saveProfile({ languages: updatedLanguages });
+    }
+  };
+
+  const handleBlur = (updateData) => {
+    saveProfile(updateData);
   };
 
   return (
     <div className="min-h-screen bg-gray-50/50 py-8 font-sans">
-      <EditProfileModal
-        isOpen={isEditModalOpen}
-        onClose={() => setIsEditModalOpen(false)}
-        data={profileInfo}
-        onSave={(updatedData) => {
-          setProfileInfo(updatedData);
-          saveProfile(updatedData);
-        }}
-      />
+      {isEditModalOpen && (
+        <EditProfileModal
+          isOpen={isEditModalOpen}
+          onClose={() => setIsEditModalOpen(false)}
+          data={profileInfo}
+          onSave={(updatedData) => {
+            setProfileInfo(updatedData);
+            saveProfile(updatedData);
+          }}
+        />
+      )}
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col lg:flex-row gap-6">
         <div className="w-full lg:w-[320px] flex flex-col gap-4">
@@ -667,10 +867,10 @@ const ProfilePage = () => {
               </div>
             </div>
             <span className="text-[#5B5FC7] font-bold text-sm mb-2">
-              70% Completed
+              {percent}% Completed
             </span>
             <h2 className="text-lg font-bold text-gray-900 text-center break-words w-full">
-              {profileInfo.name}
+              {profileInfo.fullName}
             </h2>
             <p className="text-sm text-gray-500 text-center">
               {profileInfo.jobPosition}
@@ -687,7 +887,11 @@ const ProfilePage = () => {
               </p>
             </div>
             <button
-              onClick={() => setIsToWork(!isToWork)}
+              onClick={() => {
+                const newStatus = !isToWork;
+                setIsToWork(newStatus);
+                saveProfile({ openToWork: newStatus });
+              }}
               className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus:outline-none ${
                 isToWork ? "bg-[#5B5FC7]" : "bg-gray-300"
               }`}
@@ -723,7 +927,7 @@ const ProfilePage = () => {
           <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6 md:p-8 shadow-sm">
             <div className="flex items-center gap-4 mb-6">
               <h1 className="text-2xl md:text-3xl font-bold text-[#5B5FC7] truncate">
-                {profileInfo.name}
+                {profileInfo.fullName}
               </h1>
 
               <button
@@ -792,6 +996,9 @@ const ProfilePage = () => {
                   placeholder="Click to add summary"
                   onDone={() => {
                     saveProfile({ summary });
+                  }}
+                  onBlur={(updateData) => {
+                    handleBlur({ summary: updateData });
                   }}
                 />
               </div>
@@ -876,7 +1083,7 @@ const ProfilePage = () => {
                     onChange={(e) => setSoftSkill(e.target.value)}
                     onKeyDown={handleKeyDownSoftSkill}
                     placeholder="Enter a soft skill and press Enter"
-                    className="w-full outline-none text-sm p-2 bg-transparent text-gray-500 border border-gray-200 rounded-md focus:border-[#5B5FC7]"
+                    className="w-55 outline-none text-sm p-2 bg-transparent text-gray-500 border border-gray-200 rounded-md focus:border-[#5B5FC7]"
                   />
                 </div>
               </div>
@@ -886,12 +1093,22 @@ const ProfilePage = () => {
               title="Work Experience"
               emptyText="No experience added yet."
               items={works}
-              setItems={setWorks}
+              setItems={(items) => {
+                onSetItems(items, "workExperiences");
+              }}
+              updateDelete={(items) => {
+                onSetItems(items, "workExperiences", true);
+              }}
               renderItem={(item, update) => (
                 <div className="flex flex-col gap-1 w-full">
                   <InlineInput
                     value={item.company}
-                    onChange={(v) => update("company", v)}
+                    onChange={(v) => {
+                      update("company", v);
+                    }}
+                    onBlur={() => {
+                      onUpdateItem(item, "workExperiences");
+                    }}
                     placeholder="Company name"
                     className="font-bold text-gray-900 text-sm placeholder-gray-400"
                   />
@@ -899,14 +1116,24 @@ const ProfilePage = () => {
                     <input
                       type="date"
                       value={item.startDate || ""}
-                      onChange={(e) => update("startDate", e.target.value)}
+                      onChange={(e) => {
+                        update("startDate", e.target.value);
+                      }}
+                      onBlur={() => {
+                        onUpdateItem(item, "workExperiences");
+                      }}
                       className="text-xs text-[#5B5FC7] bg-gray-50 p-1.5 rounded-md border border-transparent hover:border-gray-200 focus:border-[#5B5FC7] focus:bg-white outline-none cursor-pointer"
                     />
                     <span className="text-gray-400 text-xs">-</span>
                     <input
                       type="date"
                       value={item.endDate || ""}
-                      onChange={(e) => update("endDate", e.target.value)}
+                      onChange={(e) => {
+                        update("endDate", e.target.value);
+                      }}
+                      onBlur={() => {
+                        onUpdateItem(item, "workExperiences");
+                      }}
                       disabled={item.isCurrent}
                       className="text-xs text-[#5B5FC7] bg-gray-50 p-1.5 rounded-md border border-transparent hover:border-gray-200 focus:border-[#5B5FC7] focus:bg-white outline-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                     />
@@ -914,21 +1141,43 @@ const ProfilePage = () => {
                       <input
                         type="checkbox"
                         checked={item.isCurrent || false}
-                        onChange={(e) => update("isCurrent", e.target.checked)}
+                        onChange={(e) => {
+                          const isChecked = e.target.checked;
+                          update("isCurrent", isChecked);
+
+                          const updatedWorks = works.map((w) =>
+                            w.id === item.id
+                              ? { ...w, isCurrent: isChecked }
+                              : w
+                          );
+                          setWorks(updatedWorks);
+                          saveProfile({ workExperiences: updatedWorks });
+                        }}
                         className="w-3.5 h-3.5 rounded border-gray-300 text-[#5B5FC7] focus:ring-[#5B5FC7]"
-                      />{" "}
+                      />
                       I am currently working in this role
                     </label>
                   </div>
                   <WorkSkillSelector
                     selectedSkills={item.skills || []}
-                    onChange={(updatedSkills) =>
-                      update("skills", updatedSkills)
-                    }
+                    onChange={(updatedSkills) => {
+                      update("skills", updatedSkills);
+                      const updatedWorks = works.map((w) =>
+                        w.id === item.id ? { ...w, skills: updatedSkills } : w
+                      );
+                      setWorks(updatedWorks);
+                      saveProfile({ workExperiences: updatedWorks });
+                    }}
                   />
                   <InlineRichText
                     value={item.desc}
-                    onChange={(v) => update("desc", v)}
+                    onChange={(v) => {
+                      update("desc", v);
+                    }}
+                    onBlur={() => {
+                      onUpdateItem(item, "workExperiences");
+                    }}
+                    onDone={() => onUpdateItem(item, "workExperiences")}
                     placeholder="Enter detailed job description and role"
                     className="text-sm mt-1"
                   />
@@ -940,18 +1189,33 @@ const ProfilePage = () => {
               title="Education"
               emptyText="No education added yet."
               items={educations}
-              setItems={setEducations}
+              setItems={(items) => {
+                onSetItems(items, "educations");
+              }}
+              updateDelete={(items) => {
+                onSetItems(items, "educations", true);
+              }}
               renderItem={(item, update) => (
                 <div className="flex flex-col gap-1 w-full">
                   <InlineInput
                     value={item.school}
-                    onChange={(v) => update("school", v)}
+                    onChange={(v) => {
+                      update("school", v);
+                    }}
+                    onBlur={() => {
+                      onUpdateItem(item, "educations");
+                    }}
                     placeholder="School name"
                     className="font-bold text-gray-900 text-sm placeholder-gray-400"
                   />
                   <InlineInput
                     value={item.major}
-                    onChange={(v) => update("major", v)}
+                    onChange={(v) => {
+                      update("major", v);
+                    }}
+                    onBlur={() => {
+                      onUpdateItem(item, "educations");
+                    }}
                     placeholder="Major"
                     className="text-sm text-[#5B5FC7] placeholder-[#5b5fc780]"
                   />
@@ -959,20 +1223,36 @@ const ProfilePage = () => {
                     <input
                       type="date"
                       value={item.startDate || ""}
-                      onChange={(e) => update("startDate", e.target.value)}
+                      onChange={(e) => {
+                        update("startDate", e.target.value);
+                      }}
+                      onBlur={() => {
+                        onUpdateItem(item, "educations");
+                      }}
                       className="text-xs text-[#5B5FC7] bg-gray-50 p-1.5 rounded-md border border-transparent hover:border-gray-200 focus:border-[#5B5FC7] outline-none cursor-pointer"
                     />
                     <span className="text-gray-400 text-xs">-</span>
                     <input
                       type="date"
                       value={item.endDate || ""}
-                      onChange={(e) => update("endDate", e.target.value)}
+                      onChange={(e) => {
+                        update("endDate", e.target.value);
+                      }}
+                      onBlur={() => {
+                        onUpdateItem(item, "educations");
+                      }}
                       className="text-xs text-[#5B5FC7] bg-gray-50 p-1.5 rounded-md border border-transparent hover:border-gray-200 focus:border-[#5B5FC7] outline-none cursor-pointer"
                     />
                   </div>
                   <InlineRichText
                     value={item.desc}
-                    onChange={(v) => update("desc", v)}
+                    onChange={(v) => {
+                      update("desc", v);
+                    }}
+                    onBlur={() => {
+                      onUpdateItem(item, "educations");
+                    }}
+                    onDone={() => onUpdateItem(item, "educations")}
                     placeholder="Describe your education program, degrees, and achievements"
                     className="text-sm mt-2"
                   />
@@ -981,15 +1261,44 @@ const ProfilePage = () => {
             />
 
             <DynamicSection
+              title="Languages"
+              emptyText="No language added yet."
+              items={languages}
+              setItems={(items) => {
+                setLanguages(items);
+              }}
+              updateDelete={(items) => {
+                onSetItems(items, "languages", true);
+              }}
+              renderItem={(item, update) => (
+                <InlineInput
+                  value={item.lang}
+                  onChange={(v) => update("lang", v)}
+                  onKeyDown={(e) => handleKeyDownLanguage(e, item)}
+                  placeholder="Language (e.g. English) - Press Enter to save & add new"
+                  className="font-bold text-gray-900 text-sm placeholder-gray-400"
+                />
+              )}
+            />
+
+            <DynamicSection
               title="Projects"
               emptyText="No project added yet."
               items={projects}
-              setItems={setProjects}
+              setItems={(items) => {
+                onSetItems(items, "projects");
+              }}
+              updateDelete={(items) => {
+                onSetItems(items, "projects", true);
+              }}
               renderItem={(item, update) => (
                 <div className="flex flex-col gap-1 w-full">
                   <InlineInput
                     value={item.project}
                     onChange={(v) => update("project", v)}
+                    onBlur={() => {
+                      onUpdateItem(item, "projects");
+                    }}
                     placeholder="Project name"
                     className="font-bold text-gray-900 text-sm placeholder-gray-400"
                   />
@@ -998,12 +1307,21 @@ const ProfilePage = () => {
                       type="date"
                       value={item.date || ""}
                       onChange={(e) => update("date", e.target.value)}
+                      onBlur={() => {
+                        onUpdateItem(item, "projects");
+                      }}
                       className="text-xs text-[#5B5FC7] bg-gray-50 p-1.5 rounded-md border border-transparent hover:border-gray-200 focus:border-[#5B5FC7] outline-none cursor-pointer"
                     />
                   </div>
                   <InlineRichText
                     value={item.desc}
                     onChange={(v) => update("desc", v)}
+                    onBlur={() => {
+                      onUpdateItem(item, "projects");
+                    }}
+                    onDone={() => {
+                      onUpdateItem(item, "projects");
+                    }}
                     placeholder="Enter a project description"
                     className="text-sm mt-2"
                   />

@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.loihvk23.profile_service.dto.embedded.Education;
+import com.loihvk23.profile_service.dto.embedded.Language;
 import com.loihvk23.profile_service.dto.embedded.Project;
 import com.loihvk23.profile_service.dto.embedded.WorkExperience;
 
@@ -39,6 +40,8 @@ public class ProfileDTO {
 	
 	private String summary;
 	
+	private boolean openToWork;
+	
 	@Builder.Default
 	private List<String> skills = new ArrayList();
 	
@@ -46,7 +49,7 @@ public class ProfileDTO {
 	private List<String> softSkills = new ArrayList();
 	
 	@Builder.Default
-    private List<String> languages = new ArrayList<>();
+    private List<Language> languages = new ArrayList<>();
 	
 	@Builder.Default
     private List<WorkExperience> workExperiences = new ArrayList<>();

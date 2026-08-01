@@ -49,6 +49,8 @@ public class ProfileDocument {
 	
 	private boolean openToWork;
 	
+	private Integer totalPercent;
+	
 	@Builder.Default
 	private List<String> skills = new ArrayList();
 	

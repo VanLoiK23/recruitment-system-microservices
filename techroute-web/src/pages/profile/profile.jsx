@@ -20,6 +20,8 @@ import { toast } from "react-toastify";
 import cities from "../../components/city-province";
 import { AuthContext } from "../../components/context/auth.context";
 import axios from "../../utils/axios.customize";
+import { PDFDownloadLink, PDFViewer } from "@react-pdf/renderer";
+import CvTemplate from "../../pdf-templates/cv-template";
 
 const EditProfileModal = ({ isOpen, onClose, data, onSave }) => {
   const [formData, setFormData] = useState(data);
@@ -526,6 +528,9 @@ const ProfilePage = () => {
   const [activeTab, setActiveTab] = useState("My Techroute CV");
   const [isToWork, setIsToWork] = useState(true);
 
+  const [showPdf, setShowPdfCv] = useState(false);
+  const [showDemoPdf, setShowDemoPdf] = useState(false);
+
   const [percent, setPercent] = useState(10);
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -642,6 +647,7 @@ const ProfilePage = () => {
 
   useEffect(() => {
     const fetchProfile = async () => {
+      setShowPdfCv(false);
       try {
         const data = await axios.get("profile");
 
@@ -685,6 +691,8 @@ const ProfilePage = () => {
       } catch (err) {
         toast.error(err.message);
         console.error(`Status code from Backend [${err.code}]:`, err.message);
+      } finally {
+        setShowPdfCv(true);
       }
     };
 
@@ -751,6 +759,19 @@ const ProfilePage = () => {
 
   const saveProfile = async (updatedData) => {
     try {
+      calculatePercentCompleteCv({
+        ...profileInfo,
+        summary,
+        skills: skillSelected,
+        softSkills: softSkills,
+        languages,
+        workExperiences: works,
+        educations,
+        projects,
+        openToWork: isToWork,
+        totalPercent: percent,
+        ...updatedData,
+      });
       console.log({
         ...profileInfo,
         summary,
@@ -761,6 +782,7 @@ const ProfilePage = () => {
         educations,
         projects,
         openToWork: isToWork,
+        totalPercent: percent,
         ...updatedData,
       });
       const data = await axios.post("profile", {
@@ -773,6 +795,7 @@ const ProfilePage = () => {
         educations,
         projects,
         openToWork: isToWork,
+        totalPercent: percent,
         ...updatedData,
       });
 
@@ -832,43 +855,56 @@ const ProfilePage = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col lg:flex-row gap-6">
         <div className="w-full lg:w-[320px] flex flex-col gap-4">
           <div className="bg-white rounded-xl border border-gray-200 p-6 flex flex-col items-center shadow-sm">
-            <div className="relative w-28 h-28 flex items-center justify-center mb-4">
-              <svg
-                className="w-full h-full transform -rotate-90 absolute"
-                viewBox="0 0 100 100"
-              >
-                <circle
-                  cx="50"
-                  cy="50"
-                  r="45"
-                  fill="none"
-                  stroke="#f3f4f6"
-                  strokeWidth="6"
-                />
-                <circle
-                  cx="50"
-                  cy="50"
-                  r="45"
-                  fill="none"
-                  stroke="#5B5FC7"
-                  strokeWidth="6"
-                  strokeDasharray="283"
-                  strokeDashoffset="85"
-                />
-              </svg>
-              <div className="w-24 h-24 bg-gray-100 rounded-full overflow-hidden border-2 border-white z-10 flex items-center justify-center">
-                <svg
-                  className="w-14 h-14 text-gray-400"
-                  fill="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
-                </svg>
-              </div>
-            </div>
-            <span className="text-[#5B5FC7] font-bold text-sm mb-2">
-              {percent}% Completed
-            </span>
+            {(() => {
+              const radius = 45;
+              const circumference = 2 * Math.PI * radius; // ~282.74
+              const strokeDashoffset =
+                circumference - (percent / 100) * circumference;
+
+              return (
+                <div className="flex flex-col items-center">
+                  <div className="relative w-28 h-28 flex items-center justify-center mb-4">
+                    <svg
+                      className="w-full h-full transform -rotate-90 absolute"
+                      viewBox="0 0 100 100"
+                    >
+                      <circle
+                        cx="50"
+                        cy="50"
+                        r={radius}
+                        fill="none"
+                        stroke="#f3f4f6"
+                        strokeWidth="6"
+                      />
+                      <circle
+                        cx="50"
+                        cy="50"
+                        r={radius}
+                        fill="none"
+                        stroke="#5B5FC7"
+                        strokeWidth="6"
+                        strokeDasharray={circumference}
+                        strokeDashoffset={strokeDashoffset}
+                        strokeLinecap="round"
+                        className="transition-all duration-500 ease-out"
+                      />
+                    </svg>
+                    <div className="w-24 h-24 bg-gray-100 rounded-full overflow-hidden border-2 border-white z-10 flex items-center justify-center">
+                      <svg
+                        className="w-14 h-14 text-gray-400"
+                        fill="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+                      </svg>
+                    </div>
+                  </div>
+                  <span className="text-[#5B5FC7] font-bold text-sm mb-2">
+                    {percent}% Completed
+                  </span>
+                </div>
+              );
+            })()}
             <h2 className="text-lg font-bold text-gray-900 text-center break-words w-full">
               {profileInfo.fullName}
             </h2>
@@ -936,6 +972,64 @@ const ProfilePage = () => {
               >
                 <FiEdit2 className="w-3.5 h-3.5" /> Edit Info
               </button>
+
+              <div className="flex flex-col items-center gap-4 p-6">
+                {showPdf && (
+                  <>
+                    <PDFDownloadLink
+                      document={
+                        <CvTemplate
+                          profileInfo={profileInfo}
+                          summary={summary}
+                          skills={skillSelected}
+                          softSkills={softSkills}
+                          languages={languages}
+                          works={works}
+                          educations={educations}
+                          projects={projects}
+                        />
+                      }
+                      onMouseOver={() => {
+                        setShowDemoPdf(true);
+                      }}
+                      // onMouseLeave={() => {
+                      //   setShowDemoPdf(false);
+                      // }}
+                      fileName={profileInfo.fullName + ".pdf"}
+                      className="px-6 py-2.5 bg-[#5B5FC7] cursor-pointer text-white font-semibold text-sm rounded-lg shadow hover:bg-[#4a4ea6] transition-colors"
+                    >
+                      {({ loading }) =>
+                        loading
+                          ? "Đang tạo file CV..."
+                          : "📄 Tải xuống CV PDF (Chuẩn ATS)"
+                      }
+                    </PDFDownloadLink>
+                    {showDemoPdf && (
+                      <PDFViewer
+                        width="100%"
+                        height="100%"
+                        onMouseOver={() => {
+                          setShowDemoPdf(true);
+                        }}
+                        onMouseLeave={() => {
+                          setShowDemoPdf(false);
+                        }}
+                      >
+                        <CvTemplate
+                          profileInfo={profileInfo}
+                          summary={summary}
+                          skills={skillSelected}
+                          softSkills={softSkills}
+                          languages={languages}
+                          works={works}
+                          educations={educations}
+                          projects={projects}
+                        />
+                      </PDFViewer>
+                    )}
+                  </>
+                )}
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-4 gap-x-6 mb-10 pb-8">

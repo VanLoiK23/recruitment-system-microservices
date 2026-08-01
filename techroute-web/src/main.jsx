@@ -17,7 +17,6 @@ import NotFound from "./pages/error/NotFound.jsx";
 import ForgotPasswordPage from "./pages/auth/forgot-password.jsx";
 import ResetPasswordPage from "./pages/auth/reset-password.jsx";
 import ProfilePage from "./pages/profile/profile.jsx";
-
 const router = createBrowserRouter([
   {
     path: "/",

@@ -3,6 +3,8 @@ package com.loihvk23.application_service.service.impl;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import com.loihvk23.application_service.dto.CvDTO;
@@ -26,9 +28,16 @@ public class CvServiceImpl implements CvService {
 	}
 
 	@Override
-	public List<CvDTO> getCvs(String candidateEmail) {
+	public List<CvDTO> getAllCvByCandidate(String candidateEmail) {
 		List<CvEntity> cvEntities = cvRepository.findByCandidateEmail(candidateEmail);
 		List<CvDTO> cvdtos = cvEntities.stream().map(mapper::toDTO).collect(Collectors.toList());
+		return cvdtos;
+	}
+
+	@Override
+	public Page<CvDTO> getCvsFollowPage(String candidateEmail, Pageable pageable) {
+		Page<CvEntity> cvEntities = cvRepository.findByCandidateEmail(candidateEmail, pageable);
+		Page<CvDTO> cvdtos = cvEntities.map(mapper::toDTO);
 		return cvdtos;
 	}
 

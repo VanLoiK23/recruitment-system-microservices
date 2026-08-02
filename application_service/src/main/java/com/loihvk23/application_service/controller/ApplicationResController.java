@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
@@ -113,7 +114,21 @@ public class ApplicationResController {
 	public ResponseEntity<?> getCvList(@AuthenticationPrincipal UserDetails userDetails) {
 		String emailCandidate = userDetails.getUsername();
 
-		List<CvDTO> cvDTOs = cvService.getCvs(emailCandidate);
+		List<CvDTO> cvDTOs = cvService.getAllCvByCandidate(emailCandidate);
+
+		return ResponseEntity.ok(cvDTOs);
+	}
+
+	@GetMapping("/profile/cv")
+	public ResponseEntity<?> getCvPage(@RequestParam(name = "page", defaultValue = "1") int page,
+			@RequestParam(name = "limit", defaultValue = "7") int limit,
+			@RequestParam(name = "sortBy", defaultValue = "uploadedAt") String sortBy,
+			@AuthenticationPrincipal UserDetails userDetails) {
+		String emailCandidate = userDetails.getUsername();
+
+		Pageable pageable = PageRequest.of(page, limit, Sort.by(Sort.Direction.DESC, sortBy));
+
+		Page<CvDTO> cvDTOs = cvService.getCvsFollowPage(emailCandidate, pageable);
 
 		return ResponseEntity.ok(cvDTOs);
 	}

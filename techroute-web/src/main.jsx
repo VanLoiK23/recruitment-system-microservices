@@ -35,10 +35,10 @@ const router = createBrowserRouter([
       //   path: "about",
       //   element: <AboutPage />,
       // },
-      // {
-      //   path: "profile",
-      //   element: <ProfilePage />,
-      // },
+      {
+        path: "profile",
+        element: <ProfilePage />,
+      },
 
       // Private
       {
@@ -56,10 +56,10 @@ const router = createBrowserRouter([
               // { path: "today-schedule", element: <TodaySchedule /> },
             ],
           },
-          {
-            path: "profile",
-            element: <ProfilePage />,
-          },
+          // {
+          //   path: "profile",
+          //   element: <ProfilePage />,
+          // },
         ],
       },
     ],

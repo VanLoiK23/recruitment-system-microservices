@@ -13,4 +13,6 @@ public interface CvService {
 	List<CvDTO> getAllCvByCandidate(String candidateEmail);
 	
 	Page<CvDTO> getCvsFollowPage(String candidateEmail,Pageable pageable);
+	
+	void deleteCv(String cvId, String emailCandidate);
 }

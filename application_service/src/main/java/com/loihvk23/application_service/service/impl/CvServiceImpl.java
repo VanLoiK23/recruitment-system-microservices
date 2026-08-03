@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 
 import com.loihvk23.application_service.dto.CvDTO;
 import com.loihvk23.application_service.entity.CvEntity;
+import com.loihvk23.application_service.exception.ResourceNotFoundException;
 import com.loihvk23.application_service.mapper.CvMapper;
 import com.loihvk23.application_service.repository.CvRepository;
 import com.loihvk23.application_service.service.CvService;
@@ -39,6 +40,18 @@ public class CvServiceImpl implements CvService {
 		Page<CvEntity> cvEntities = cvRepository.findByCandidateEmail(candidateEmail, pageable);
 		Page<CvDTO> cvdtos = cvEntities.map(mapper::toDTO);
 		return cvdtos;
+	}
+
+	@Override
+	public void deleteCv(String cvId, String emailCandidate) {
+		CvEntity cvEntity = cvRepository.findById(cvId)
+				.orElseThrow(() -> new ResourceNotFoundException("Cv isn't exist !"));
+
+		if (!cvEntity.getCandidateEmail().equalsIgnoreCase(emailCandidate)) {
+			throw new IllegalArgumentException("You can't delete this CV. (Not authorization)");
+		}
+
+		cvRepository.delete(cvEntity);
 	}
 
 }

@@ -30,8 +30,10 @@ import org.springframework.web.multipart.MultipartFile;
 import com.loihvk23.application_service.dto.ApplicationDTO;
 import com.loihvk23.application_service.dto.CvDTO;
 import com.loihvk23.application_service.dto.request.ApplicationRequest;
+import com.loihvk23.application_service.dto.response.JobAppliedDTO;
 import com.loihvk23.application_service.service.ApplicationService;
 import com.loihvk23.application_service.service.CvService;
+import com.loihvk23.application_service.service.JobAppliedService;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -43,6 +45,8 @@ public class ApplicationResController {
 	private final ApplicationService applicationService;
 
 	private final CvService cvService;
+	
+	private final JobAppliedService jobAppliedService;
 
 	@GetMapping("/job/{jobId}")
 	public ResponseEntity<?> getApplicationsByJob(@PathVariable(name = "jobId") String jobId,
@@ -119,6 +123,16 @@ public class ApplicationResController {
 		return ResponseEntity.ok(cvDTOs);
 	}
 
+	@DeleteMapping("/cv/:id")
+	public ResponseEntity<?> deleteCv(@PathVariable(name = "id") String cvId,
+			@AuthenticationPrincipal UserDetails userDetails) {
+		String emailCandidate = userDetails.getUsername();
+
+		cvService.deleteCv(cvId, emailCandidate);
+
+		return ResponseEntity.ok(Map.of("isSuccess", true));
+	}
+
 	@GetMapping("/profile/cv")
 	public ResponseEntity<?> getCvPage(@RequestParam(name = "page", defaultValue = "1") int page,
 			@RequestParam(name = "limit", defaultValue = "7") int limit,
@@ -131,6 +145,20 @@ public class ApplicationResController {
 		Page<CvDTO> cvDTOs = cvService.getCvsFollowPage(emailCandidate, pageable);
 
 		return ResponseEntity.ok(cvDTOs);
+	}
+
+	@GetMapping("/profile/jobApplied")
+	public ResponseEntity<?> getJobApplied(@RequestParam(name = "page", defaultValue = "1") int page,
+			@RequestParam(name = "limit", defaultValue = "7") int limit,
+			@RequestParam(name = "sortBy", defaultValue = "dateApplied") String sortBy,
+			@AuthenticationPrincipal UserDetails userDetails) {
+		String emailCandidate = userDetails.getUsername();
+
+		Pageable pageable = PageRequest.of(page, limit, Sort.by(Sort.Direction.DESC, sortBy));
+
+		Slice<JobAppliedDTO> jobs = jobAppliedService.findJobAppliedByCandidate(emailCandidate, pageable);
+
+		return ResponseEntity.ok(jobs);
 	}
 
 	@PostMapping

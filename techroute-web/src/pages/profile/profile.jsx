@@ -1,12 +1,17 @@
 import React, { useContext, useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { AuthContext } from "../../components/context/auth.context";
 import axios from "../../utils/axios.customize";
 import CvCreateTag from "./cv-create-tag.jsx";
 import { EditProfileModal } from "./cv-create-component.jsx";
+import CvUploadTag from "./cv-upload-tag.jsx";
+import JobManagementTag from "./job-management-tag.jsx";
 
 const ProfilePage = () => {
+  const location = useLocation();
+
   const { auth } = useContext(AuthContext);
-  const [activeTab, setActiveTab] = useState("My Techroute CV");
+  const [activeTab, setActiveTab] = useState("profile");
   const [isToWork, setIsToWork] = useState(true);
   const [percent, setPercent] = useState(10);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -23,13 +28,25 @@ const ProfilePage = () => {
     address: "",
   });
 
-  const tabs = [
-    "My Techroute CV",
-    "Job management",
-    "CV Management",
-    "Email Management",
-    "Personality Test",
-  ];
+  const tabs = {
+    profile: "My Techroute CV",
+    "job-management": "Job management",
+    "my-cv": "CV Management",
+    "email-management": "Email Management",
+  };
+
+  const onChangeActiveTab = (tab)=>{
+    window.location.hash = tab
+    setActiveTab(tab);
+  }
+
+  useEffect(() => {
+    const hash = location.hash;
+
+    const tab = hash.replace("#", "");
+
+    setActiveTab(tab);
+  }, [location]);
 
   useEffect(() => {
     const fetchGeneralInfo = async () => {
@@ -77,13 +94,24 @@ const ProfilePage = () => {
             {(() => {
               const radius = 45;
               const circumference = 2 * Math.PI * radius;
-              const strokeDashoffset = circumference - (percent / 100) * circumference;
+              const strokeDashoffset =
+                circumference - (percent / 100) * circumference;
 
               return (
                 <div className="flex flex-col items-center">
                   <div className="relative w-28 h-28 flex items-center justify-center mb-4">
-                    <svg className="w-full h-full transform -rotate-90 absolute" viewBox="0 0 100 100">
-                      <circle cx="50" cy="50" r={radius} fill="none" stroke="#f3f4f6" strokeWidth="6" />
+                    <svg
+                      className="w-full h-full transform -rotate-90 absolute"
+                      viewBox="0 0 100 100"
+                    >
+                      <circle
+                        cx="50"
+                        cy="50"
+                        r={radius}
+                        fill="none"
+                        stroke="#f3f4f6"
+                        strokeWidth="6"
+                      />
                       <circle
                         cx="50"
                         cy="50"
@@ -98,24 +126,34 @@ const ProfilePage = () => {
                       />
                     </svg>
                     <div className="w-24 h-24 bg-gray-100 rounded-full overflow-hidden border-2 border-white z-10 flex items-center justify-center">
-                      <svg className="w-14 h-14 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
+                      <svg
+                        className="w-14 h-14 text-gray-400"
+                        fill="currentColor"
+                        viewBox="0 0 24 24"
+                      >
                         <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
                       </svg>
                     </div>
                   </div>
-                  <span className="text-[#5B5FC7] font-bold text-sm mb-2">{percent}% Completed</span>
+                  <span className="text-[#5B5FC7] font-bold text-sm mb-2">
+                    {percent}% Completed
+                  </span>
                 </div>
               );
             })()}
             <h2 className="text-lg font-bold text-gray-900 text-center break-words w-full">
               {profileInfo.fullName}
             </h2>
-            <p className="text-sm text-gray-500 text-center">{profileInfo.jobPosition}</p>
+            <p className="text-sm text-gray-500 text-center">
+              {profileInfo.jobPosition}
+            </p>
           </div>
 
           <div className="bg-white rounded-xl border border-gray-200 p-5 flex items-center justify-between shadow-sm">
             <div className="pr-4">
-              <h3 className="font-bold text-gray-900 text-sm">Open to work now</h3>
+              <h3 className="font-bold text-gray-900 text-sm">
+                Open to work now
+              </h3>
               <p className="text-xs text-gray-500 mt-1">
                 Activate Open to Work mode to connect with employers.
               </p>
@@ -146,12 +184,12 @@ const ProfilePage = () => {
         <div className="flex-1 flex flex-col min-w-0">
           <div className="border-b border-gray-200 mb-6 overflow-x-auto hide-scrollbar">
             <nav className="flex space-x-8 min-w-max px-2">
-              {tabs.map((tab) => (
+              {Object.entries(tabs).map(([key,tab]) => (
                 <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
+                  key={key}
+                  onClick={() => onChangeActiveTab(key)}
                   className={`py-4 text-sm font-medium transition-colors relative whitespace-nowrap ${
-                    activeTab === tab
+                    activeTab === key
                       ? "text-[#5B5FC7] after:absolute after:bottom-0 after:left-0 after:w-full after:h-0.5 after:bg-[#5B5FC7]"
                       : "text-gray-500 hover:text-gray-900"
                   }`}
@@ -162,7 +200,7 @@ const ProfilePage = () => {
             </nav>
           </div>
 
-          {activeTab === "My Techroute CV" && (
+          {activeTab === "profile" && (
             <CvCreateTag
               profileInfo={profileInfo}
               setIsEditModalOpen={setIsEditModalOpen}
@@ -170,17 +208,17 @@ const ProfilePage = () => {
             />
           )}
 
-          {activeTab === "Job management" && (
-            <div className="bg-white p-6 rounded-xl border">Quản lý công việc</div>
+          {activeTab === "job-management" && (
+            <JobManagementTag />
           )}
-          {activeTab === "CV Management" && (
-            <div className="bg-white p-6 rounded-xl border">Quản lý CV</div>
-          )}
+          {activeTab === "my-cv" && <CvUploadTag />}
           {activeTab === "Email Management" && (
             <div className="bg-white p-6 rounded-xl border">Quản lý Email</div>
           )}
-          {activeTab === "Personality Test" && (
-            <div className="bg-white p-6 rounded-xl border">Bài kiểm tra tính cách</div>
+          {activeTab === "email-management" && (
+            <div className="bg-white p-6 rounded-xl border">
+              Bài kiểm tra tính cách
+            </div>
           )}
         </div>
       </div>

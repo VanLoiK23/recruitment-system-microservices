@@ -9,6 +9,7 @@ import org.springframework.data.domain.Slice;
 
 import com.loihvk23.job_service.dto.JobDTO;
 import com.loihvk23.job_service.dto.request.AdvanceFilterRequest;
+import com.loihvk23.job_service.dto.response.JobSavedOrViewedResponse;
 
 public interface JobService {
 	Slice<JobDTO> findAll(Pageable pageable);
@@ -35,4 +36,8 @@ public interface JobService {
 	Page<JobDTO> filterAdvanceJobs(AdvanceFilterRequest searchRequest, Pageable pageable);
 	
 	void incrementApplicantCount(String jobId);
+	
+	void saveViewedJobHistory(String emailCandidate,String jobId);
+	
+	Slice<JobSavedOrViewedResponse> getViewdJobs(String emailCandidate, Pageable pageable);
 }

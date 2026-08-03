@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
 import axios from "../../utils/axios.customize";
 import {
@@ -10,12 +10,81 @@ import {
   FiClock,
   FiHash,
 } from "react-icons/fi";
+import CircleLoading from "../../components/animation/animate-loading";
 
 const CvUploadTag = () => {
   const [cvs, setCvs] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null);
 
-  const uploadCv = () => {};
-  const handleDelete = () => {};
+  const fileInputRef = useRef(null);
+
+  const handleButtonUploadClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        toast.warn("File's size must be less than 5MB");
+        return;
+      }
+      setSelectedFile(file);
+      uploadCv();
+    } else {
+      toast.warn("No file selected");
+    }
+  };
+
+  const uploadCv = async () => {
+    if (!selectedFile) {
+      toast.error("File CV is required!");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", selectedFile);
+
+    setLoading(true);
+    try {
+      const data = await axios.post("applications/upload", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      if (data) {
+        setCvs([...cvs, data]);
+      }
+    } catch (err) {
+      toast.error(err.message);
+      console.error(`Status code from Backend [${err.code}]:`, err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async (cvId) => {
+    const check = window.confirm("Are you sure you want to delete this CV ?");
+
+    if (check) {
+      try {
+        const data = await axios.delete("applications/cv");
+
+        if (data.isSuccess) {
+          setCvs((prev) => prev.filter((item) => item.id != cvId));
+          toast.success("Delete Cv successfully");
+        } else {
+          toast.warn("Delete failed");
+        }
+      } catch (err) {
+        toast.error(err.message);
+        console.error(`Status code from Backend [${err.code}]:`, err.message);
+      }
+    }
+  };
 
   useEffect(() => {
     const loadCvsUploaded = async () => {
@@ -42,12 +111,34 @@ const CvUploadTag = () => {
           </p>
         </div>
 
+        <input
+          type="file"
+          ref={fileInputRef}
+          onChange={handleFileChange}
+          accept=".pdf,.doc,.docx"
+          className="hidden"
+        />
+
         <button
-          className="flex items-center justify-center gap-2 bg-[#5B5FC7] hover:bg-[#4a4ea6] text-white px-5 py-2.5 rounded-lg text-sm font-semibold transition-all shadow-md shadow-indigo-100 cursor-pointer"
-          onClick={uploadCv}
+          onClick={handleButtonUploadClick}
+          disabled={loading}
+          className={`
+            flex items-center justify-center gap-2 text-white px-5 py-2.5 rounded-lg text-sm font-semibold transition-all shadow-md shadow-indigo-100
+            ${
+              loading
+                ? "cursor-not-allowed bg-gray-500"
+                : "cursor-pointer bg-[#5B5FC7] hover:bg-[#4a4ea6]"
+            }
+            `}
         >
-          <FiUploadCloud className="w-5 h-5" />
-          Upload more CV
+          {loading ? (
+            <CircleLoading />
+          ) : (
+            <span className="flex gap-3">
+              <FiUploadCloud className="w-5 h-5" />
+              Upload more CV
+            </span>
+          )}
         </button>
       </div>
 
@@ -91,7 +182,10 @@ const CvUploadTag = () => {
                       <div className="p-2 bg-indigo-50 text-[#5B5FC7] rounded-lg">
                         <FiFileText className="w-5 h-5" />
                       </div>
-                      <span className="truncate max-w-[220px] sm:max-w-xs" title={cv.fileName}>
+                      <span
+                        className="truncate max-w-[220px] sm:max-w-xs"
+                        title={cv.fileName}
+                      >
                         {cv.fileName}
                       </span>
                     </div>
@@ -125,7 +219,7 @@ const CvUploadTag = () => {
                       </a>
 
                       <button
-                        onClick={handleDelete}
+                        onClick={() => handleDelete(cv.id)}
                         className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
                         title="Delete CV"
                       >

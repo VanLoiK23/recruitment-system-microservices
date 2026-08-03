@@ -7,6 +7,7 @@ import lombok.Data;
 @Builder
 public class JobEvent {
 	private String id;
+	private String title;
 	private String recruiterEmail;
 	private String status;
 }

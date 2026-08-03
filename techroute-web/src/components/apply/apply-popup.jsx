@@ -76,7 +76,7 @@ const ApplyJobModal = ({ auth, job, onClose, updateApplySuccess }) => {
 
   const uploadCv = async () => {
     if (!selectedFile) {
-      toast.error("Vui lòng chọn file CV trước!");
+      toast.error("File CV is required!");
       return;
     }
 

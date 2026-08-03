@@ -25,6 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.loihvk23.job_service.dto.JobDTO;
 import com.loihvk23.job_service.dto.SavedJobDTO;
 import com.loihvk23.job_service.dto.request.AdvanceFilterRequest;
+import com.loihvk23.job_service.dto.response.JobSavedOrViewedResponse;
 import com.loihvk23.job_service.service.JobService;
 import com.loihvk23.job_service.service.SavedJobService;
 
@@ -52,7 +53,14 @@ public class JobResController {
 	}
 
 	@GetMapping("/{id}")
-	public ResponseEntity<?> getDetailJob(@PathVariable(name = "id") String id) {
+	public ResponseEntity<?> getDetailJob(@PathVariable(name = "id") String id,
+			@AuthenticationPrincipal UserDetails userDetails) {
+		String email = (userDetails != null) ? userDetails.getUsername() : null;
+
+		if (email != null) {
+			jobService.saveViewedJobHistory(email, id);
+		}
+
 		JobDTO jobDTO = jobService.findDetailJob(id);
 
 		return ResponseEntity.ok(jobDTO);
@@ -165,7 +173,7 @@ public class JobResController {
 
 		Pageable pageable = PageRequest.of(page - 1, limit, Sort.by(Sort.Direction.DESC, sortBy));
 
-		Slice<SavedJobDTO> jobs = savedJobService.findSavedJobsByUser(email, pageable);
+		Slice<JobSavedOrViewedResponse> jobs = savedJobService.findSavedJobsByUser(email, pageable);
 
 		return ResponseEntity.ok(jobs);
 	}

@@ -1,7 +1,10 @@
 package com.loihvk23.job_service.service.impl;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
@@ -9,7 +12,7 @@ import org.springframework.stereotype.Service;
 
 import com.loihvk23.job_service.document.JobDocument;
 import com.loihvk23.job_service.document.SavedJobDocument;
-import com.loihvk23.job_service.dto.SavedJobDTO;
+import com.loihvk23.job_service.dto.response.JobSavedOrViewedResponse;
 import com.loihvk23.job_service.mapper.JobMapper;
 import com.loihvk23.job_service.mapper.SavedJobMapper;
 import com.loihvk23.job_service.repository.JobRepository;
@@ -52,22 +55,42 @@ public class SavedJobServiceImpl implements SavedJobService {
 	}
 
 	@Override
-	public Slice<SavedJobDTO> findSavedJobsByUser(String userEmail, Pageable pageable) {
+	public Slice<JobSavedOrViewedResponse> findSavedJobsByUser(String userEmail, Pageable pageable) {
 		Slice<SavedJobDocument> saveJobs = savedJobRepository.findByUserEmail(userEmail, pageable);
 
-		Slice<SavedJobDTO> saveJobDTOs = saveJobs.map(savedJob -> {
-			SavedJobDTO dto = mapper.toDTO(savedJob);
+		if (!saveJobs.hasContent()) {
+			return saveJobs.map(job -> new JobSavedOrViewedResponse());
+		}
 
-			JobDocument jobDocument = jobRepository.findById(dto.getJobId()).orElse(null);
+		List<String> jobIds = saveJobs.getContent().stream().map(SavedJobDocument::getJobId).distinct()
+				.collect(Collectors.toList());
+		Iterable<JobDocument> jobsIterable = jobRepository.findAllById(jobIds);
+		
+		Map<String, JobDetailHolder> jobDetailMap = new HashMap<String, JobDetailHolder>();
+		jobsIterable.forEach((job)->{
+			jobDetailMap.put(job.getId(), new JobDetailHolder(job.getTitle(), job.getStatus()));
+		});
 
-			if (jobDocument != null) {
-				dto.setJob(jobMapper.toDTO(jobDocument));
+		Slice<JobSavedOrViewedResponse> saveJobDTOs = saveJobs.map(savedJob -> {
+			JobSavedOrViewedResponse dto = new JobSavedOrViewedResponse();
+			dto.setId(savedJob.getId());
+			dto.setJobId(savedJob.getJobId());
+			dto.setCreatedAt(savedJob.getCreatedAt());
+			
+			JobDetailHolder detail = jobDetailMap.get(savedJob.getJobId());
+
+			if (detail != null) {
+				dto.setTitle(detail.title());  
+				dto.setStatus(detail.status());
 			}
 
 			return dto;
 		});
 
 		return saveJobDTOs;
+	}
+
+	record JobDetailHolder(String title, String status) {
 	}
 
 }

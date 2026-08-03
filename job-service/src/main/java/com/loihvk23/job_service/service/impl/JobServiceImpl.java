@@ -1,19 +1,28 @@
 package com.loihvk23.job_service.service.impl;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
-import org.springframework.boot.autoconfigure.batch.BatchProperties.Job;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
+import org.springframework.data.domain.SliceImpl;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ZSetOperations.TypedTuple;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -23,6 +32,7 @@ import com.loihvk23.job_service.document.JobDocument;
 import com.loihvk23.job_service.dto.JobDTO;
 import com.loihvk23.job_service.dto.request.AdvanceFilterRequest;
 import com.loihvk23.job_service.dto.request.JobEvent;
+import com.loihvk23.job_service.dto.response.JobSavedOrViewedResponse;
 import com.loihvk23.job_service.exception.DuplicateResourceException;
 import com.loihvk23.job_service.exception.ResourceNotFoundException;
 import com.loihvk23.job_service.mapper.JobMapper;
@@ -41,6 +51,8 @@ public class JobServiceImpl implements JobService {
 	private final JobMapper jobMapper;
 
 	private final RabbitTemplate rabbitTemplate;
+
+	private final RedisTemplate<String, Object> redisTemplate;
 
 	@Override
 	public Slice<JobDTO> findAll(Pageable pageable) {
@@ -76,8 +88,8 @@ public class JobServiceImpl implements JobService {
 		JobDocument jobDocument = jobRepository.save(jobMapper.toDocument(jobDTO));
 		JobDTO jobSaveDto = jobMapper.toDTO(jobDocument);
 
-		JobEvent jobEvent = JobEvent.builder().id(jobSaveDto.getId()).recruiterEmail(recruiterEmail)
-				.status(jobSaveDto.getStatus()).build();
+		JobEvent jobEvent = JobEvent.builder().id(jobSaveDto.getId()).title(jobSaveDto.getTitle())
+				.recruiterEmail(recruiterEmail).status(jobSaveDto.getStatus()).build();
 		rabbitTemplate.convertAndSend(RabbitMQConfig.JOB_EXCHANGE, RabbitMQConfig.JOB_UPSERTED_KEY, jobEvent);
 
 		return jobSaveDto;
@@ -95,8 +107,8 @@ public class JobServiceImpl implements JobService {
 		JobDocument jobDocument = jobRepository.save(jobMapper.toDocument(jobDTO));
 		JobDTO jobSaveDto = jobMapper.toDTO(jobDocument);
 
-		JobEvent jobEvent = JobEvent.builder().id(jobSaveDto.getId()).recruiterEmail(recruiterEmail)
-				.status(jobSaveDto.getStatus()).build();
+		JobEvent jobEvent = JobEvent.builder().id(jobSaveDto.getId()).title(jobSaveDto.getTitle())
+				.recruiterEmail(recruiterEmail).status(jobSaveDto.getStatus()).build();
 
 		rabbitTemplate.convertAndSend(RabbitMQConfig.JOB_EXCHANGE, RabbitMQConfig.JOB_UPSERTED_KEY, jobEvent);
 
@@ -162,26 +174,26 @@ public class JobServiceImpl implements JobService {
 			criterias.add(Criteria.where("location").in(searchRequest.getLocations()));
 		}
 
-		  if (searchRequest.getMinSalary() != null && searchRequest.getMinSalary() > 0) {
-		        Criteria salaryCriteria = Criteria.where("minSalary").gte(searchRequest.getMinSalary());
-		        if (searchRequest.getMaxSalary() != null && searchRequest.getMaxSalary() > 0) {
-		            salaryCriteria.lte(searchRequest.getMaxSalary());
-		        }
-		        criterias.add(salaryCriteria);
-		    } else if (searchRequest.getMaxSalary() != null && searchRequest.getMaxSalary() > 0) {
-		        criterias.add(Criteria.where("maxSalary").lte(searchRequest.getMaxSalary()));
-		    }
+		if (searchRequest.getMinSalary() != null && searchRequest.getMinSalary() > 0) {
+			Criteria salaryCriteria = Criteria.where("minSalary").gte(searchRequest.getMinSalary());
+			if (searchRequest.getMaxSalary() != null && searchRequest.getMaxSalary() > 0) {
+				salaryCriteria.lte(searchRequest.getMaxSalary());
+			}
+			criterias.add(salaryCriteria);
+		} else if (searchRequest.getMaxSalary() != null && searchRequest.getMaxSalary() > 0) {
+			criterias.add(Criteria.where("maxSalary").lte(searchRequest.getMaxSalary()));
+		}
 
 		if (searchRequest.isHotJob()) {
-	        criterias.add(Criteria.where("hotJob").is(true));
-	    }
+			criterias.add(Criteria.where("hotJob").is(true));
+		}
 
 		if (!criterias.isEmpty()) {
 			query.addCriteria(new Criteria().andOperator(criterias.toArray(new Criteria[0])));
 		}
 
 		long total = mongoTemplate.count(query, JobDocument.class);
-		
+
 		query.with(pageable);
 		query.limit(pageable.getPageSize() + 1);
 
@@ -198,7 +210,8 @@ public class JobServiceImpl implements JobService {
 
 	@Override
 	public Slice<JobDTO> findJobRelevants(List<String> technologies, String jobId, Pageable pageable) {
-		Slice<JobDocument> jobDocumentSlices = jobRepository.findByTechnologiesInAndIdNot(technologies, jobId, pageable);
+		Slice<JobDocument> jobDocumentSlices = jobRepository.findByTechnologiesInAndIdNot(technologies, jobId,
+				pageable);
 
 		Slice<JobDTO> jobDtos = jobDocumentSlices.map(jobMapper::toDTO);
 
@@ -207,9 +220,62 @@ public class JobServiceImpl implements JobService {
 
 	@Override
 	public void incrementApplicantCount(String jobId) {
-	    Query query = new Query(Criteria.where("id").is(jobId));
-	    Update update = new Update().inc("applicantCount", 1);
-	    mongoTemplate.updateFirst(query, update, JobDocument.class);
+		Query query = new Query(Criteria.where("id").is(jobId));
+		Update update = new Update().inc("applicantCount", 1);
+		mongoTemplate.updateFirst(query, update, JobDocument.class);
+	}
+
+	@Override
+	public void saveViewedJobHistory(String emailCandidate, String jobId) {
+		if (emailCandidate == null || jobId == null) {
+			return;
+		}
+		String key = "viewed_jobs:" + emailCandidate;
+
+		double timestamp = System.currentTimeMillis();
+
+		redisTemplate.opsForZSet().add(key, jobId, timestamp);
+
+		Long totalSize = redisTemplate.opsForZSet().zCard(key);
+		if (totalSize != null && totalSize > 50) {
+			redisTemplate.opsForZSet().removeRange(key, 0, (totalSize - 51));
+		}
+	}
+
+	@Override
+	public Slice<JobSavedOrViewedResponse> getViewdJobs(String emailCandidate, Pageable pageable) {
+		String key = "viewed_jobs:" + emailCandidate;
+
+		Set<TypedTuple<Object>> typedTuples = redisTemplate.opsForZSet().reverseRangeWithScores(key, 0, 49);
+
+		if (typedTuples == null || typedTuples.isEmpty()) {
+			return new SliceImpl<>(Collections.emptyList(), pageable, false);
+		}
+
+		Map<String, LocalDateTime> viewedAtMap = typedTuples.stream()
+				.filter(tuple -> tuple.getValue() != null && tuple.getScore() != null)
+				.collect(Collectors.toMap(tuple -> tuple.getValue().toString(), tuple -> {
+					long timestamp = tuple.getScore().longValue();
+					return LocalDateTime.ofInstant(Instant.ofEpochMilli(timestamp), ZoneId.systemDefault());
+				}, (existing, replacement) -> existing));
+
+		List<String> jobIds = new ArrayList<>(viewedAtMap.keySet());
+		Iterable<JobDocument> jobs = jobRepository.findAllById(jobIds);
+
+		List<JobSavedOrViewedResponse> responseList = StreamSupport.stream(jobs.spliterator(), false).map(job -> {
+			JobSavedOrViewedResponse res = new JobSavedOrViewedResponse();
+			res.setId(String.valueOf(System.currentTimeMillis()));
+			res.setJobId(job.getId());
+			res.setTitle(job.getTitle());
+			res.setStatus(job.getStatus());
+
+			res.setCreatedAt(viewedAtMap.get(job.getId()));
+			return res;
+		}).collect(Collectors.toList());
+
+		boolean hasNext = responseList.size() > pageable.getPageSize();
+
+		return new SliceImpl<>(responseList, pageable, hasNext);
 	}
 
 }

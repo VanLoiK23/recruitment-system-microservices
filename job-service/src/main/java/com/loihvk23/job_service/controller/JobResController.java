@@ -23,9 +23,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.loihvk23.job_service.dto.JobDTO;
-import com.loihvk23.job_service.dto.SavedJobDTO;
 import com.loihvk23.job_service.dto.request.AdvanceFilterRequest;
-import com.loihvk23.job_service.dto.response.JobSavedOrViewedResponse;
+import com.loihvk23.job_service.dto.response.JobManagementResponse;
 import com.loihvk23.job_service.service.JobService;
 import com.loihvk23.job_service.service.SavedJobService;
 
@@ -44,10 +43,13 @@ public class JobResController {
 	@GetMapping
 	public ResponseEntity<?> getListJobs(@RequestParam(name = "page", defaultValue = "1") int page,
 			@RequestParam(name = "limit", defaultValue = "7") int limit,
-			@RequestParam(name = "sortBy", defaultValue = "createdAt") String sortBy) {
+			@RequestParam(name = "sortBy", defaultValue = "createdAt") String sortBy,
+			@AuthenticationPrincipal UserDetails userDetails) {
 		Pageable pageable = PageRequest.of(page - 1, limit, Sort.by(Sort.Direction.DESC, sortBy));
 
-		Slice<JobDTO> jobSlice = jobService.findAll(pageable);
+		String email = (userDetails != null) ? userDetails.getUsername() : null;
+
+		Slice<JobDTO> jobSlice = jobService.findAll(pageable, email);
 
 		return ResponseEntity.ok(jobSlice);
 	}
@@ -61,7 +63,7 @@ public class JobResController {
 			jobService.saveViewedJobHistory(email, id);
 		}
 
-		JobDTO jobDTO = jobService.findDetailJob(id);
+		JobDTO jobDTO = jobService.findDetailJob(id, email);
 
 		return ResponseEntity.ok(jobDTO);
 	}
@@ -70,11 +72,13 @@ public class JobResController {
 	public ResponseEntity<?> getJobRelevants(@RequestParam(name = "technologies") List<String> technologies,
 			@RequestParam(name = "jobId") String jobId, @RequestParam(name = "page", defaultValue = "1") int page,
 			@RequestParam(name = "limit", defaultValue = "7") int limit,
-			@RequestParam(name = "sortBy", defaultValue = "createdAt") String sortBy) {
+			@RequestParam(name = "sortBy", defaultValue = "createdAt") String sortBy,
+			@AuthenticationPrincipal UserDetails userDetails) {
+		String email = (userDetails != null) ? userDetails.getUsername() : null;
 
 		Pageable pageable = PageRequest.of(page - 1, limit, Sort.by(Sort.Direction.DESC, sortBy));
 
-		Slice<JobDTO> jobSlice = jobService.findJobRelevants(technologies, jobId, pageable);
+		Slice<JobDTO> jobSlice = jobService.findJobRelevants(technologies, jobId, pageable, email);
 
 		return ResponseEntity.ok(jobSlice);
 	}
@@ -117,7 +121,8 @@ public class JobResController {
 	public ResponseEntity<?> filterAdvanceJobs(@RequestParam(name = "page", defaultValue = "1") int page,
 			@RequestParam(name = "limit", defaultValue = "7") int limit,
 			@RequestParam(name = "sortBy", defaultValue = "createdAt") String sortBy,
-			@RequestBody AdvanceFilterRequest searchRequest) {
+			@RequestBody AdvanceFilterRequest searchRequest, @AuthenticationPrincipal UserDetails userDetails) {
+		String email = (userDetails != null) ? userDetails.getUsername() : null;
 		Sort sort = Sort.by(Sort.Direction.DESC, sortBy);
 
 		if (sortBy.contains("-")) {
@@ -133,7 +138,7 @@ public class JobResController {
 		}
 		Pageable pageable = PageRequest.of(page - 1, limit, sort);
 
-		Page<JobDTO> jobPage = jobService.filterAdvanceJobs(searchRequest, pageable);
+		Page<JobDTO> jobPage = jobService.filterAdvanceJobs(searchRequest, pageable, email);
 
 		return ResponseEntity.ok(jobPage);
 	}
@@ -146,9 +151,9 @@ public class JobResController {
 		}
 		String email = userDetails.getUsername();
 
-		savedJobService.saveJob(jobId, email);
+		boolean isSaved = savedJobService.saveJob(jobId, email);
 
-		return ResponseEntity.ok(Map.of("isSuccess", true));
+		return ResponseEntity.ok(Map.of("isSuccess", isSaved));
 	}
 
 	@GetMapping("/{jobId}/is-saved")
@@ -156,6 +161,9 @@ public class JobResController {
 			@AuthenticationPrincipal UserDetails userDetails) {
 		if (jobId == null) {
 			throw new IllegalArgumentException("Job Id is required");
+		}
+		if (userDetails == null) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
 		}
 		String email = userDetails.getUsername();
 
@@ -173,8 +181,23 @@ public class JobResController {
 
 		Pageable pageable = PageRequest.of(page - 1, limit, Sort.by(Sort.Direction.DESC, sortBy));
 
-		Slice<JobSavedOrViewedResponse> jobs = savedJobService.findSavedJobsByUser(email, pageable);
+		Slice<JobManagementResponse> jobs = savedJobService.findSavedJobsByUser(email, pageable);
 
 		return ResponseEntity.ok(jobs);
 	}
+
+	@GetMapping("/viewed")
+	public ResponseEntity<?> getMyJobViewed(@RequestParam(name = "page", defaultValue = "1") int page,
+			@RequestParam(name = "limit", defaultValue = "7") int limit,
+			@RequestParam(name = "sortBy", defaultValue = "createdAt") String sortBy,
+			@AuthenticationPrincipal UserDetails userDetails) {
+		String email = userDetails.getUsername();
+
+		Pageable pageable = PageRequest.of(page - 1, limit, Sort.by(Sort.Direction.DESC, sortBy));
+
+		Slice<JobManagementResponse> jobs = jobService.getViewdJobs(email, pageable);
+
+		return ResponseEntity.ok(jobs);
+	}
+
 }

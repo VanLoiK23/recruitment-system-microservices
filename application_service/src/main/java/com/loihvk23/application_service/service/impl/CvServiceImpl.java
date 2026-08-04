@@ -5,6 +5,7 @@ import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 
 import com.loihvk23.application_service.dto.CvDTO;
@@ -36,9 +37,9 @@ public class CvServiceImpl implements CvService {
 	}
 
 	@Override
-	public Page<CvDTO> getCvsFollowPage(String candidateEmail, Pageable pageable) {
-		Page<CvEntity> cvEntities = cvRepository.findByCandidateEmail(candidateEmail, pageable);
-		Page<CvDTO> cvdtos = cvEntities.map(mapper::toDTO);
+	public Slice<CvDTO> getCvsFollowPage(String candidateEmail, Pageable pageable) {
+		Slice<CvEntity> cvEntities = cvRepository.findByCandidateEmail(candidateEmail, pageable);
+		Slice<CvDTO> cvdtos = cvEntities.map(mapper::toDTO);
 		return cvdtos;
 	}
 

@@ -57,6 +57,8 @@ const JobDetailPage = () => {
         const data = await axios.get(`jobs/${id}`);
         if (data) {
           setJobDetail(data);
+          setIsApply(data.isApplied ?? false);
+          setIsFavorite(data.isSaved ?? false);
         }
       } catch (err) {
         toast.error(err.message);
@@ -105,26 +107,26 @@ const JobDetailPage = () => {
     }
   }, [job.id, pageActive]);
 
-  useEffect(() => {
-    const checkedApply = async () => {
-      try {
-        const data = await axios.get(
-          `applications/check-apply?jobId=${job.id}`
-        );
+  // useEffect(() => {
+  //   const checkedApply = async () => {
+  //     try {
+  //       const data = await axios.get(
+  //         `applications/check-apply?jobId=${job.id}`
+  //       );
 
-        if (data) {
-          setIsApply(data.isApply);
-        }
-      } catch (err) {
-        toast.error(err.message);
-        console.error(`Status code from Backend [${err.code}]:`, err.message);
-      }
-    };
+  //       if (data) {
+  //         setIsApply(data.isApply);
+  //       }
+  //     } catch (err) {
+  //       toast.error(err.message);
+  //       console.error(`Status code from Backend [${err.code}]:`, err.message);
+  //     }
+  //   };
 
-    if (job.id && auth.isAuthenticated) {
-      checkedApply();
-    }
-  }, [job.id]);
+  //   if (job.id && auth.isAuthenticated) {
+  //     checkedApply();
+  //   }
+  // }, [job.id]);
 
   const onChangePage = (page, isPrev) => {
     if (isPrev) {
@@ -138,9 +140,26 @@ const JobDetailPage = () => {
     }
   };
 
-  const updateOnApply = (data)=>{
+  const updateOnApply = (data) => {
     setIsApply(data);
-  }
+  };
+
+  const handleToggleSaveJob = async (jobId) => {
+    setIsFavorite(!isFavorite)
+    setJobDetail({ ...job, isSaved: !job.isSaved });
+
+    try {
+      const data = await axios.post(`jobs/${jobId}/saveJob`);
+
+      if (data) {
+        console.log(data);
+      }
+    } catch (error) {
+      
+      setJobDetail({ ...job, isSaved: !job.isSaved });
+      toast.error("Save job failed!");
+    }
+  };
 
   const onApply = () => {
     if (!auth.isAuthenticated) {
@@ -251,7 +270,7 @@ const JobDetailPage = () => {
                 </div>
                 <div className="flex flex-row items-center gap-2 shrink-0 whitespace-nowrap pt-1">
                   <button
-                    onClick={() => setIsFavorite(!isFavorite)}
+                    onClick={() => handleToggleSaveJob(job.id)}
                     className="w-8 h-8 rounded-full bg-[#EFEFEF] flex items-center justify-center transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer focus:outline-none"
                   >
                     <Heart

@@ -1,4 +1,4 @@
-package com.loihvk23.job_service.dto.response;
+package com.loihvk23.application_service.dto.request;
 
 import java.time.LocalDateTime;
 
@@ -11,10 +11,10 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class JobSavedOrViewedResponse {
+public class UserAppliedJobEvent {
 	private String id;
+	private String candidateEmail;
 	private String jobId;
-	private String title;
-	private LocalDateTime createdAt;
 	private String status;
+	private LocalDateTime createdAt;
 }

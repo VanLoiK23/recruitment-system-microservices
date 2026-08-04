@@ -61,24 +61,34 @@ const HomePage = () => {
     setShowApplyPopup(true);
   };
 
-  const [isApply,setIsApply] = useState(false);
+  const [isApply, setIsApply] = useState(false);
 
-  const updateOnApply = (data)=>{
+  const updateOnApply = (data) => {
     setIsApply(data);
-  }
+  };
 
-  const saveJob = async(jobId)=>{
+  const handleToggleSaveJob = async (jobId) => {
+    setJobs((prevJobs) =>
+      prevJobs.map((item) =>
+        item.id === jobId ? { ...item, isSaved: !item.isSaved } : item
+      )
+    );
+
     try {
       const data = await axios.post(`jobs/${jobId}/saveJob`);
 
-      if(data){
+      if (data) {
         console.log(data);
       }
-    } catch (err) {
-      toast.error(err.message);
-      console.error(`Status code from Backend [${err.code}]:`, err.message);
+    } catch (error) {
+      setJobs((prevJobs) =>
+        prevJobs.map((item) =>
+          item.id === jobId ? { ...item, isSaved: !item.isSaved } : item
+        )
+      );
+      toast.error("Save job failed!");
     }
-  }
+  };
 
   useEffect(() => {
     const fetchFilteredJobs = async () => {
@@ -257,13 +267,13 @@ const HomePage = () => {
                   }}
                   onClickJobActive={() => {
                     setJobActive(index);
-                    setIsApply(false);//set default
+                    setIsApply(false); //set default
                   }}
                   redirectLogin={redirectLogin}
-                  saveJob={(jobId)=>{
-                    saveJob(jobId)
+                  saveJob={(jobId) => {
+                    handleToggleSaveJob(jobId);
                   }}
-                  isActive={index===jobActive}
+                  isActive={index === jobActive}
                 />
               ))}
               <div className="flex items-center justify-around gap-2">
@@ -323,8 +333,8 @@ const HomePage = () => {
                 navigate("/jobs/" + jobs[jobActive].id);
               }}
               redirectLogin={redirectLogin}
-              saveJob={(jobId)=>{
-                saveJob(jobId);
+              saveJob={(jobId) => {
+                handleToggleSaveJob(jobId);
               }}
               onApply={onApply}
               isApply={isApply}

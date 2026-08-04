@@ -142,7 +142,7 @@ public class ApplicationResController {
 
 		Pageable pageable = PageRequest.of(page, limit, Sort.by(Sort.Direction.DESC, sortBy));
 
-		Page<CvDTO> cvDTOs = cvService.getCvsFollowPage(emailCandidate, pageable);
+		Slice<CvDTO> cvDTOs = cvService.getCvsFollowPage(emailCandidate, pageable);
 
 		return ResponseEntity.ok(cvDTOs);
 	}
@@ -150,7 +150,7 @@ public class ApplicationResController {
 	@GetMapping("/profile/jobApplied")
 	public ResponseEntity<?> getJobApplied(@RequestParam(name = "page", defaultValue = "1") int page,
 			@RequestParam(name = "limit", defaultValue = "7") int limit,
-			@RequestParam(name = "sortBy", defaultValue = "dateApplied") String sortBy,
+			@RequestParam(name = "sortBy", defaultValue = "createdAt") String sortBy,
 			@AuthenticationPrincipal UserDetails userDetails) {
 		String emailCandidate = userDetails.getUsername();
 

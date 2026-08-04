@@ -10,6 +10,8 @@ import com.loihvk23.job_service.document.SavedJobDocument;
 
 public interface SavedJobRepository extends MongoRepository<SavedJobDocument, String>{
 	void deleteByUserEmailAndJobId(String userEmail, String jobId);
+	List<SavedJobDocument> findByUserEmailAndJobIdIn(String userEmail, List<String> jobId);
 	List<SavedJobDocument> findByUserEmailAndJobId(String userEmail, String jobId);
+	List<SavedJobDocument> findByUserEmail(String userEmail);
 	Slice<SavedJobDocument> findByUserEmail(String userEmail, Pageable pageable);
 }

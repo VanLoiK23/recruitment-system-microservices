@@ -12,9 +12,7 @@ import org.springframework.stereotype.Service;
 
 import com.loihvk23.job_service.document.JobDocument;
 import com.loihvk23.job_service.document.SavedJobDocument;
-import com.loihvk23.job_service.dto.response.JobSavedOrViewedResponse;
-import com.loihvk23.job_service.mapper.JobMapper;
-import com.loihvk23.job_service.mapper.SavedJobMapper;
+import com.loihvk23.job_service.dto.response.JobManagementResponse;
 import com.loihvk23.job_service.repository.JobRepository;
 import com.loihvk23.job_service.repository.SavedJobRepository;
 import com.loihvk23.job_service.service.SavedJobService;
@@ -26,22 +24,20 @@ import lombok.RequiredArgsConstructor;
 public class SavedJobServiceImpl implements SavedJobService {
 	private final SavedJobRepository savedJobRepository;
 
-	private final SavedJobMapper mapper;
-
 	private final JobRepository jobRepository;
 
-	private final JobMapper jobMapper;
-
 	@Override
-	public void saveJob(String jobId, String userEmail) {
+	public boolean saveJob(String jobId, String userEmail) {
 		if (checkJobIsSaved(jobId, userEmail)) {
 			// unsave job
 			savedJobRepository.deleteByUserEmailAndJobId(userEmail, jobId);
+			return false;
 		}
 		SavedJobDocument savedJobDocument = SavedJobDocument.builder().userEmail(userEmail).jobId(jobId)
 				.createdAt(LocalDateTime.now()).build();
 
 		savedJobRepository.save(savedJobDocument);
+		return true;
 	}
 
 	@Override
@@ -55,32 +51,32 @@ public class SavedJobServiceImpl implements SavedJobService {
 	}
 
 	@Override
-	public Slice<JobSavedOrViewedResponse> findSavedJobsByUser(String userEmail, Pageable pageable) {
+	public Slice<JobManagementResponse> findSavedJobsByUser(String userEmail, Pageable pageable) {
 		Slice<SavedJobDocument> saveJobs = savedJobRepository.findByUserEmail(userEmail, pageable);
 
 		if (!saveJobs.hasContent()) {
-			return saveJobs.map(job -> new JobSavedOrViewedResponse());
+			return saveJobs.map(job -> new JobManagementResponse());
 		}
 
 		List<String> jobIds = saveJobs.getContent().stream().map(SavedJobDocument::getJobId).distinct()
 				.collect(Collectors.toList());
 		Iterable<JobDocument> jobsIterable = jobRepository.findAllById(jobIds);
-		
+
 		Map<String, JobDetailHolder> jobDetailMap = new HashMap<String, JobDetailHolder>();
-		jobsIterable.forEach((job)->{
+		jobsIterable.forEach((job) -> {
 			jobDetailMap.put(job.getId(), new JobDetailHolder(job.getTitle(), job.getStatus()));
 		});
 
-		Slice<JobSavedOrViewedResponse> saveJobDTOs = saveJobs.map(savedJob -> {
-			JobSavedOrViewedResponse dto = new JobSavedOrViewedResponse();
+		Slice<JobManagementResponse> saveJobDTOs = saveJobs.map(savedJob -> {
+			JobManagementResponse dto = new JobManagementResponse();
 			dto.setId(savedJob.getId());
 			dto.setJobId(savedJob.getJobId());
 			dto.setCreatedAt(savedJob.getCreatedAt());
-			
+
 			JobDetailHolder detail = jobDetailMap.get(savedJob.getJobId());
 
 			if (detail != null) {
-				dto.setTitle(detail.title());  
+				dto.setTitle(detail.title());
 				dto.setStatus(detail.status());
 			}
 

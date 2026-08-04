@@ -5,6 +5,8 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -29,14 +31,18 @@ import org.springframework.util.StringUtils;
 
 import com.loihvk23.job_service.config.RabbitMQConfig;
 import com.loihvk23.job_service.document.JobDocument;
+import com.loihvk23.job_service.document.SavedJobDocument;
+import com.loihvk23.job_service.document.UserAppliedJobDocument;
 import com.loihvk23.job_service.dto.JobDTO;
 import com.loihvk23.job_service.dto.request.AdvanceFilterRequest;
 import com.loihvk23.job_service.dto.request.JobEvent;
-import com.loihvk23.job_service.dto.response.JobSavedOrViewedResponse;
+import com.loihvk23.job_service.dto.response.JobManagementResponse;
 import com.loihvk23.job_service.exception.DuplicateResourceException;
 import com.loihvk23.job_service.exception.ResourceNotFoundException;
 import com.loihvk23.job_service.mapper.JobMapper;
 import com.loihvk23.job_service.repository.JobRepository;
+import com.loihvk23.job_service.repository.SavedJobRepository;
+import com.loihvk23.job_service.repository.UserAppliedJobRepository;
 import com.loihvk23.job_service.service.JobService;
 
 import lombok.RequiredArgsConstructor;
@@ -54,13 +60,36 @@ public class JobServiceImpl implements JobService {
 
 	private final RedisTemplate<String, Object> redisTemplate;
 
+	private final SavedJobRepository savedJobRepository;
+	
+	private final UserAppliedJobRepository userAppliedJobRepository;
+
 	@Override
-	public Slice<JobDTO> findAll(Pageable pageable) {
+	public Slice<JobDTO> findAll(Pageable pageable, String email) {
 		Slice<JobDocument> jobDocuments = jobRepository.findAll(pageable);
 
 		Slice<JobDTO> jobDTOs = jobDocuments.map(jobMapper::toDTO);
 
-		return jobDTOs;
+		if (email == null || jobDTOs.isEmpty()) {
+			return jobDTOs;
+		}
+
+		List<String> currentJobIds = jobDTOs.getContent().stream().map(JobDTO::getId).collect(Collectors.toList());
+
+		Set<String> savedJobIdsInCurrentPage = savedJobRepository.findByUserEmailAndJobIdIn(email, currentJobIds)
+				.stream().map(SavedJobDocument::getJobId).collect(Collectors.toSet());
+		
+		Set<String> appliedJobIdsInCurrentPage = userAppliedJobRepository.findByCandidateEmailAndJobIdIn(email, currentJobIds)
+				.stream().map(UserAppliedJobDocument::getJobId).collect(Collectors.toSet());
+
+		Slice<JobDTO> adjustJobDtos = jobDTOs.map(job -> {
+			job.setIsSaved(savedJobIdsInCurrentPage.contains(job.getId()));
+			job.setIsApplied(appliedJobIdsInCurrentPage.contains(job.getId()));
+
+			return job;
+		});
+
+		return adjustJobDtos;
 	}
 
 	@Override
@@ -136,15 +165,28 @@ public class JobServiceImpl implements JobService {
 	}
 
 	@Override
-	public JobDTO findDetailJob(String jobId) {
+	public JobDTO findDetailJob(String jobId, String email) {
 		JobDocument jobDocument = jobRepository.findById(jobId)
 				.orElseThrow(() -> new ResourceNotFoundException("Job isn't exist. Can not see !!"));
 
-		return jobMapper.toDTO(jobDocument);
+		if (email == null || jobDocument == null) {
+			return jobMapper.toDTO(jobDocument);
+		}
+
+		Set<String> savedJobIds = savedJobRepository.findByUserEmailAndJobId(email, jobId).stream()
+				.map(SavedJobDocument::getJobId).collect(Collectors.toSet());
+		
+		Set<String> appliedJobIds = userAppliedJobRepository.findByCandidateEmailAndJobId(email, jobId)
+				.stream().map(UserAppliedJobDocument::getJobId).collect(Collectors.toSet());
+
+		JobDTO jobDTO = jobMapper.toDTO(jobDocument);
+		jobDTO.setIsSaved(savedJobIds.contains(jobId));
+		jobDTO.setIsApplied(appliedJobIds.contains(jobId));
+		return jobDTO;
 	}
 
 	@Override
-	public Page<JobDTO> filterAdvanceJobs(AdvanceFilterRequest searchRequest, Pageable pageable) {
+	public Page<JobDTO> filterAdvanceJobs(AdvanceFilterRequest searchRequest, Pageable pageable, String email) {
 
 		Query query = new Query();
 		List<Criteria> criterias = new ArrayList<Criteria>();
@@ -195,27 +237,64 @@ public class JobServiceImpl implements JobService {
 		long total = mongoTemplate.count(query, JobDocument.class);
 
 		query.with(pageable);
-		query.limit(pageable.getPageSize() + 1);
+//		query.limit(pageable.getPageSize() + 1);
 
 		List<JobDocument> jobDocuments = mongoTemplate.find(query, JobDocument.class);
 
-		boolean hasNext = jobDocuments.size() > pageable.getPageSize();
-		if (hasNext) {
-			jobDocuments.remove(pageable.getPageSize()); // remove last residual item
-		}
+//		boolean hasNext = jobDocuments.size() > pageable.getPageSize();
+//		if (hasNext) {
+//			jobDocuments.remove(pageable.getPageSize()); // remove last residual item
+//		}
 
 		List<JobDTO> jobDTOs = jobDocuments.stream().map(jobMapper::toDTO).toList();
-		return new PageImpl<>(jobDTOs, pageable, total);
+
+		if (email == null || jobDTOs.isEmpty()) {
+			return new PageImpl<>(jobDTOs, pageable, total);
+		}
+
+		List<String> currentJobIds = jobDTOs.stream().map(JobDTO::getId).collect(Collectors.toList());
+
+		Set<String> savedJobIdsInCurrentPage = savedJobRepository.findByUserEmailAndJobIdIn(email, currentJobIds)
+				.stream().map(SavedJobDocument::getJobId).collect(Collectors.toSet());
+		Set<String> appliedJobIdsInCurrentPage = userAppliedJobRepository.findByCandidateEmailAndJobIdIn(email, currentJobIds)
+				.stream().map(UserAppliedJobDocument::getJobId).collect(Collectors.toSet());
+
+		List<JobDTO> adjustJobDtos = jobDTOs.stream().map(job -> {
+			job.setIsSaved(savedJobIdsInCurrentPage.contains(job.getId()));
+			job.setIsApplied(appliedJobIdsInCurrentPage.contains(job.getId()));
+
+			return job;
+		}).collect(Collectors.toList());
+
+		return new PageImpl<>(adjustJobDtos, pageable, total);
 	}
 
 	@Override
-	public Slice<JobDTO> findJobRelevants(List<String> technologies, String jobId, Pageable pageable) {
+	public Slice<JobDTO> findJobRelevants(List<String> technologies, String jobId, Pageable pageable, String email) {
 		Slice<JobDocument> jobDocumentSlices = jobRepository.findByTechnologiesInAndIdNot(technologies, jobId,
 				pageable);
 
-		Slice<JobDTO> jobDtos = jobDocumentSlices.map(jobMapper::toDTO);
+		Slice<JobDTO> jobDTOs = jobDocumentSlices.map(jobMapper::toDTO);
 
-		return jobDtos;
+		if (email == null || jobDTOs.isEmpty()) {
+			return jobDTOs;
+		}
+
+		List<String> currentJobIds = jobDTOs.getContent().stream().map(JobDTO::getId).collect(Collectors.toList());
+
+		Set<String> savedJobIdsInCurrentPage = savedJobRepository.findByUserEmailAndJobIdIn(email, currentJobIds)
+				.stream().map(SavedJobDocument::getJobId).collect(Collectors.toSet());
+		Set<String> appliedJobIdsInCurrentPage = userAppliedJobRepository.findByCandidateEmailAndJobIdIn(email, currentJobIds)
+				.stream().map(UserAppliedJobDocument::getJobId).collect(Collectors.toSet());
+		
+		Slice<JobDTO> adjustJobDtos = jobDTOs.map(job -> {
+			job.setIsSaved(savedJobIdsInCurrentPage.contains(job.getId()));
+			job.setIsApplied(appliedJobIdsInCurrentPage.contains(job.getId()));
+
+			return job;
+		});
+
+		return adjustJobDtos;
 	}
 
 	@Override
@@ -243,7 +322,7 @@ public class JobServiceImpl implements JobService {
 	}
 
 	@Override
-	public Slice<JobSavedOrViewedResponse> getViewdJobs(String emailCandidate, Pageable pageable) {
+	public Slice<JobManagementResponse> getViewdJobs(String emailCandidate, Pageable pageable) {
 		String key = "viewed_jobs:" + emailCandidate;
 
 		Set<TypedTuple<Object>> typedTuples = redisTemplate.opsForZSet().reverseRangeWithScores(key, 0, 49);
@@ -257,21 +336,21 @@ public class JobServiceImpl implements JobService {
 				.collect(Collectors.toMap(tuple -> tuple.getValue().toString(), tuple -> {
 					long timestamp = tuple.getScore().longValue();
 					return LocalDateTime.ofInstant(Instant.ofEpochMilli(timestamp), ZoneId.systemDefault());
-				}, (existing, replacement) -> existing));
+				}, (existing, replacement) -> existing, LinkedHashMap::new));
 
 		List<String> jobIds = new ArrayList<>(viewedAtMap.keySet());
 		Iterable<JobDocument> jobs = jobRepository.findAllById(jobIds);
 
-		List<JobSavedOrViewedResponse> responseList = StreamSupport.stream(jobs.spliterator(), false).map(job -> {
-			JobSavedOrViewedResponse res = new JobSavedOrViewedResponse();
-			res.setId(String.valueOf(System.currentTimeMillis()));
+		List<JobManagementResponse> responseList = StreamSupport.stream(jobs.spliterator(), false).map(job -> {
+			JobManagementResponse res = new JobManagementResponse();
+			res.setId(job.getId());
 			res.setJobId(job.getId());
 			res.setTitle(job.getTitle());
 			res.setStatus(job.getStatus());
-
 			res.setCreatedAt(viewedAtMap.get(job.getId()));
 			return res;
-		}).collect(Collectors.toList());
+		}).sorted(Comparator.comparing(JobManagementResponse::getCreatedAt,
+				Comparator.nullsLast(Comparator.reverseOrder()))).collect(Collectors.toList());
 
 		boolean hasNext = responseList.size() > pageable.getPageSize();
 

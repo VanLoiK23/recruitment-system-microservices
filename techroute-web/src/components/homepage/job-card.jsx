@@ -1,4 +1,4 @@
-import { MapPin, Heart } from "lucide-react";
+import { MapPin, Heart, Flame } from "lucide-react";
 import { useContext, useEffect, useState } from "react";
 import { AuthContext } from "../../components/context/auth.context";
 import { redirect } from "react-router-dom";
@@ -13,38 +13,39 @@ const JobCard = ({
   redirectLogin,
   isActive,
 }) => {
-  const [isFavorite, setIsFavorite] = useState(false);
+  const [isFavorite, setIsFavorite] = useState(job.isSaved ?? false);
   const { auth } = useContext(AuthContext);
 
-  useEffect(() => {
-    const checkJobSave = async () => {
-      try {
-        const data = await axios.get(`jobs/${job.id}/is-saved`);
+  // useEffect(() => {
+  //   const checkJobSave = async () => {
+  //     try {
+  //       const data = await axios.get(`jobs/${job.id}/is-saved`);
 
-        if (data) {
-          setIsFavorite(data.isSaved);
-        }
-      } catch (err) {
-        toast.error(err.message);
-        console.error(`Status code from Backend [${err.code}]:`, err.message);
-      }
-    };
+  //       if (data) {
+  //         setIsFavorite(data.isSaved);
+  //       }
+  //     } catch (err) {
+  //       toast.error(err.message);
+  //       console.error(`Status code from Backend [${err.code}]:`, err.message);
+  //     }
+  //   };
 
-    if (job && auth.isAuthenticated) {
-      checkJobSave();
-    }
-  }, [job]);
+  //   if (job && auth.isAuthenticated) {
+  //     checkJobSave();
+  //   }
+  // }, [job]);
 
   return (
     <div
-      className={`relative w-full p-3.5 rounded-xl border transition-all duration-200 cursor-pointer hover:scale-[1.02] z-0
-    ${
-      job?.hotJob
-        ? "border-red-600 bg-red-50/50 hover:bg-red-100/60 shadow-sm shadow-red-100"
-        : "border-[#2F00FF] bg-white hover:bg-[#5b5ec725]"
-    }
-    ${isActive ? (job?.hotJob ? "bg-red-100/80" : "bg-[#5b5ec725]") : ""}
-  `}
+      className={`relative w-full p-3.5 rounded-xl border transition-all duration-200 cursor-pointer hover:scale-[1.02] z-0 ${
+        job?.hotJob
+          ? `border-red-600 shadow-sm shadow-red-100 ${
+              isActive ? "bg-red-100/80" : "bg-red-50/50 hover:bg-red-100/60"
+            }`
+          : `border-[#2F00FF] ${
+              isActive ? "bg-[#5b5ec725]" : "bg-white hover:bg-[#5b5ec725]"
+            }`
+      }`}
     >
       {job?.hotJob && (
         <div className="absolute -top-2.5 right-3 flex items-center gap-1 py-0.5 px-2.5 rounded-full bg-gradient-to-r from-red-600 to-orange-500 text-white text-[10px] font-bold border border-red-200 uppercase tracking-wider shadow-md animate-pulse">

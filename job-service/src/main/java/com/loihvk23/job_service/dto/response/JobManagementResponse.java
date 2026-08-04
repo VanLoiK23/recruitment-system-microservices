@@ -1,4 +1,4 @@
-package com.loihvk23.application_service.dto.response;
+package com.loihvk23.job_service.dto.response;
 
 import java.time.LocalDateTime;
 
@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class JobAppliedDTO {
+public class JobManagementResponse {
 	private String id;
 	private String jobId;
 	private String title;

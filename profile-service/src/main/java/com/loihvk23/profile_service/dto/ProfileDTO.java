@@ -40,9 +40,11 @@ public class ProfileDTO {
 	
 	private String summary;
 	
-	private boolean openToWork;
-	
-	private Integer totalPercent;
+	@Builder.Default
+    private Boolean openToWork = false;
+
+    @Builder.Default
+    private Integer totalPercent = 10;
 	
 	@Builder.Default
 	private List<String> skills = new ArrayList();

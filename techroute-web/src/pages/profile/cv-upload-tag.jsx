@@ -17,6 +17,11 @@ const CvUploadTag = () => {
   const [loading, setLoading] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
 
+  const [previous, setPrevious] = useState(false);
+  const [pageActive, setPageActive] = useState(1);
+  const [limit, setLimit] = useState(5);
+  const [next, setNext] = useState(false);
+
   const fileInputRef = useRef(null);
 
   const handleButtonUploadClick = () => {
@@ -69,37 +74,55 @@ const CvUploadTag = () => {
   const handleDelete = async (cvId) => {
     const check = window.confirm("Are you sure you want to delete this CV ?");
 
-    if (check) {
-      try {
-        const data = await axios.delete("applications/cv");
+    if (!check) {
+      return;
+    }
 
-        if (data.isSuccess) {
-          setCvs((prev) => prev.filter((item) => item.id != cvId));
-          toast.success("Delete Cv successfully");
-        } else {
-          toast.warn("Delete failed");
-        }
-      } catch (err) {
-        toast.error(err.message);
-        console.error(`Status code from Backend [${err.code}]:`, err.message);
+    try {
+      const data = await axios.delete("applications/cv");
+
+      if (data.isSuccess) {
+        setCvs((prev) => prev.filter((item) => item.id != cvId));
+        toast.success("Delete Cv successfully");
+      } else {
+        toast.warn("Delete failed");
       }
+    } catch (err) {
+      toast.error(err.message);
+      console.error(`Status code from Backend [${err.code}]:`, err.message);
     }
   };
 
   useEffect(() => {
     const loadCvsUploaded = async () => {
       try {
-        const data = await axios.get("applications/profile/cv");
+        const data = await axios.get(
+          `applications/profile/cv?page=${pageActive}&limit=${limit}`
+        );
 
         if (data) {
-          setCvs(data);
+          setCvs(data.content);
+          setPrevious(!data?.first);
+          setNext(!data?.last);
         }
       } catch (err) {
         toast.error(err.message);
       }
     };
     loadCvsUploaded();
-  }, []);
+  }, [pageActive]);
+
+  const onChangePage = (page, isPrev) => {
+    if (isPrev) {
+      if (previous) {
+        setPageActive(page);
+      }
+    } else {
+      if (next) {
+        setPageActive(page);
+      }
+    }
+  };
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6 md:p-8 shadow-sm">
@@ -241,6 +264,26 @@ const CvUploadTag = () => {
             )}
           </tbody>
         </table>
+        {cvs?.length > 0 && (
+          <div className="flex items-center gap-3 justify-end">
+            <div
+              className={`px-2 py-1 text-center text-sm border rounded-xl border-blue-300
+            ${!previous ? "bg-gray-400 pointer-events-none" : "cursor-pointer"}
+            `}
+              onClick={() => onChangePage(pageActive - 1, true)}
+            >
+              Previous
+            </div>
+            <div
+              className={`px-2 py-1 text-center text-sm border rounded-xl border-blue-300
+            ${!next ? "bg-gray-400 pointer-events-none" : "cursor-pointer"}
+            `}
+              onClick={() => onChangePage(pageActive + 1, false)}
+            >
+              Next
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -13,50 +13,48 @@ function JobDetailCard({
   apply,
 }) {
   const { auth } = useContext(AuthContext);
-  const [isFavorite, setIsFavorite] = useState(false);
-  const [isApply, setIsApply] = useState(false);
+  const [isFavorite, setIsFavorite] = useState(job.isSaved ?? false);
+  const [isApply, setIsApply] = useState(job.isApplied ?? false);
 
-  useEffect(() => {
-    const checkedApply = async () => {
-      try {
-        const data = await axios.get(
-          `applications/check-apply?jobId=${job.id}`
-        );
+  // useEffect(() => {
+  //   const checkedApply = async () => {
+  //     try {
+  //       const data = await axios.get(
+  //         `applications/check-apply?jobId=${job.id}`
+  //       );
 
-        if (data) {
-          setIsApply(data.isApply);
-        }
-      } catch (err) {
-        toast.error(err.message);
-        console.error(`Status code from Backend [${err.code}]:`, err.message);
-      }
-    };
+  //       if (data) {
+  //         setIsApply(data.isApply);
+  //       }
+  //     } catch (err) {
+  //       toast.error(err.message);
+  //       console.error(`Status code from Backend [${err.code}]:`, err.message);
+  //     }
+  //   };
 
-    if (job && auth.isAuthenticated) {
-      checkedApply();
-    }
-  }, [job, apply]);
+  //   if (job && auth.isAuthenticated) {
+  //     checkedApply();
+  //   }
+  // }, [job, apply]);
 
-  useEffect(() => {
-    const checkJobSave = async () => {
-      try {
-        const data = await axios.get(
-          `jobs/${job.id}/is-saved`
-        );
+  // useEffect(() => {
+  //   const checkJobSave = async () => {
+  //     try {
+  //       const data = await axios.get(`jobs/${job.id}/is-saved`);
 
-        if (data) {
-          setIsFavorite(data.isSaved);
-        }
-      } catch (err) {
-        toast.error(err.message);
-        console.error(`Status code from Backend [${err.code}]:`, err.message);
-      }
-    };
+  //       if (data) {
+  //         setIsFavorite(data.isSaved);
+  //       }
+  //     } catch (err) {
+  //       toast.error(err.message);
+  //       console.error(`Status code from Backend [${err.code}]:`, err.message);
+  //     }
+  //   };
 
-    if (job && auth.isAuthenticated) {
-      checkJobSave();
-    }
-  }, [job]);
+  //   if (job && auth.isAuthenticated) {
+  //     checkJobSave();
+  //   }
+  // }, [job]);
 
   return (
     <div className="flex flex-col justify-center w-full bg-white p-4 rounded-xl border border-[#2F00FF]/30">

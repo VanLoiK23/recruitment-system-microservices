@@ -2,6 +2,7 @@ package com.loihvk23.spring_cloud_gateway.filter;
 
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.cloud.gateway.filter.GatewayFilter;
@@ -33,8 +34,17 @@ public class AuthenticationGatewayFilterFactory
 	public AuthenticationGatewayFilterFactory() {
 		super(Config.class);
 	}
+	
+	@Override
+    public List<String> shortcutFieldOrder() {
+        return List.of("optional"); 
+    }
 
 	public static class Config {
+		private boolean optional = false; 
+
+        public boolean isOptional() { return optional; }
+        public void setOptional(boolean optional) { this.optional = optional; }
 	}
 
 	@Override
@@ -43,6 +53,9 @@ public class AuthenticationGatewayFilterFactory
 			ServerHttpRequest request = exchange.getRequest();
 
 			if (!request.getHeaders().containsKey(HttpHeaders.AUTHORIZATION)) {
+				if (config.isOptional()) {
+                    return chain.filter(exchange);
+                }
 				return onError(exchange, "Missing Authorization Header", HttpStatus.UNAUTHORIZED);
 			}
 
@@ -67,6 +80,9 @@ public class AuthenticationGatewayFilterFactory
 				return chain.filter(exchange.mutate().request(modifiedRequest).build());
 
 			} catch (Exception e) {
+				if (config.isOptional()) {
+                    return chain.filter(exchange);
+                }
 //				e.printStackTrace();
 				return onError(exchange, "Invalid Token or Token is expired!", HttpStatus.UNAUTHORIZED);
 			}

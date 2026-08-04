@@ -17,7 +17,7 @@ import com.loihvk23.application_service.dto.ApplicationDTO;
 import com.loihvk23.application_service.dto.CvDTO;
 import com.loihvk23.application_service.dto.JobCacheDTO;
 import com.loihvk23.application_service.dto.request.ApplicationRequest;
-import com.loihvk23.application_service.dto.request.JobEvent;
+import com.loihvk23.application_service.dto.request.UserAppliedJobEvent;
 import com.loihvk23.application_service.entity.ApplicationEntity;
 import com.loihvk23.application_service.exception.ResourceNotFoundException;
 import com.loihvk23.application_service.mapper.ApplicationMapper;
@@ -84,8 +84,10 @@ public class ApplicationServiceImpl implements ApplicationService {
 
 		ApplicationEntity applicationEntity = applicationRepository.save(applicationMapper.toEntity(applicationDTO));
 
-		JobEvent jobEvent = JobEvent.builder().id(applicationRequest.getJobId()).build();
-		rabbitTemplate.convertAndSend(RabbitMQConfig.JOB_EXCHANGE, RabbitMQConfig.JOB_EVENT_APPLY, jobEvent);
+		UserAppliedJobEvent jobAppliedEvent = UserAppliedJobEvent.builder().candidateEmail(emailCandidate)
+				.jobId(applicationRequest.getJobId()).status(applicationEntity.getStatus())
+				.createdAt(LocalDateTime.now()).build();
+		rabbitTemplate.convertAndSend(RabbitMQConfig.JOB_EXCHANGE, RabbitMQConfig.JOB_EVENT_APPLY, jobAppliedEvent);
 
 		return applicationMapper.toDTO(applicationEntity);
 	}
@@ -163,6 +165,12 @@ public class ApplicationServiceImpl implements ApplicationService {
 
 		ApplicationEntity savedEntity = applicationRepository.save(applicationEntity);
 
+		UserAppliedJobEvent jobAppliedEvent = UserAppliedJobEvent.builder()
+				.candidateEmail(savedEntity.getCandidateEmail()).jobId(savedEntity.getJobId())
+				.status(savedEntity.getStatus()).createdAt(savedEntity.getCreatedAt()).build();
+		rabbitTemplate.convertAndSend(RabbitMQConfig.JOB_EXCHANGE, RabbitMQConfig.JOB_EVENT_APPLIED_UPDATE,
+				jobAppliedEvent);
+
 		return applicationMapper.toDTO(savedEntity);
 	}
 
@@ -178,6 +186,10 @@ public class ApplicationServiceImpl implements ApplicationService {
 		}
 
 		applicationRepository.deleteById(applicationId);
+		UserAppliedJobEvent jobAppliedEvent = UserAppliedJobEvent.builder()
+				.candidateEmail(applicationEntity.getCandidateEmail()).jobId(applicationEntity.getJobId()).build();
+		rabbitTemplate.convertAndSend(RabbitMQConfig.JOB_EXCHANGE, RabbitMQConfig.JOB_EVENT_APPLIED_DELETE,
+				jobAppliedEvent);
 	}
 
 	private void checkValidJobAndRecruiterEmail(String jobId, String emailRecruiter) {

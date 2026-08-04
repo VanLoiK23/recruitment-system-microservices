@@ -66,4 +66,8 @@ public class JobDTO {
     private Long applicantCount;
 
     private LocalDateTime createdAt;
+    
+    private Boolean isSaved;
+    
+    private Boolean isApplied;
 }

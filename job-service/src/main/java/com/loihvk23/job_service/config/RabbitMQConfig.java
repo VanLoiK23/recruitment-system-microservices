@@ -18,7 +18,12 @@ public class RabbitMQConfig {
 	public static final String JOB_UPSERTED_KEY = "job.event.upserted";
 	public static final String JOB_DELETE_KEY = "job.event.deleted";
 
-	public static final String KEY_JOB_APPLIED = "job.apply";
+	public static final String KEY_JOB_APPLY_ALL_EVENTS_PATTERN = "job.apply.#";
+	
+	public static final String KEY_JOB_APPLIED_UPDATE = "job.apply.update";
+	public static final String KEY_JOB_APPLIED_SAVE = "job.apply.save";
+	public static final String KEY_JOB_APPLIED_DELETE = "job.apply.delete";
+
 	@Bean
 	public TopicExchange jobExchange() {
 		return new TopicExchange(JOB_EXCHANGE);
@@ -37,6 +42,6 @@ public class RabbitMQConfig {
 	
 	@Bean
     public Binding bindJobApplied(Queue jobQueue, TopicExchange jobExchange) {
-        return BindingBuilder.bind(jobQueue).to(jobExchange).with(KEY_JOB_APPLIED);
+        return BindingBuilder.bind(jobQueue).to(jobExchange).with(KEY_JOB_APPLY_ALL_EVENTS_PATTERN);
     }
 }

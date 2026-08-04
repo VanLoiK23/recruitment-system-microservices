@@ -20,6 +20,11 @@ const JobManagementTag = () => {
 
   const [jobData, setJobData] = useState({});
 
+  const [previous, setPrevious] = useState(false);
+  const [pageActive, setPageActive] = useState(1);
+  const [limit, setLimit] = useState(5);
+  const [next, setNext] = useState(false);
+
   const subTabs = [
     {
       id: "applied",
@@ -34,43 +39,83 @@ const JobManagementTag = () => {
     { id: "viewed", label: "Viewed Jobs", icon: <FiEye className="w-4 h-4" /> },
   ];
 
+  const mockData = {
+    applied: [
+      {
+        id: 1,
+        title: "Java Developer",
+        createdAt: "23-07-2026",
+        status: "Reviewing",
+      },
+      {
+        id: 2,
+        title: "Senior ReactJS Engineer",
+        createdAt: "15-07-2026",
+        status: "Interview",
+      },
+      {
+        id: 3,
+        title: "Fullstack Developer (Java/React)",
+        createdAt: "01-07-2026",
+        status: "Rejected",
+      },
+    ],
+    saved: [
+      {
+        id: 3,
+        title: "Fullstack Developer (Java/React)",
+        createdAt: "01-07-2026",
+        status: "Rejected",
+      },
+    ],
+    viewed: [
+      {
+        id: 6,
+        title: "Java Backend Developer",
+        createdAt: "02-08-2026",
+        status: "Open",
+      },
+      {
+        id: 7,
+        title: "Senior .NET / C# Backend",
+        createdAt: "10-07-2026",
+        status: "Open",
+      },
+    ],
+  };
+
   useEffect(() => {
-    const fetchJobApplied = async () => {
+    const fetchJob = async () => {
+      let urlFetch = "";
+      if (activeSubTab === "applied") {
+        urlFetch = "applications/profile/jobApplied";
+      } else {
+        urlFetch = `jobs/${activeSubTab}`;
+      }
       try {
-        const data = await axios.get("applications/profile/jobApplied");
+        const data = await axios.get(urlFetch);
 
         if (data) {
-          setJobData({ ...jobData, applied: data });
+          console.log(data);
+          setJobData({[activeSubTab]: data.content });
+          setPrevious(!data?.first);
+          setNext(!data?.last);
         }
       } catch (err) {
         toast.error(err.message);
         console.error(`Status code from Backend [${err.code}]:`, err.message);
       }
     };
-    fetchJobApplied();
-  }, []);
-
-  const fetchJobSavedViewed = async (tab) => {
-    if (tab === "saved" && jobData.saved) {
-      return;
-    }
-    if (tab === "viewed" && jobData.viewed) {
-      return;
-    }
-
-    try {
-      const data = await axios.get(`jobs/${tab}`);
-
-      if (data) {
-        setJobData({ ...jobData, [tab]: data });
-      }
-    } catch (err) {
-      toast.error(err.message);
-      console.error(`Status code from Backend [${err.code}]:`, err.message);
-    }
-  };
+    fetchJob();
+  }, [activeSubTab, pageActive]);
 
   const deleteJobSaved = async (jobId) => {
+    const check = window.confirm("Do you want unsave this Job");
+
+    if (!check) {
+      return;
+    }
+
     try {
       const data = await axios.post(`jobs/${jobId}/saveJob`);
 
@@ -86,6 +131,18 @@ const JobManagementTag = () => {
     } catch (err) {
       toast.error(err.message);
       console.error(`Status code from Backend [${err.code}]:`, err.message);
+    }
+  };
+
+  const onChangePage = (page, isPrev) => {
+    if (isPrev) {
+      if (previous) {
+        setPageActive(page);
+      }
+    } else {
+      if (next) {
+        setPageActive(page);
+      }
     }
   };
 
@@ -154,9 +211,6 @@ const JobManagementTag = () => {
               key={tab.id}
               onClick={() => {
                 setActiveSubTab(tab.id);
-                if (tab.id !== "applied") {
-                  fetchJobSavedViewed(tab.id);
-                }
               }}
               className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
                 activeSubTab === tab.id
@@ -277,6 +331,26 @@ const JobManagementTag = () => {
           </tbody>
         </table>
       </div>
+      {currentJobs?.length > 0 && (
+        <div className="flex items-center gap-3 justify-end mt-3">
+          <div
+            className={`px-2 py-1 text-center text-sm border rounded-xl border-blue-300
+            ${!previous ? "bg-gray-400 pointer-events-none" : "cursor-pointer"}
+            `}
+            onClick={() => onChangePage(pageActive - 1, true)}
+          >
+            Previous
+          </div>
+          <div
+            className={`px-2 py-1 text-center text-sm border rounded-xl border-blue-300
+            ${!next ? "bg-gray-400 pointer-events-none" : "cursor-pointer"}
+            `}
+            onClick={() => onChangePage(pageActive + 1, false)}
+          >
+            Next
+          </div>
+        </div>
+      )}
     </div>
   );
 };

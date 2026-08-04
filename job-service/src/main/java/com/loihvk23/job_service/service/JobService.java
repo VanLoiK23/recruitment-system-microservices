@@ -9,10 +9,10 @@ import org.springframework.data.domain.Slice;
 
 import com.loihvk23.job_service.dto.JobDTO;
 import com.loihvk23.job_service.dto.request.AdvanceFilterRequest;
-import com.loihvk23.job_service.dto.response.JobSavedOrViewedResponse;
+import com.loihvk23.job_service.dto.response.JobManagementResponse;
 
 public interface JobService {
-	Slice<JobDTO> findAll(Pageable pageable);
+	Slice<JobDTO> findAll(Pageable pageable,String email);
 	
 	Slice<JobDTO> findByRecruiter(String recruiterEmail, Pageable pageable);
 	
@@ -22,7 +22,7 @@ public interface JobService {
 	
 	void deleteJob(String jobId, String recruiterEmail);
 
-	JobDTO findDetailJob(String jobId);
+	JobDTO findDetailJob(String jobId, String email);
 
 //	Slice<JobDTO> filterJobsByRangeSalary(Double minSalary,Double maxSalary, Pageable pageable);
 //	
@@ -31,13 +31,13 @@ public interface JobService {
 //	Slice<JobDTO> filterJobsByTechnologiesAndJobLevel(String technology, String jobLevel, Pageable pageable);
 //	
 //	Slice<JobDTO> filterJobsByTechnologiesJobLevelAndLocation(String technology, String jobLevel, String location, Pageable pageable);
-	Slice<JobDTO> findJobRelevants(List<String> technologies, String jobId, Pageable pageable);
+	Slice<JobDTO> findJobRelevants(List<String> technologies, String jobId, Pageable pageable, String email);
 	
-	Page<JobDTO> filterAdvanceJobs(AdvanceFilterRequest searchRequest, Pageable pageable);
+	Page<JobDTO> filterAdvanceJobs(AdvanceFilterRequest searchRequest, Pageable pageable, String email);
 	
 	void incrementApplicantCount(String jobId);
 	
 	void saveViewedJobHistory(String emailCandidate,String jobId);
 	
-	Slice<JobSavedOrViewedResponse> getViewdJobs(String emailCandidate, Pageable pageable);
+	Slice<JobManagementResponse> getViewdJobs(String emailCandidate, Pageable pageable);
 }

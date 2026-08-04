@@ -35,10 +35,10 @@ const ProfilePage = () => {
     "email-management": "Email Management",
   };
 
-  const onChangeActiveTab = (tab)=>{
-    window.location.hash = tab
+  const onChangeActiveTab = (tab) => {
+    window.location.hash = tab;
     setActiveTab(tab);
-  }
+  };
 
   useEffect(() => {
     const hash = location.hash;
@@ -54,7 +54,7 @@ const ProfilePage = () => {
         const data = await axios.get("profile");
         if (data) {
           setProfileInfo(data);
-          if (data.openToWork !== undefined) setIsToWork(data.openToWork);
+          setIsToWork(data.openToWork);
         }
       } catch (err) {
         console.error(err);
@@ -69,9 +69,10 @@ const ProfilePage = () => {
   };
 
   const handleSaveModalInfo = async (updatedData) => {
-    setProfileInfo(updatedData);
+    setProfileInfo({ ...profileInfo, updatedData });
+    console.log(profileInfo);
     try {
-      await axios.post("profile", updatedData);
+      // await axios.post("profile", profileInfo);
     } catch (err) {
       console.error(err);
     }
@@ -84,7 +85,9 @@ const ProfilePage = () => {
           isOpen={isEditModalOpen}
           onClose={() => setIsEditModalOpen(false)}
           data={profileInfo}
-          onSave={handleSaveModalInfo}
+          onSave={(updateData) => {
+            handleSaveModalInfo(updateData);
+          }}
         />
       )}
 
@@ -162,11 +165,7 @@ const ProfilePage = () => {
               onClick={async () => {
                 const newStatus = !isToWork;
                 setIsToWork(newStatus);
-                try {
-                  await axios.post("profile", { openToWork: newStatus });
-                } catch (e) {
-                  console.error(e);
-                }
+                handleSaveModalInfo({ openToWork: newStatus });
               }}
               className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus:outline-none ${
                 isToWork ? "bg-[#5B5FC7]" : "bg-gray-300"
@@ -184,7 +183,7 @@ const ProfilePage = () => {
         <div className="flex-1 flex flex-col min-w-0">
           <div className="border-b border-gray-200 mb-6 overflow-x-auto hide-scrollbar">
             <nav className="flex space-x-8 min-w-max px-2">
-              {Object.entries(tabs).map(([key,tab]) => (
+              {Object.entries(tabs).map(([key, tab]) => (
                 <button
                   key={key}
                   onClick={() => onChangeActiveTab(key)}
@@ -208,9 +207,7 @@ const ProfilePage = () => {
             />
           )}
 
-          {activeTab === "job-management" && (
-            <JobManagementTag />
-          )}
+          {activeTab === "job-management" && <JobManagementTag />}
           {activeTab === "my-cv" && <CvUploadTag />}
           {activeTab === "Email Management" && (
             <div className="bg-white p-6 rounded-xl border">Quản lý Email</div>

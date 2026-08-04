@@ -11,10 +11,10 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class SavedJobDTO {
+public class UserAppliedJobDTO {
 	private String id;
+	private String candidateEmail;
 	private String jobId;
-	private JobDTO job;
-	private String userEmail;
+	private String status;
 	private LocalDateTime createdAt;
 }

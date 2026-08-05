@@ -46,6 +46,8 @@ const JobDetailPage = () => {
 
   const jobBenefits = job?.benefits ? job.benefits : [];
 
+  const [jobApply, setJobApply] = useState({});
+
   const redirectLogin = () => {
     navigate("/auth");
   };
@@ -57,8 +59,8 @@ const JobDetailPage = () => {
         const data = await axios.get(`jobs/${id}`);
         if (data) {
           setJobDetail(data);
-          setIsApply(data.isApplied ?? false);
-          setIsFavorite(data.isSaved ?? false);
+          // setIsApply(data.isApplied ?? false);
+          // setIsFavorite(data.isSaved ?? false);
         }
       } catch (err) {
         toast.error(err.message);
@@ -107,6 +109,11 @@ const JobDetailPage = () => {
     }
   }, [job.id, pageActive]);
 
+  useEffect(() => {
+    setIsFavorite(job.isSaved ?? false);
+    setIsApply(job.isApplied ?? false);
+  }, [job.isSaved, job.isApplied]);
+
   // useEffect(() => {
   //   const checkedApply = async () => {
   //     try {
@@ -141,12 +148,37 @@ const JobDetailPage = () => {
   };
 
   const updateOnApply = (data) => {
-    setIsApply(data);
+    // setIsApply(data);
+    if (data === job.id) {
+      setJobDetail({ ...job, isApplied: true });
+
+      return;
+    }
+
+    setJobsRelevant((prevJobs) =>
+      prevJobs.map((item) =>
+        item.id === data ? { ...item, isApplied: true } : item
+      )
+    );
   };
 
-  const handleToggleSaveJob = async (jobId) => {
-    setIsFavorite(!isFavorite)
-    setJobDetail({ ...job, isSaved: !job.isSaved });
+  const handleToggleSaveJob = async (jobId, relevant) => {
+    if (!auth.isAuthenticated) {
+      toast.warn("Pls Login before save this job !");
+      redirectLogin();
+      return;
+    }
+
+    if (!relevant) {
+      // setIsFavorite(!isFavorite);
+      setJobDetail({ ...job, isSaved: !job.isSaved });
+    } else {
+      setJobsRelevant((prevJobs) =>
+        prevJobs.map((item) =>
+          item.id === jobId ? { ...item, isSaved: !item.isSaved } : item
+        )
+      );
+    }
 
     try {
       const data = await axios.post(`jobs/${jobId}/saveJob`);
@@ -155,18 +187,27 @@ const JobDetailPage = () => {
         console.log(data);
       }
     } catch (error) {
-      
-      setJobDetail({ ...job, isSaved: !job.isSaved });
+      if (!relevant) {
+        // setIsFavorite(!isFavorite);
+        setJobDetail({ ...job, isSaved: !job.isSaved });
+      } else {
+        setJobsRelevant((prevJobs) =>
+          prevJobs.map((item) =>
+            item.id === jobId ? { ...item, isSaved: !item.isSaved } : item
+          )
+        );
+      }
       toast.error("Save job failed!");
     }
   };
 
-  const onApply = () => {
+  const onApply = (job) => {
     if (!auth.isAuthenticated) {
       toast.warn("Pls Login before apply this job !");
       redirectLogin();
       return;
     }
+    setJobApply(job);
     setShowApplyPopup(true);
   };
 
@@ -190,7 +231,7 @@ const JobDetailPage = () => {
       {showApplyPopup && (
         <ApplyJobModal
           auth={auth}
-          job={job}
+          job={jobApply}
           onClose={() => {
             setShowApplyPopup(false);
           }}
@@ -287,7 +328,7 @@ const JobDetailPage = () => {
                     </div>
                   ) : (
                     <button
-                      onClick={onApply}
+                      onClick={() => onApply(job)}
                       className="h-9 px-6 rounded-xl bg-[#1677FF] text-white text-xs font-bold transition-all duration-200 hover:scale-105 hover:bg-[#1631ff] active:scale-95 cursor-pointer uppercase tracking-wider"
                     >
                       Apply Now
@@ -404,8 +445,9 @@ const JobDetailPage = () => {
             onClickDetail={() => {
               navigate("/jobs/" + jobRelevant.id);
             }}
+            saveJob={(jobId) => handleToggleSaveJob(jobId, true)}
             redirectLogin={redirectLogin}
-            onApply={() => {}}
+            onApply={() => onApply(jobRelevant)}
           />
         ))}
         {jobsRelevant?.length > 0 && (

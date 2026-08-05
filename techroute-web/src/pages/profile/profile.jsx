@@ -6,6 +6,7 @@ import CvCreateTag from "./cv-create-tag.jsx";
 import { EditProfileModal } from "./cv-create-component.jsx";
 import CvUploadTag from "./cv-upload-tag.jsx";
 import JobManagementTag from "./job-management-tag.jsx";
+import { toast } from "react-toastify";
 
 const ProfilePage = () => {
   const location = useLocation();
@@ -45,7 +46,11 @@ const ProfilePage = () => {
 
     const tab = hash.replace("#", "");
 
-    setActiveTab(tab);
+    if (tab) {
+      setActiveTab(tab);
+    } else {
+      setActiveTab("profile");
+    }
   }, [location]);
 
   useEffect(() => {
@@ -70,9 +75,13 @@ const ProfilePage = () => {
 
   const handleSaveModalInfo = async (updatedData) => {
     setProfileInfo({ ...profileInfo, updatedData });
-    console.log(profileInfo);
+    console.log({ ...profileInfo, ...updatedData });
     try {
-      // await axios.post("profile", profileInfo);
+      const data = await axios.post("profile", {
+        ...profileInfo,
+        ...updatedData,
+      });
+      if (data) toast.success("Profile updated successfully!");
     } catch (err) {
       console.error(err);
     }

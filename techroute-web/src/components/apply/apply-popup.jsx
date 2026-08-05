@@ -4,15 +4,19 @@ import ReactQuill from "react-quill-new";
 import "react-quill-new/dist/quill.snow.css";
 import { toast } from "react-toastify";
 import axios from "../../utils/axios.customize";
-import { Eye } from "lucide-react";
+import { Pencil, Eye, ChevronRight } from "lucide-react";
 import CircleLoading from "../animation/animate-loading";
+import { useNavigate } from "react-router-dom";
 
 const ApplyJobModal = ({ auth, job, onClose, updateApplySuccess }) => {
+  const navigate = useNavigate();
+  const [profileInfo, setProfileInfo] = useState({});
+
   const [coverLetter, setCoverLetter] = useState("");
   const [infoApply, setInfoApply] = useState({
     fullName: auth?.user?.fullName || "",
     email: auth?.user?.email || "",
-    phone: "",
+    phone: profileInfo.phone || "",
     recruiterEmail: job.recruiterEmail,
     jobId: job.id,
   });
@@ -52,10 +56,14 @@ const ApplyJobModal = ({ auth, job, onClose, updateApplySuccess }) => {
         return;
       }
       setSelectedFile(file);
-      uploadCv();
+      uploadCv(file);
     } else {
       toast.warn("No file selected");
     }
+  };
+
+  const redirectProfilePage = () => {
+    navigate("/profile#profile");
   };
 
   useEffect(() => {
@@ -74,14 +82,30 @@ const ApplyJobModal = ({ auth, job, onClose, updateApplySuccess }) => {
     loadListCv();
   }, [job]);
 
-  const uploadCv = async () => {
-    if (!selectedFile) {
+  useEffect(() => {
+    const fetchGeneralInfo = async () => {
+      try {
+        const data = await axios.get("profile");
+        if (data) {
+          console.log(data);
+          setProfileInfo(data);
+          setInfoApply({ ...infoApply, phone: data.phone });
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    fetchGeneralInfo();
+  }, []);
+
+  const uploadCv = async (file) => {
+    if (!file) {
       toast.error("File CV is required!");
       return;
     }
 
     const formData = new FormData();
-    formData.append("file", selectedFile);
+    formData.append("file", file);
 
     setLoading(true);
     try {
@@ -136,7 +160,7 @@ const ApplyJobModal = ({ auth, job, onClose, updateApplySuccess }) => {
 
       if (data) {
         toast.success("Apply job successfully !");
-        updateApplySuccess(true);
+        updateApplySuccess(job.id);
         onClose();
       } else {
         toast.warn("Apply job failed");
@@ -191,8 +215,8 @@ const ApplyJobModal = ({ auth, job, onClose, updateApplySuccess }) => {
                     Phone number <span className="text-red-500">*</span>
                   </label>
                   <input
-                    type="tel" 
-                    value={infoApply.phone || ""}
+                    type="tel"
+                    value={infoApply.phone}
                     onChange={(e) => {
                       const onlyNumbers = e.target.value.replace(/\D/g, "");
 
@@ -276,10 +300,10 @@ const ApplyJobModal = ({ auth, job, onClose, updateApplySuccess }) => {
                 );
               })}
               <div
-                className={`border rounded-lg p-4 flex items-start gap-3 transition-colors ${
+                className={`rounded-md p-3.5 flex items-start gap-3 transition-colors ${
                   selectedCvId === "user"
-                    ? "bg-blue-50/50 border-blue-400"
-                    : "bg-[#f4f5f5] border-gray-200"
+                    ? "bg-blue-50/50 border border-blue-400"
+                    : "bg-[#f4f5f5] border border-transparent hover:border-gray-300"
                 }`}
               >
                 <input
@@ -287,24 +311,55 @@ const ApplyJobModal = ({ auth, job, onClose, updateApplySuccess }) => {
                   name="resume"
                   checked={selectedCvId === "user"}
                   onChange={() => setSelectedCvId("user")}
-                  className="mt-1 w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                  className="mt-1 w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500 cursor-pointer"
                 />
+
                 <div className="flex-1">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                    <div className="flex items-center gap-3">
-                      <span className="font-medium text-gray-900">
-                        {`${auth?.user?.fullName || ""}`}
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-gray-800 text-sm">
+                        {auth?.user?.fullName || "Username"}
                       </span>
-                      <span className="bg-red-50 text-red-500 text-xs font-semibold px-2 py-0.5 rounded">
-                        10%
+                      <span
+                        className={`text-xs font-medium px-2 py-0.5 rounded-full border
+                        ${
+                          profileInfo?.totalPercent == 100
+                            ? "bg-green-50 text-green-500 border-green-100"
+                            : "bg-red-50 text-red-500 border-red-100"
+                        }
+                        `}
+                      >
+                        {profileInfo?.totalPercent || 0}%
                       </span>
                     </div>
-                    <div className="flex items-center gap-3 text-xs text-gray-400">
-                      <span>
-                        user_profile_apply_modal_last_updated_at 22:47
-                        13/06/2024
-                      </span>
+
+                    <div className="flex items-center gap-2 text-xs text-gray-400">
+                      <span>user_profile_apply_modal</span>
+
+                      <div className="flex items-center gap-1.5 ml-1 text-gray-500">
+                        <button
+                          type="button"
+                          className="p-0.5 hover:text-blue-600 transition-colors cursor-pointer"
+                          title="Edit"
+                          onClick={redirectProfilePage}
+                        >
+                          <Pencil className="w-4 h-4 stroke-[1.75]" />
+                        </button>
+                      </div>
                     </div>
+                  </div>
+
+                  <div className="mt-1.5 text-xs text-gray-500 flex items-center gap-1">
+                    <span>Employer prefers a CV with ATS standard.</span>
+                    {profileInfo?.totalPercent < 100 && (
+                      <button
+                        onClick={redirectProfilePage}
+                        className="text-blue-600 font-semibold hover:underline inline-flex items-center"
+                      >
+                        Complete your CV
+                        <ChevronRight className="w-3.5 h-3.5 ml-0.5 stroke-[2.5]" />
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>

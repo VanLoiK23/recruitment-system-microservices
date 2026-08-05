@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
@@ -45,7 +44,7 @@ public class ApplicationResController {
 	private final ApplicationService applicationService;
 
 	private final CvService cvService;
-	
+
 	private final JobAppliedService jobAppliedService;
 
 	@GetMapping("/job/{jobId}")
@@ -109,7 +108,7 @@ public class ApplicationResController {
 
 		String emailCandidate = userDetails.getUsername();
 
-		CvDTO cvResponse = applicationService.uploadCv(file, emailCandidate);
+		CvDTO cvResponse = cvService.uploadCv(file, emailCandidate);
 
 		return ResponseEntity.status(HttpStatus.ACCEPTED).body(cvResponse);
 	}
@@ -123,9 +122,9 @@ public class ApplicationResController {
 		return ResponseEntity.ok(cvDTOs);
 	}
 
-	@DeleteMapping("/cv/:id")
+	@DeleteMapping("/profile/cv/{id}")
 	public ResponseEntity<?> deleteCv(@PathVariable(name = "id") String cvId,
-			@AuthenticationPrincipal UserDetails userDetails) {
+			@AuthenticationPrincipal UserDetails userDetails)  throws IOException {
 		String emailCandidate = userDetails.getUsername();
 
 		cvService.deleteCv(cvId, emailCandidate);
@@ -140,7 +139,7 @@ public class ApplicationResController {
 			@AuthenticationPrincipal UserDetails userDetails) {
 		String emailCandidate = userDetails.getUsername();
 
-		Pageable pageable = PageRequest.of(page, limit, Sort.by(Sort.Direction.DESC, sortBy));
+		Pageable pageable = PageRequest.of(page - 1, limit, Sort.by(Sort.Direction.DESC, sortBy));
 
 		Slice<CvDTO> cvDTOs = cvService.getCvsFollowPage(emailCandidate, pageable);
 
@@ -154,7 +153,7 @@ public class ApplicationResController {
 			@AuthenticationPrincipal UserDetails userDetails) {
 		String emailCandidate = userDetails.getUsername();
 
-		Pageable pageable = PageRequest.of(page, limit, Sort.by(Sort.Direction.DESC, sortBy));
+		Pageable pageable = PageRequest.of(page - 1, limit, Sort.by(Sort.Direction.DESC, sortBy));
 
 		Slice<JobAppliedDTO> jobs = jobAppliedService.findJobAppliedByCandidate(emailCandidate, pageable);
 

@@ -12,8 +12,6 @@ import com.loihvk23.application_service.dto.request.ApplicationRequest;
 
 public interface ApplicationService {
 	ApplicationDTO postApplicationApplyJob(ApplicationRequest request, String emailCandidate);
-
-	CvDTO uploadCv(MultipartFile request, String emailCandidate) throws IOException;
 	
 	boolean checkJobApply(String jobId,String emailCandidate);
 

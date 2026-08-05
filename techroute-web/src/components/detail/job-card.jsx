@@ -13,8 +13,8 @@ function JobDetailCard({
   apply,
 }) {
   const { auth } = useContext(AuthContext);
-  const [isFavorite, setIsFavorite] = useState(job.isSaved ?? false);
-  const [isApply, setIsApply] = useState(job.isApplied ?? false);
+  const isFavorite = job.isSaved ?? false;
+  const isApply = job.isApplied ?? false;
 
   // useEffect(() => {
   //   const checkedApply = async () => {
@@ -114,7 +114,6 @@ function JobDetailCard({
         <div className="flex flex-row items-center gap-2 shrink-0 whitespace-nowrap pt-1">
           <button
             onClick={() => {
-              setIsFavorite(!isFavorite);
               saveJob(job.id);
             }}
             className="w-8 h-8 rounded-full bg-[#EFEFEF] flex items-center justify-center transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer focus:outline-none"

@@ -37,20 +37,20 @@ const CvUploadTag = () => {
         return;
       }
       setSelectedFile(file);
-      uploadCv();
+      uploadCv(file);
     } else {
       toast.warn("No file selected");
     }
   };
 
-  const uploadCv = async () => {
-    if (!selectedFile) {
+  const uploadCv = async (file) => {
+    if (!file) {
       toast.error("File CV is required!");
       return;
     }
 
     const formData = new FormData();
-    formData.append("file", selectedFile);
+    formData.append("file", file);
 
     setLoading(true);
     try {
@@ -62,6 +62,7 @@ const CvUploadTag = () => {
 
       if (data) {
         setCvs([...cvs, data]);
+        toast.success("Upload CV successfully !")
       }
     } catch (err) {
       toast.error(err.message);
@@ -79,7 +80,7 @@ const CvUploadTag = () => {
     }
 
     try {
-      const data = await axios.delete("applications/cv");
+      const data = await axios.delete("applications/profile/cv/"+cvId);
 
       if (data.isSuccess) {
         setCvs((prev) => prev.filter((item) => item.id != cvId));
@@ -101,6 +102,7 @@ const CvUploadTag = () => {
         );
 
         if (data) {
+          console.log(data)
           setCvs(data.content);
           setPrevious(!data?.first);
           setNext(!data?.last);

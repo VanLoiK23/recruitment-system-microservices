@@ -64,10 +64,21 @@ const HomePage = () => {
   const [isApply, setIsApply] = useState(false);
 
   const updateOnApply = (data) => {
-    setIsApply(data);
+    // setIsApply(data);
+    setJobs((prevJobs) =>
+      prevJobs.map((item) =>
+        item.id === data ? { ...item, isApplied: true } : item
+      )
+    );
   };
 
   const handleToggleSaveJob = async (jobId) => {
+    if (!auth.isAuthenticated) {
+      toast.warn("Pls Login before save this job !");
+      redirectLogin();
+      return;
+    }
+
     setJobs((prevJobs) =>
       prevJobs.map((item) =>
         item.id === jobId ? { ...item, isSaved: !item.isSaved } : item
@@ -127,7 +138,7 @@ const HomePage = () => {
     };
 
     fetchFilteredJobs();
-  }, [filters, sortBy, pageActive, pageSize]);
+  }, [filters, sortBy, pageActive, pageSize, auth]);
 
   return (
     <div className="min-h-screen w-full bg-white relative font-sans">

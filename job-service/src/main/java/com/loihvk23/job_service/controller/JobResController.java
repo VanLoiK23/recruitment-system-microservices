@@ -27,6 +27,7 @@ import com.loihvk23.job_service.dto.request.AdvanceFilterRequest;
 import com.loihvk23.job_service.dto.response.JobManagementResponse;
 import com.loihvk23.job_service.service.JobService;
 import com.loihvk23.job_service.service.SavedJobService;
+import com.loihvk23.job_service.service.UserAppliedJobService;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -39,6 +40,8 @@ public class JobResController {
 	private final JobService jobService;
 
 	private final SavedJobService savedJobService;
+	
+	private final UserAppliedJobService userAppliedJobService;
 
 	@GetMapping
 	public ResponseEntity<?> getListJobs(@RequestParam(name = "page", defaultValue = "1") int page,
@@ -200,4 +203,17 @@ public class JobResController {
 		return ResponseEntity.ok(jobs);
 	}
 
+	@GetMapping("/applied")
+	public ResponseEntity<?> getMyJobApplied(@RequestParam(name = "page", defaultValue = "1") int page,
+			@RequestParam(name = "limit", defaultValue = "7") int limit,
+			@RequestParam(name = "sortBy", defaultValue = "createdAt") String sortBy,
+			@AuthenticationPrincipal UserDetails userDetails) {
+		String email = userDetails.getUsername();
+
+		Pageable pageable = PageRequest.of(page - 1, limit, Sort.by(Sort.Direction.DESC, sortBy));
+
+		Slice<JobManagementResponse> jobs = userAppliedJobService.findAppliedJobsByUser(email, pageable);
+
+		return ResponseEntity.ok(jobs);
+	}
 }

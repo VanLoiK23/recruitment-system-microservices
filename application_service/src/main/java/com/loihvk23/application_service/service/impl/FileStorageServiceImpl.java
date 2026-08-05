@@ -38,4 +38,29 @@ public class FileStorageServiceImpl implements FileStorageService {
 
 		return uploadResult.get("secure_url").toString();
 	}
+	
+	@Override
+    public void deleteFile(String fileUrlOrPublicId) throws IOException {
+        if (fileUrlOrPublicId == null || fileUrlOrPublicId.isBlank()) {
+            return;
+        }
+
+        String publicId = extractPublicId(fileUrlOrPublicId);
+
+        Map<?, ?> result = cloudinary.uploader().destroy(publicId, ObjectUtils.asMap("resource_type", "raw"));
+    }
+
+    private String extractPublicId(String fileUrl) {
+        if (!fileUrl.startsWith("http://") && !fileUrl.startsWith("https://")) {
+            return fileUrl; 
+        }
+        
+        int uploadIndex = fileUrl.indexOf("/upload/");
+        if (uploadIndex != -1) {
+            String pathAfterUpload = fileUrl.substring(uploadIndex + 8);
+            return pathAfterUpload.replaceFirst("^v\\d+/", "");
+        }
+        
+        return fileUrl;
+    }
 }

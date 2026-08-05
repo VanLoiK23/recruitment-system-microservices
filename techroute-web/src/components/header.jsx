@@ -22,7 +22,7 @@ const NavBar = () => {
 
   const handleLogout = async () => {
     try {
-      const data = await axios.post("logout");
+      const data = await axios.post("auth/logout");
 
       if (data) {
         localStorage.removeItem("access_token");
@@ -124,7 +124,7 @@ const NavBar = () => {
               <button
                 onClick={() => {
                   setIsOpen(false);
-                  navigate("/profile");
+                  navigate("/profile#profile");
                 }}
                 className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
               >
@@ -217,7 +217,7 @@ const NavBar = () => {
                 <button
                   onClick={() => {
                     setIsOpen(false);
-                    navigate("/profile");
+                    navigate("/profile#profile");
                   }}
                   className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                 >

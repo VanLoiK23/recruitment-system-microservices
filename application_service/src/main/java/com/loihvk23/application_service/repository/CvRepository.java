@@ -11,5 +11,5 @@ import com.loihvk23.application_service.entity.CvEntity;
 public interface CvRepository extends JpaRepository<CvEntity, String> {
 	List<CvEntity> findByCandidateEmail(String candidateEmail);
 
-	Slice<CvEntity> findByCandidateEmail(String candidateEmail,Pageable pageable);
+	Slice<CvEntity> findByCandidateEmail(String candidateEmail, Pageable pageable);
 }

@@ -131,8 +131,11 @@ const CvCreateTag = ({ profileInfo, setIsEditModalOpen, onProfileUpdated }) => {
         ...updatedData,
       };
 
-      calculatePercent(payload);
-      const data = await axios.post("profile", payload);
+      const percent = calculatePercent(payload);
+      const data = await axios.post("profile", {
+        ...payload,
+        totalPercent: percent,
+      });
       if (data) toast.success("Profile updated successfully!");
     } catch (err) {
       toast.error(err.message);

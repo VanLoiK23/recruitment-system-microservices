@@ -1,6 +1,5 @@
 package com.loihvk23.application_service.service.impl;
 
-import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Stream;
@@ -9,12 +8,10 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
 import com.loihvk23.application_service.StatusEnum;
 import com.loihvk23.application_service.config.RabbitMQConfig;
 import com.loihvk23.application_service.dto.ApplicationDTO;
-import com.loihvk23.application_service.dto.CvDTO;
 import com.loihvk23.application_service.dto.JobCacheDTO;
 import com.loihvk23.application_service.dto.request.ApplicationRequest;
 import com.loihvk23.application_service.dto.request.UserAppliedJobEvent;
@@ -23,8 +20,6 @@ import com.loihvk23.application_service.exception.ResourceNotFoundException;
 import com.loihvk23.application_service.mapper.ApplicationMapper;
 import com.loihvk23.application_service.repository.ApplicationRepository;
 import com.loihvk23.application_service.service.ApplicationService;
-import com.loihvk23.application_service.service.CvService;
-import com.loihvk23.application_service.service.FileStorageService;
 import com.loihvk23.application_service.service.JobCacheService;
 
 import jakarta.persistence.EntityExistsException;
@@ -41,11 +36,7 @@ public class ApplicationServiceImpl implements ApplicationService {
 
 	private final JobCacheService jobCacheService;
 
-	private final FileStorageService fileStorageService;
-
 	private final RabbitTemplate rabbitTemplate;
-
-	private final CvService cvService;
 
 	@Override
 	@Transactional // if one of actions does not success then roll-back all
@@ -90,23 +81,6 @@ public class ApplicationServiceImpl implements ApplicationService {
 		rabbitTemplate.convertAndSend(RabbitMQConfig.JOB_EXCHANGE, RabbitMQConfig.JOB_EVENT_APPLY, jobAppliedEvent);
 
 		return applicationMapper.toDTO(applicationEntity);
-	}
-
-	@Override
-	@Transactional
-	public CvDTO uploadCv(MultipartFile file, String emailCandidate) throws IOException {
-		LocalDateTime dateTime = LocalDateTime.now();
-		String urlCv = fileStorageService.uploadCV(file);
-
-		if (urlCv == null || urlCv.isEmpty()) {
-			throw new IllegalArgumentException("Upload file CV failed. Try again !!");
-		}
-		CvDTO cvDTO = CvDTO.builder().candidateEmail(emailCandidate).fileName(file.getOriginalFilename())
-				.uploadedAt(dateTime).fileUrl(urlCv).build();
-
-		CvDTO savCvdto = cvService.save(cvDTO);
-
-		return savCvdto;
 	}
 
 	@Override

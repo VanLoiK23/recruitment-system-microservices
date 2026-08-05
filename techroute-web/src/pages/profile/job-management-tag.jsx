@@ -86,12 +86,8 @@ const JobManagementTag = () => {
 
   useEffect(() => {
     const fetchJob = async () => {
-      let urlFetch = "";
-      if (activeSubTab === "applied") {
-        urlFetch = "applications/profile/jobApplied";
-      } else {
-        urlFetch = `jobs/${activeSubTab}`;
-      }
+      const urlFetch = `jobs/${activeSubTab}`;
+      
       try {
         const data = await axios.get(urlFetch);
 

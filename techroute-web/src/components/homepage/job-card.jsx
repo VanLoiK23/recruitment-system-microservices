@@ -13,7 +13,7 @@ const JobCard = ({
   redirectLogin,
   isActive,
 }) => {
-  const [isFavorite, setIsFavorite] = useState(job.isSaved ?? false);
+  const isFavorite = job.isSaved ?? false;
   const { auth } = useContext(AuthContext);
 
   // useEffect(() => {
@@ -101,7 +101,6 @@ const JobCard = ({
         <button
           onClick={(e) => {
             e.preventDefault();
-            setIsFavorite(!isFavorite);
             saveJob(job.id);
           }}
           className="w-5 h-5 rounded-full bg-[#EFEFEF] flex items-center justify-center transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer focus:outline-none select-none"

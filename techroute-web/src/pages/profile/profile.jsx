@@ -7,6 +7,7 @@ import { EditProfileModal } from "./cv-create-component.jsx";
 import CvUploadTag from "./cv-upload-tag.jsx";
 import JobManagementTag from "./job-management-tag.jsx";
 import { toast } from "react-toastify";
+import EmailManagementTab from "./email-management-tag.jsx";
 
 const ProfilePage = () => {
   const location = useLocation();
@@ -74,7 +75,7 @@ const ProfilePage = () => {
   };
 
   const handleSaveModalInfo = async (updatedData) => {
-    setProfileInfo({ ...profileInfo, updatedData });
+    setProfileInfo({ ...profileInfo, ...updatedData });
     console.log({ ...profileInfo, ...updatedData });
     try {
       const data = await axios.post("profile", {
@@ -218,13 +219,8 @@ const ProfilePage = () => {
 
           {activeTab === "job-management" && <JobManagementTag />}
           {activeTab === "my-cv" && <CvUploadTag />}
-          {activeTab === "Email Management" && (
-            <div className="bg-white p-6 rounded-xl border">Quản lý Email</div>
-          )}
           {activeTab === "email-management" && (
-            <div className="bg-white p-6 rounded-xl border">
-              Bài kiểm tra tính cách
-            </div>
+            <EmailManagementTab />
           )}
         </div>
       </div>

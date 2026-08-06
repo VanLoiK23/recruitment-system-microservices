@@ -30,6 +30,7 @@ const CategoryPanel = ({
               className={`hover:bg-blue-200  hover:text-blue-500 whitespace-nowrap p-1 rounded-xl cursor-pointer justify-between flex items-center gap-3
                   ${
                     categoryActive.includes(index) &&
+                    contentActive[index]?.length > 0 &&
                     "bg-blue-200 text-blue-500"
                   }
                   `}
@@ -37,7 +38,7 @@ const CategoryPanel = ({
               <div className="flex items-center gap-1">
                 <BarChart3 className="w-3.5 h-3.5 text-blue-600" />
                 {category}
-                {contentActive[index] && (
+                {contentActive[index] && contentActive[index]?.length > 0 && (
                   <span>({contentActive[index]?.length})</span>
                 )}
               </div>

@@ -114,27 +114,6 @@ const JobDetailPage = () => {
     setIsApply(job.isApplied ?? false);
   }, [job.isSaved, job.isApplied]);
 
-  // useEffect(() => {
-  //   const checkedApply = async () => {
-  //     try {
-  //       const data = await axios.get(
-  //         `applications/check-apply?jobId=${job.id}`
-  //       );
-
-  //       if (data) {
-  //         setIsApply(data.isApply);
-  //       }
-  //     } catch (err) {
-  //       toast.error(err.message);
-  //       console.error(`Status code from Backend [${err.code}]:`, err.message);
-  //     }
-  //   };
-
-  //   if (job.id && auth.isAuthenticated) {
-  //     checkedApply();
-  //   }
-  // }, [job.id]);
-
   const onChangePage = (page, isPrev) => {
     if (isPrev) {
       if (previous) {

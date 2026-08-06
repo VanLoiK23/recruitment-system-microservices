@@ -251,7 +251,7 @@ const ApplyJobModal = ({ auth, job, onClose, updateApplySuccess }) => {
             <h3 className="text-lg font-semibold text-blue-600 mb-4">
               Current resumes:
             </h3>
-            <div className="flex flex-col justify-center gap-3">
+            <div className="flex flex-col py-1 pr-1 gap-3 h-55 overflow-y-auto">
               {cvList.map((cv, index) => {
                 const isSelected = selectedCvId === cv.id;
                 return (

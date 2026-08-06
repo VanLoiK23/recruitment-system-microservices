@@ -6,7 +6,6 @@ function JobDetailView({
   redirectLogin,
   saveJob,
   onApply,
-  isApply,
 }) {
 
   const roles = job?.roles || [
@@ -36,7 +35,6 @@ function JobDetailView({
           saveJob(jobId);
         }}
         onApply={onApply}
-        apply={isApply}
       />
 
       <div className="w-full border-t border-gray-200/80 my-2"></div>

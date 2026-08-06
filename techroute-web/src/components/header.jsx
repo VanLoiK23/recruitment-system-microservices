@@ -39,6 +39,11 @@ const NavBar = () => {
     }
   };
 
+  const navLinkStyle = ({ isActive }) =>
+    isActive
+      ? "text-[#5B5FC7] font-bold border-b-2 border-[#5B5FC7] pb-1 transition-all"
+      : "text-gray-600 hover:text-[#5B5FC7] font-medium transition-colors pb-1";
+
   return (
     <nav className="w-full p-6 bg-white pb-4 px-auto md:px-14 border-b border-gray-100 font-sans flex items-center justify-between">
       <div
@@ -53,65 +58,40 @@ const NavBar = () => {
 
       <div className="hidden min-[650px]:flex items-center gap-7 md:gap-20">
         <div className="hidden min-[650px]:flex items-center gap-x-12 text-sm font-medium">
-          <NavLink
-            to="/blog"
-            className={({ isActive }) =>
-              isActive
-                ? "text-[#8A2BE2] font-semibold"
-                : "text-gray-500 hover:text-gray-800 transition-colors"
-            }
-          >
-            Blog & News
+          <NavLink to="/" className={navLinkStyle}>
+            All Jobs
           </NavLink>
-          <NavLink
-            to="/create-cv"
-            className={({ isActive }) =>
-              isActive
-                ? "text-[#8A2BE2] font-semibold"
-                : "text-gray-500 hover:text-gray-800 transition-colors"
-            }
-          >
+
+          <NavLink to="/create-cv" className={navLinkStyle}>
             CV Builder
           </NavLink>
-          {auth.isAuthenticated && (
-            <NavLink
-              to="/my-applications"
-              className={({ isActive }) =>
-                isActive
-                  ? "text-[#8A2BE2] font-semibold"
-                  : "text-gray-500 hover:text-gray-800 transition-colors"
-              }
-            >
-              My Applications
-            </NavLink>
-          )}
+
+          <NavLink to="/blog" className={navLinkStyle}>
+            Tech Blog
+          </NavLink>
+
         </div>
 
         <div className="relative" ref={dropdownRef}>
-          <button
-            onClick={() => {
-              if (!auth?.isAuthenticated) {
-                navigate("/auth");
-              } else {
-                setIsOpen(!isOpen);
-              }
-            }}
-            className="cursor-pointer w-9 h-9 rounded-full bg-[#007AFF] flex items-center justify-center text-white hover:opacity-90 transition-opacity focus:outline-none"
-          >
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              viewBox="0 0 24 24"
+          {auth?.isAuthenticated ? (
+            <button
+              type="button"
+              onClick={() => setIsOpen(!isOpen)}
+              className="w-10 h-10 rounded-full bg-[#5B5FC7]/10 text-[#5B5FC7] font-bold flex items-center justify-center hover:bg-[#5B5FC7]/20 transition-all focus:outline-none border border-[#5B5FC7]/20 cursor-pointer"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-              />
-            </svg>
-          </button>
+              {auth?.user?.fullName
+                ? auth.user.fullName.charAt(0).toUpperCase()
+                : "U"}
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => navigate("/auth")}
+              className="px-4 py-2 text-sm font-semibold text-white bg-[#5B5FC7] hover:bg-[#4C50B6] rounded-lg transition-colors shadow-xs cursor-pointer"
+            >
+              Sign In
+            </button>
+          )}
 
           {isOpen && auth?.isAuthenticated && (
             <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-100 py-1 z-50 animate-in fade-in slide-in-from-top-1 duration-100">
@@ -133,11 +113,20 @@ const NavBar = () => {
               <button
                 onClick={() => {
                   setIsOpen(false);
-                  navigate("/saved-jobs");
+                  navigate("/profile#job-management");
                 }}
                 className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
               >
-                Saved Jobs
+                Applied Job
+              </button>
+              <button
+                onClick={() => {
+                  setIsOpen(false);
+                  navigate("/profile#job-management");
+                }}
+                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
+              >
+                CV Upload
               </button>
 
               <div className="border-t border-gray-100 my-1"></div>
@@ -154,26 +143,25 @@ const NavBar = () => {
       </div>
 
       <div className="relative min-[650px]:hidden" ref={dropdownRef}>
-        <button
-          onClick={() => {
-            setIsOpen(!isOpen);
-          }}
-          className="w-9 h-9 rounded-full bg-[#007AFF] flex items-center justify-center text-white hover:opacity-90 transition-opacity focus:outline-none"
-        >
-          <svg
-            className="w-4 h-4"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            viewBox="0 0 24 24"
+        {auth?.isAuthenticated ? (
+          <button
+            type="button"
+            onClick={() => setIsOpen(!isOpen)}
+            className="w-10 h-10 rounded-full bg-[#5B5FC7]/10 text-[#5B5FC7] font-bold flex items-center justify-center hover:bg-[#5B5FC7]/20 transition-all focus:outline-none border border-[#5B5FC7]/20 cursor-pointer"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-            />
-          </svg>
-        </button>
+            {auth?.user?.fullName
+              ? auth.user.fullName.charAt(0).toUpperCase()
+              : "U"}
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => navigate("/auth")}
+            className="px-4 py-2 text-sm font-semibold text-white bg-[#5B5FC7] hover:bg-[#4C50B6] rounded-lg transition-colors shadow-xs cursor-pointer"
+          >
+            Sign In
+          </button>
+        )}
 
         {isOpen && (
           <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-100 py-1 z-50 animate-in fade-in slide-in-from-top-1 duration-100">
@@ -208,20 +196,29 @@ const NavBar = () => {
                 <button
                   onClick={() => {
                     setIsOpen(false);
-                    navigate("/my-applications");
-                  }}
-                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                >
-                  My Applications
-                </button>
-                <button
-                  onClick={() => {
-                    setIsOpen(false);
                     navigate("/profile#profile");
                   }}
                   className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                 >
                   My Profile
+                </button>
+                <button
+                  onClick={() => {
+                    setIsOpen(false);
+                    navigate("/profile#job-management");
+                  }}
+                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
+                >
+                  Applied Job
+                </button>
+                <button
+                  onClick={() => {
+                    setIsOpen(false);
+                    navigate("/profile#job-management");
+                  }}
+                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
+                >
+                  CV Upload
                 </button>
               </>
             )}

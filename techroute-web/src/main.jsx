@@ -17,6 +17,8 @@ import NotFound from "./pages/error/NotFound.jsx";
 import ForgotPasswordPage from "./pages/auth/forgot-password.jsx";
 import ResetPasswordPage from "./pages/auth/reset-password.jsx";
 import ProfilePage from "./pages/profile/profile.jsx";
+import CvBuilderLanding from "./pages/client/cv-builder.jsx";
+import TechBlog from "./pages/client/tech-blog.jsx";
 const router = createBrowserRouter([
   {
     path: "/",
@@ -36,10 +38,13 @@ const router = createBrowserRouter([
       //   element: <AboutPage />,
       // },
       {
-        path: "profile",
-        element: <ProfilePage />,
+        path: "create-cv",
+        element: <CvBuilderLanding />,
       },
-
+      {
+        path: "blog",
+        element: <TechBlog />,
+      },
       // Private
       {
         element: <ProtectedRoute />,
@@ -56,10 +61,10 @@ const router = createBrowserRouter([
               // { path: "today-schedule", element: <TodaySchedule /> },
             ],
           },
-          // {
-          //   path: "profile",
-          //   element: <ProfilePage />,
-          // },
+          {
+            path: "profile",
+            element: <ProfilePage />,
+          },
         ],
       },
     ],

@@ -23,7 +23,7 @@ const HomePage = () => {
   const [startPage, setStarPage] = useState(0);
   const [numberPageDisplay, setNumberPageDisplay] = useState(3);
 
-  const [pageSize, setPageSize] = useState(3);
+  const [pageSize, setPageSize] = useState(7);
   const [pageActive, setPageActive] = useState(1);
 
   const [loading, setLoading] = useState(false);
@@ -61,10 +61,7 @@ const HomePage = () => {
     setShowApplyPopup(true);
   };
 
-  const [isApply, setIsApply] = useState(false);
-
   const updateOnApply = (data) => {
-    // setIsApply(data);
     setJobs((prevJobs) =>
       prevJobs.map((item) =>
         item.id === data ? { ...item, isApplied: true } : item
@@ -278,7 +275,6 @@ const HomePage = () => {
                   }}
                   onClickJobActive={() => {
                     setJobActive(index);
-                    setIsApply(false); //set default
                   }}
                   redirectLogin={redirectLogin}
                   saveJob={(jobId) => {
@@ -348,7 +344,6 @@ const HomePage = () => {
                 handleToggleSaveJob(jobId);
               }}
               onApply={onApply}
-              isApply={isApply}
             />
           </div>
         ) : (

@@ -16,25 +16,6 @@ const JobCard = ({
   const isFavorite = job.isSaved ?? false;
   const { auth } = useContext(AuthContext);
 
-  // useEffect(() => {
-  //   const checkJobSave = async () => {
-  //     try {
-  //       const data = await axios.get(`jobs/${job.id}/is-saved`);
-
-  //       if (data) {
-  //         setIsFavorite(data.isSaved);
-  //       }
-  //     } catch (err) {
-  //       toast.error(err.message);
-  //       console.error(`Status code from Backend [${err.code}]:`, err.message);
-  //     }
-  //   };
-
-  //   if (job && auth.isAuthenticated) {
-  //     checkJobSave();
-  //   }
-  // }, [job]);
-
   return (
     <div
       className={`relative w-full p-3.5 rounded-xl border transition-all duration-200 cursor-pointer hover:scale-[1.02] z-0 ${

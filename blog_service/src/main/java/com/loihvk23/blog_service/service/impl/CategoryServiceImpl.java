@@ -42,8 +42,18 @@ public class CategoryServiceImpl implements CategoryService {
 	}
 
 	@Override
-	public CategoryDTO saveCategory(CategoryDTO categoryDTO) {		
+	public CategoryDTO saveCategory(CategoryDTO categoryDTO) {
+		if (categoryDTO.getId() == null || categoryDTO.getId().isBlank()) {
+			if (categoryRepository.existsByName(categoryDTO.getName())) {
+				throw new IllegalArgumentException("Category's name has already exist");
+			}
+		}
 		return categoryMapper.toDTO(categoryRepository.save(categoryMapper.toDocument(categoryDTO)));
+	}
+
+	@Override
+	public void deleteCategory(String categoryId) {
+		categoryRepository.deleteById(categoryId);
 	}
 
 }

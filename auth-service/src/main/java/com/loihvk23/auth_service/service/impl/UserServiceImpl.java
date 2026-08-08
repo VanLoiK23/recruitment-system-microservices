@@ -118,6 +118,8 @@ public class UserServiceImpl implements UserService {
 
 	@Override
 	public boolean generateTokenAndSendMailReset(String email) {
+		userRepository.findByEmail(email).orElseThrow(() -> new IllegalArgumentException("Email not found"));
+
 		String resetToken = UUID.randomUUID().toString();
 
 		redisTemplate.opsForValue().set("RESET_" + resetToken, email, 15, TimeUnit.MINUTES);
@@ -132,13 +134,13 @@ public class UserServiceImpl implements UserService {
 		String email = (String) redisTemplate.opsForValue().get(key);
 
 		if (email == null || email.isBlank()) {
-			return false;
+			throw new IllegalArgumentException("Token is expired or is incorrect");
 		}
 
 		UserEntity userEntity = userRepository.findByEmail(email).orElse(null);
 
 		if (userEntity == null) {
-			return false;
+			throw new IllegalArgumentException("Email not found");
 		}
 		userEntity.setPassword(passwordEncoder.encode(password));
 

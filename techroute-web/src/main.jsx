@@ -19,6 +19,7 @@ import ResetPasswordPage from "./pages/auth/reset-password.jsx";
 import ProfilePage from "./pages/profile/profile.jsx";
 import CvBuilderLanding from "./pages/client/cv-builder.jsx";
 import TechBlog from "./pages/client/tech-blog.jsx";
+import BlogDetail from "./pages/client/tech-blog-detail.jsx";
 const router = createBrowserRouter([
   {
     path: "/",
@@ -44,6 +45,10 @@ const router = createBrowserRouter([
       {
         path: "blog",
         element: <TechBlog />,
+      },
+      {
+        path: "blog/:id",
+        element: <BlogDetail />
       },
       // Private
       {

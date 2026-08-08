@@ -13,4 +13,6 @@ public interface CategoryService {
 	List<CategoryDTO> getCategories();
 
 	CategoryDTO saveCategory(CategoryDTO categoryDTO);
+	
+	void deleteCategory(String categoryId);
 }

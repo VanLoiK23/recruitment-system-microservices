@@ -40,7 +40,7 @@ public class JobResController {
 	private final JobService jobService;
 
 	private final SavedJobService savedJobService;
-	
+
 	private final UserAppliedJobService userAppliedJobService;
 
 	@GetMapping
@@ -110,7 +110,7 @@ public class JobResController {
 	}
 
 	@DeleteMapping("/{id}")
-	public ResponseEntity<?> updateJob(@PathVariable(name = "id") String jobId,
+	public ResponseEntity<?> deleteJob(@PathVariable(name = "id") String jobId,
 			@AuthenticationPrincipal UserDetails userDetails) {
 
 		String email = userDetails.getUsername();

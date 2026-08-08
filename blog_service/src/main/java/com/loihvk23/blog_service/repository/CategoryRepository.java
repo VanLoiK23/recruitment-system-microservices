@@ -13,4 +13,6 @@ public interface CategoryRepository extends MongoRepository<CategoryDocument, St
 	List<CategoryDocument> findByName(String name);
 	
 	Slice<CategoryDocument> findAllBy(Pageable pageable);
+	
+	boolean existsByName(String name);
 }

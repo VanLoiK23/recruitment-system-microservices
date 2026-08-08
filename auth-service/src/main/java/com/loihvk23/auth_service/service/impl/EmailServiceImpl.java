@@ -16,7 +16,7 @@ public class EmailServiceImpl implements EmailService {
 
 	private final JavaMailSenderImpl mailSender;
 
-	@Value("url.front-end")
+	@Value("${url.front-end}")
 	private String url;
 
 	public boolean sendOTPEmail(String toEmail, String OTP) {

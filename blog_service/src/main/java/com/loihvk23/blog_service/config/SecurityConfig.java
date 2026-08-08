@@ -2,6 +2,7 @@ package com.loihvk23.blog_service.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -16,7 +17,7 @@ import lombok.RequiredArgsConstructor;
 @EnableWebSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
-	
+
 	private final HeaderAuthenticationFilter headerAuthenticationFilter;
 
 	@Bean
@@ -27,7 +28,19 @@ public class SecurityConfig {
 	@Bean
 	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 		http.csrf(csrf -> csrf.disable()).cors(cors -> cors.disable())
-				.authorizeHttpRequests(auth -> auth
+				.authorizeHttpRequests(auth -> auth.requestMatchers(HttpMethod.GET, "/api/blogs/**").permitAll()
+
+						.requestMatchers(HttpMethod.POST, "/api/blogs/**").hasAnyRole("RECRUITER", "ADMIN")
+						.requestMatchers(HttpMethod.PUT, "/api/blogs/**").hasAnyRole("RECRUITER", "ADMIN")
+
+						.requestMatchers(HttpMethod.DELETE, "/api/blogs/**").hasAnyRole("RECRUITER", "ADMIN")
+
+						.requestMatchers(HttpMethod.PUT, "/api/blogs/approve/**").hasRole("ADMIN")
+
+						.requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
+						
+						.requestMatchers(HttpMethod.POST, "/api/categories/**").hasRole("ADMIN")
+						.requestMatchers(HttpMethod.DELETE, "/api/categories/**").hasRole("ADMIN")
 						.anyRequest().authenticated())
 				// turn off session in system, make sure STATE LESS
 				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

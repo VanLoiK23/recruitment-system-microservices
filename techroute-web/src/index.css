@@ -1,5 +1,6 @@
 @import url('https://googleapis.com');
 @import "tailwindcss";
+@plugin "@tailwindcss/typography";
 
 html, body {
     margin: 0;

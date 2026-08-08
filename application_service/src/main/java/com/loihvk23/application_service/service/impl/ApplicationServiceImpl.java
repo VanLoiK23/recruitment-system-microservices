@@ -155,7 +155,7 @@ public class ApplicationServiceImpl implements ApplicationService {
 
 		if (!applicationEntity.getCandidateEmail().equalsIgnoreCase(emailCandidate)) {
 			throw new IllegalArgumentException(
-					"You can't delete status application (This application wasn't been created by " + emailCandidate
+					"You can't delete the application (This application wasn't been created by " + emailCandidate
 							+ ")");
 		}
 

@@ -8,9 +8,17 @@ import com.loihvk23.blog_service.dto.BlogDTO;
 public interface BlogService {
 	Slice<BlogDTO> getBlogsSlice(Pageable pageable);
 
-	Slice<BlogDTO> findBlogsByCategory(String category, Pageable pageable);
+	Slice<BlogDTO> findBlogsByTitleAndCategory(String searchQuery, String category, Pageable pageable);
+	
+	Slice<BlogDTO> findBlogRelevantTag(String allTags, Pageable pageable);
+	
+	BlogDTO findById(String blogId);
+	
+	BlogDTO approveBlog(String blogId);
 
-	BlogDTO saveBlog(String email, BlogDTO blogDTO);
+	BlogDTO createBlog(BlogDTO blogDTO,String email, String role);
+	
+	BlogDTO updateBlog(BlogDTO blogDTO,String email, String role);
 
-	void deleteBlog(String email, String blogId);
+	void deleteBlog(String blogId, String email);
 }

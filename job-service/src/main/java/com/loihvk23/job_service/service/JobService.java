@@ -9,12 +9,17 @@ import org.springframework.data.domain.Slice;
 
 import com.loihvk23.job_service.dto.JobDTO;
 import com.loihvk23.job_service.dto.request.AdvanceFilterRequest;
+import com.loihvk23.job_service.dto.response.JobAppliedResponse;
 import com.loihvk23.job_service.dto.response.JobManagementResponse;
 
 public interface JobService {
 	Slice<JobDTO> findAll(Pageable pageable,String email);
 	
 	Slice<JobDTO> findByRecruiter(String recruiterEmail, Pageable pageable);
+	
+	int getTotalElementJobByRecruiter(String recruiterEmail);
+	
+	JobAppliedResponse getJobAppliedByRecruiter(String recruiterEmail, String query, Pageable pageable);
 	
 	JobDTO createNewJob(JobDTO jobDTO,String recruiterEmail);
 	

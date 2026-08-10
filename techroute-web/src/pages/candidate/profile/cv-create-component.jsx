@@ -14,8 +14,8 @@ import {
 } from "react-icons/fi";
 import ReactQuill from "react-quill-new";
 import "react-quill-new/dist/quill.snow.css";
-import skills from "../../components/profile/Skill-list";
-import cities from "../../components/city-province";
+import skills from "../../../components/profile/Skill-list";
+import cities from "../../../components/city-province";
 
 const EditProfileModal = ({ isOpen, onClose, data, onSave }) => {
   const [formData, setFormData] = useState(data);

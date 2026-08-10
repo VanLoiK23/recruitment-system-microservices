@@ -1,4 +1,4 @@
-import axios from "../../utils/axios.customize";
+import axios from "../../../utils/axios.customize";
 import React, { useEffect, useState } from "react";
 import {
   FiBriefcase,

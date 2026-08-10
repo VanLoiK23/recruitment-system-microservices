@@ -21,6 +21,11 @@ const NavBar = () => {
   // }, []);
 
   const handleLogout = async () => {
+    const check = window.confirm("Do you want to logout ?");
+
+    if (!check) {
+      return;
+    }
     try {
       const data = await axios.post("auth/logout");
 
@@ -69,7 +74,6 @@ const NavBar = () => {
           <NavLink to="/blog" className={navLinkStyle}>
             Tech Blog
           </NavLink>
-
         </div>
 
         <div className="relative" ref={dropdownRef}>
@@ -104,7 +108,7 @@ const NavBar = () => {
               <button
                 onClick={() => {
                   setIsOpen(false);
-                  navigate("/profile#profile");
+                  navigate("/candidate/profile#profile");
                 }}
                 className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
               >
@@ -113,7 +117,7 @@ const NavBar = () => {
               <button
                 onClick={() => {
                   setIsOpen(false);
-                  navigate("/profile#job-management");
+                  navigate("/candidate/profile#job-management");
                 }}
                 className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
               >
@@ -122,7 +126,7 @@ const NavBar = () => {
               <button
                 onClick={() => {
                   setIsOpen(false);
-                  navigate("/profile#job-management");
+                  navigate("/candidate/profile#my-cv");
                 }}
                 className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
               >
@@ -196,7 +200,7 @@ const NavBar = () => {
                 <button
                   onClick={() => {
                     setIsOpen(false);
-                    navigate("/profile#profile");
+                    navigate("/candidate/profile#profile");
                   }}
                   className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                 >
@@ -205,7 +209,7 @@ const NavBar = () => {
                 <button
                   onClick={() => {
                     setIsOpen(false);
-                    navigate("/profile#job-management");
+                    navigate("/candidate/profile#job-management");
                   }}
                   className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
                 >
@@ -214,7 +218,7 @@ const NavBar = () => {
                 <button
                   onClick={() => {
                     setIsOpen(false);
-                    navigate("/profile#job-management");
+                    navigate("/candidate/profile#my-cv");
                   }}
                   className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
                 >

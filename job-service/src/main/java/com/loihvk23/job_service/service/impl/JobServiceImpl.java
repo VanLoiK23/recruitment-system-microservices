@@ -36,6 +36,7 @@ import com.loihvk23.job_service.document.UserAppliedJobDocument;
 import com.loihvk23.job_service.dto.JobDTO;
 import com.loihvk23.job_service.dto.request.AdvanceFilterRequest;
 import com.loihvk23.job_service.dto.request.JobEvent;
+import com.loihvk23.job_service.dto.response.JobAppliedResponse;
 import com.loihvk23.job_service.dto.response.JobManagementResponse;
 import com.loihvk23.job_service.exception.DuplicateResourceException;
 import com.loihvk23.job_service.exception.ResourceNotFoundException;
@@ -61,7 +62,7 @@ public class JobServiceImpl implements JobService {
 	private final RedisTemplate<String, Object> redisTemplate;
 
 	private final SavedJobRepository savedJobRepository;
-	
+
 	private final UserAppliedJobRepository userAppliedJobRepository;
 
 	@Override
@@ -78,9 +79,10 @@ public class JobServiceImpl implements JobService {
 
 		Set<String> savedJobIdsInCurrentPage = savedJobRepository.findByUserEmailAndJobIdIn(email, currentJobIds)
 				.stream().map(SavedJobDocument::getJobId).collect(Collectors.toSet());
-		
-		Set<String> appliedJobIdsInCurrentPage = userAppliedJobRepository.findByCandidateEmailAndJobIdIn(email, currentJobIds)
-				.stream().map(UserAppliedJobDocument::getJobId).collect(Collectors.toSet());
+
+		Set<String> appliedJobIdsInCurrentPage = userAppliedJobRepository
+				.findByCandidateEmailAndJobIdIn(email, currentJobIds).stream().map(UserAppliedJobDocument::getJobId)
+				.collect(Collectors.toSet());
 
 		Slice<JobDTO> adjustJobDtos = jobDTOs.map(job -> {
 			job.setIsSaved(savedJobIdsInCurrentPage.contains(job.getId()));
@@ -95,10 +97,33 @@ public class JobServiceImpl implements JobService {
 	@Override
 	public Slice<JobDTO> findByRecruiter(String recruiterEmail, Pageable pageable) {
 		Slice<JobDocument> jobDocuments = jobRepository.findByRecruiterEmail(recruiterEmail, pageable);
-
 		Slice<JobDTO> jobDTOs = jobDocuments.map(jobMapper::toDTO);
 
 		return jobDTOs;
+	}
+
+	@Override
+	public int getTotalElementJobByRecruiter(String recruiterEmail) {
+		long totalJob = jobRepository.countByRecruiterEmail(recruiterEmail);
+
+		return (int) totalJob;
+	}
+
+	@Override
+	public JobAppliedResponse getJobAppliedByRecruiter(String recruiterEmail, String query, Pageable pageable) {
+		if (query == null || query.isBlank()) {
+			return JobAppliedResponse.builder().jobSlice(findByRecruiter(recruiterEmail, pageable))
+					.totalElement(getTotalElementJobByRecruiter(recruiterEmail)).build();
+
+		}
+		Slice<JobDocument> jobDocuments = jobRepository.findByRecruiterEmailAndTitleContainingIgnoreCase(recruiterEmail,
+				query, pageable);
+		Slice<JobDTO> jobDTOs = jobDocuments.map(jobMapper::toDTO);
+
+		return JobAppliedResponse.builder().jobSlice(jobDTOs)
+				.totalElement(
+						(int) jobRepository.countByRecruiterEmailAndTitleContainingIgnoreCase(recruiterEmail, query))
+				.build();
 	}
 
 	@Override
@@ -175,9 +200,9 @@ public class JobServiceImpl implements JobService {
 
 		Set<String> savedJobIds = savedJobRepository.findByUserEmailAndJobId(email, jobId).stream()
 				.map(SavedJobDocument::getJobId).collect(Collectors.toSet());
-		
-		Set<String> appliedJobIds = userAppliedJobRepository.findByCandidateEmailAndJobId(email, jobId)
-				.stream().map(UserAppliedJobDocument::getJobId).collect(Collectors.toSet());
+
+		Set<String> appliedJobIds = userAppliedJobRepository.findByCandidateEmailAndJobId(email, jobId).stream()
+				.map(UserAppliedJobDocument::getJobId).collect(Collectors.toSet());
 
 		JobDTO jobDTO = jobMapper.toDTO(jobDocument);
 		jobDTO.setIsSaved(savedJobIds.contains(jobId));
@@ -256,8 +281,9 @@ public class JobServiceImpl implements JobService {
 
 		Set<String> savedJobIdsInCurrentPage = savedJobRepository.findByUserEmailAndJobIdIn(email, currentJobIds)
 				.stream().map(SavedJobDocument::getJobId).collect(Collectors.toSet());
-		Set<String> appliedJobIdsInCurrentPage = userAppliedJobRepository.findByCandidateEmailAndJobIdIn(email, currentJobIds)
-				.stream().map(UserAppliedJobDocument::getJobId).collect(Collectors.toSet());
+		Set<String> appliedJobIdsInCurrentPage = userAppliedJobRepository
+				.findByCandidateEmailAndJobIdIn(email, currentJobIds).stream().map(UserAppliedJobDocument::getJobId)
+				.collect(Collectors.toSet());
 
 		List<JobDTO> adjustJobDtos = jobDTOs.stream().map(job -> {
 			job.setIsSaved(savedJobIdsInCurrentPage.contains(job.getId()));
@@ -284,9 +310,10 @@ public class JobServiceImpl implements JobService {
 
 		Set<String> savedJobIdsInCurrentPage = savedJobRepository.findByUserEmailAndJobIdIn(email, currentJobIds)
 				.stream().map(SavedJobDocument::getJobId).collect(Collectors.toSet());
-		Set<String> appliedJobIdsInCurrentPage = userAppliedJobRepository.findByCandidateEmailAndJobIdIn(email, currentJobIds)
-				.stream().map(UserAppliedJobDocument::getJobId).collect(Collectors.toSet());
-		
+		Set<String> appliedJobIdsInCurrentPage = userAppliedJobRepository
+				.findByCandidateEmailAndJobIdIn(email, currentJobIds).stream().map(UserAppliedJobDocument::getJobId)
+				.collect(Collectors.toSet());
+
 		Slice<JobDTO> adjustJobDtos = jobDTOs.map(job -> {
 			job.setIsSaved(savedJobIdsInCurrentPage.contains(job.getId()));
 			job.setIsApplied(appliedJobIdsInCurrentPage.contains(job.getId()));

@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.loihvk23.job_service.dto.JobDTO;
 import com.loihvk23.job_service.dto.request.AdvanceFilterRequest;
+import com.loihvk23.job_service.dto.response.JobAppliedResponse;
 import com.loihvk23.job_service.dto.response.JobManagementResponse;
 import com.loihvk23.job_service.service.JobService;
 import com.loihvk23.job_service.service.SavedJobService;
@@ -117,7 +118,7 @@ public class JobResController {
 
 		jobService.deleteJob(jobId, email);
 
-		return ResponseEntity.ok(Map.of("message", "Delete Successfully !"));
+		return ResponseEntity.ok(Map.of("success", true));
 	}
 
 	@PostMapping("/filter")
@@ -215,5 +216,21 @@ public class JobResController {
 		Slice<JobManagementResponse> jobs = userAppliedJobService.findAppliedJobsByUser(email, pageable);
 
 		return ResponseEntity.ok(jobs);
+	}
+
+	// recruiter
+	@GetMapping("/posted")
+	public ResponseEntity<?> getJobsPosted(@RequestParam(name = "page", defaultValue = "1") int page,
+			@RequestParam(name = "limit", defaultValue = "7") int limit,
+			@RequestParam(name = "sortBy", defaultValue = "createdAt") String sortBy,
+			@RequestParam(name = "query", defaultValue = "") String query,
+			@AuthenticationPrincipal UserDetails userDetails) {
+		String recruiterEmail = userDetails.getUsername();
+
+		Pageable pageable = PageRequest.of(page - 1, limit, Sort.by(Sort.Direction.DESC, sortBy));
+
+		JobAppliedResponse jobAppliedResponse = jobService.getJobAppliedByRecruiter(recruiterEmail, query, pageable);
+
+		return ResponseEntity.ok(jobAppliedResponse);
 	}
 }

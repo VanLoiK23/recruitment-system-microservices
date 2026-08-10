@@ -1,8 +1,8 @@
 import React, { useContext, useEffect, useState } from "react";
 import { MapPin, Clock, Heart } from "lucide-react";
 import { AuthContext } from "../context/auth.context";
-import axios from "../../utils/axios.customize";
-import { toast } from "react-toastify";
+
+
 function JobDetailCard({
   job,
   isDetail,

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
-import axios from "../../utils/axios.customize";
+import axios from "../../../utils/axios.customize";
 import {
   FiUploadCloud,
   FiDownload,
@@ -10,7 +10,7 @@ import {
   FiClock,
   FiHash,
 } from "react-icons/fi";
-import CircleLoading from "../../components/animation/animate-loading";
+import CircleLoading from "../../../components/animation/animate-loading";
 
 const CvUploadTag = () => {
   const [cvs, setCvs] = useState([]);

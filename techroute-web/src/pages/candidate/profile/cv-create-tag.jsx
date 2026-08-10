@@ -9,10 +9,10 @@ import {
   FiX,
 } from "react-icons/fi";
 import { toast } from "react-toastify";
-import skills from "../../components/profile/Skill-list.jsx";
-import axios from "../../utils/axios.customize.js";
+import skills from "../../../components/profile/Skill-list.jsx";
+import axios from "../../../utils/axios.customize.js";
 import { PDFDownloadLink, PDFViewer } from "@react-pdf/renderer";
-import CvTemplate from "../../pdf-templates/cv-template.jsx";
+import CvTemplate from "../../../pdf-templates/cv-template.jsx";
 import {
   DynamicSection,
   WorkSkillSelector,

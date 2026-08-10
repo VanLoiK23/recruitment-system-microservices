@@ -9,17 +9,18 @@ import { AuthWrapper } from "./components/context/auth.context.jsx";
 import ProtectedRoute from "./route/ProtectedRoute.jsx";
 import RoleRoute from "./route/RoleRoute.jsx";
 import AuthPage from "./pages/auth/auth.jsx";
-import HomePage from "./pages/client/homepage.jsx";
-import JobDetailPage from "./pages/client/job-detail.jsx";
+import HomePage from "./pages/candidate/homepage.jsx";
+import JobDetailPage from "./pages/candidate/job-detail.jsx";
 import ConfirmEmailPage from "./pages/auth/confirm-email.jsx";
 import Forbidden from "./pages/error/Forbidden.jsx";
 import NotFound from "./pages/error/NotFound.jsx";
 import ForgotPasswordPage from "./pages/auth/forgot-password.jsx";
 import ResetPasswordPage from "./pages/auth/reset-password.jsx";
-import ProfilePage from "./pages/profile/profile.jsx";
-import CvBuilderLanding from "./pages/client/cv-builder.jsx";
-import TechBlog from "./pages/client/tech-blog.jsx";
-import BlogDetail from "./pages/client/tech-blog-detail.jsx";
+import ProfilePage from "./pages/candidate/profile/profile.jsx";
+import CvBuilderLanding from "./pages/candidate/cv-builder.jsx";
+import TechBlog from "./pages/blog/tech-blog.jsx";
+import BlogDetail from "./pages/blog/tech-blog-detail.jsx";
+import RecruitmentPostingPage from "./pages/recruiter/recruitment-posting.jsx";
 const router = createBrowserRouter([
   {
     path: "/",
@@ -27,17 +28,13 @@ const router = createBrowserRouter([
     children: [
       //Public
       {
-        index: true, 
+        index: true,
         element: <HomePage />,
       },
       {
         path: "jobs/:id",
-        element: <JobDetailPage />
+        element: <JobDetailPage />,
       },
-      // {
-      //   path: "about",
-      //   element: <AboutPage />,
-      // },
       {
         path: "create-cv",
         element: <CvBuilderLanding />,
@@ -48,7 +45,11 @@ const router = createBrowserRouter([
       },
       {
         path: "blog/:id",
-        element: <BlogDetail />
+        element: <BlogDetail />,
+      },
+      {
+        path: "job-posting",
+        element: <RecruitmentPostingPage />,
       },
       // Private
       {
@@ -62,13 +63,29 @@ const router = createBrowserRouter([
               </RoleRoute>
             ),
             children: [
-              // { index: true, element: <CandidateDashboard /> },
+              { index: true, element: <ProfilePage /> },
               // { path: "today-schedule", element: <TodaySchedule /> },
+              {
+                path: "profile",
+                element: <ProfilePage />,
+              },
             ],
           },
           {
-            path: "profile",
-            element: <ProfilePage />,
+            path: "recruiter",
+            element: (
+              <RoleRoute allowedRoles={["recruiter"]}>
+                <Outlet />
+              </RoleRoute>
+            ),
+            children: [
+              // { index: true, element: <CandidateDashboard /> },
+              // { path: "today-schedule", element: <TodaySchedule /> },
+              {
+                path: "profile",
+                element: <ProfilePage />,
+              },
+            ],
           },
         ],
       },

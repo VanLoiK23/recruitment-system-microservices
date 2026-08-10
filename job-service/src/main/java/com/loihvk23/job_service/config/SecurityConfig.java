@@ -32,6 +32,8 @@ public class SecurityConfig {
 		http.csrf(csrf -> csrf.disable()).cors(cors -> cors.disable())
 				.authorizeHttpRequests(auth -> auth
 //						.requestMatchers("/admin/**").hasRole("ADMIN").requestMatchers("/recruiter/**").hasRole("RECRUITER")
+						.requestMatchers(HttpMethod.GET, "/api/jobs/posted").hasRole("RECRUITER")
+						
 	                    .requestMatchers(HttpMethod.GET, "/api/jobs/**").permitAll()
 	                    
 	                    .requestMatchers(HttpMethod.POST, "/api/jobs/filter").permitAll()

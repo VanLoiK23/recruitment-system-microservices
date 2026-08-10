@@ -1,7 +1,7 @@
 import React, { useContext, useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
-import { AuthContext } from "../../components/context/auth.context";
-import axios from "../../utils/axios.customize";
+import { AuthContext } from "../../../components/context/auth.context.jsx";
+import axios from "../../../utils/axios.customize.js";
 import CvCreateTag from "./cv-create-tag.jsx";
 import { EditProfileModal } from "./cv-create-component.jsx";
 import CvUploadTag from "./cv-upload-tag.jsx";

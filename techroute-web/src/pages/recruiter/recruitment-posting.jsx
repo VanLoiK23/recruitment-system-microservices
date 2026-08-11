@@ -11,6 +11,8 @@ import {
 import axios from "../../utils/axios.customize";
 import CircleLoading from "../../components/animation/animate-loading";
 import { toast } from "react-toastify";
+import JobViewDetail from "../../components/recruiter/job-posting/job-view";
+import JobUpsertModal from "../../components/recruiter/job-posting/job-upsert";
 const RecruitmentPostingPage = () => {
   const [jobs, setJobs] = useState([]);
   const [jobActive, setJobActive] = useState({});
@@ -86,8 +88,55 @@ const RecruitmentPostingPage = () => {
     setSearchQuery(query);
   };
 
+  const handleSave = async (formData) => {
+    try {
+      let data;
+
+      if (showAddPopup) {
+        data = await axios.post(`jobs`, formData);
+      } else {
+        data = await axios.put(`jobs/${formData.id}`, formData);
+      }
+
+      if (data) {
+        toast.success("Upsert job successfully !");
+      }
+    } catch (err) {
+      const errorData = err.message;
+
+      if (typeof errorData === "object" && errorData !== null) {
+        Object.values(errorData).forEach((message) => {
+          toast.error(message);
+        });
+      } else {
+        toast.error(err.message || "An error occurred!");
+      }
+    } finally {
+      setShowUpsertPopUp(false);
+      setShowAddPopUp(false);
+    }
+  };
+
   return (
     <div className="w-full h-full min-h-screen bg-[#EAF2FF] p-8 font-sans">
+      {showViewPopup && (
+        <JobViewDetail
+          job={jobActive}
+          onClose={() => setShowViewPopUp(false)}
+        />
+      )}
+      {showUpsertPopup && (
+        <JobUpsertModal
+          job={jobActive}
+          onClose={() => {
+            setShowUpsertPopUp(false);
+            setShowAddPopUp(false);
+          }}
+          onSave={handleSave}
+          isAdd={showAddPopup}
+        />
+      )}
+
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-2xl font-bold text-gray-800">
@@ -99,6 +148,7 @@ const RecruitmentPostingPage = () => {
         </div>
         <button
           onClick={() => {
+            setJobActive({});
             setShowUpsertPopUp(true);
             setShowAddPopUp(true);
           }}
@@ -230,7 +280,7 @@ const RecruitmentPostingPage = () => {
                   <td className="py-4 px-6 text-right">
                     <div className="flex items-center justify-end gap-2">
                       <button
-                        className="p-2 text-gray-400 hover:text-[#5B5FC7] hover:bg-[#5B5FC7]/10 rounded-lg transition-colors"
+                        className="p-2 text-gray-400 hover:text-[#5B5FC7] hover:bg-[#5B5FC7]/10 rounded-lg transition-colors cursor-pointer"
                         title="View details"
                         onClick={() => {
                           setJobActive(job);
@@ -240,7 +290,7 @@ const RecruitmentPostingPage = () => {
                         <Eye size={18} />
                       </button>
                       <button
-                        className="p-2 text-gray-400 hover:text-amber-500 hover:bg-amber-50 rounded-lg transition-colors"
+                        className="p-2 text-gray-400 hover:text-amber-500 hover:bg-amber-50 rounded-lg transition-colors cursor-pointer"
                         title="Edit"
                         onClick={() => {
                           setJobActive(job);
@@ -251,7 +301,7 @@ const RecruitmentPostingPage = () => {
                         <Edit size={18} />
                       </button>
                       <button
-                        className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                        className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
                         title="Delete"
                         onClick={() => handleDelete(job.id)}
                       >

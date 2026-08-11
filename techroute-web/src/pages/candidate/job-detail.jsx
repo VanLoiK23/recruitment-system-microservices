@@ -320,7 +320,7 @@ const JobDetailPage = () => {
         </div>
         <div className="p-6 bg-white rounded-xl border border-gray-100/50 shadow-[0_0_16px_rgba(0,0,0,0.06)] font-sans ">
           <div className="w-full overflow-y-auto max-h-[calc(130vh-260px)] pr-2 flex flex-col gap-8 custom-scrollbar">
-            {job?.categories && job?.categories.length > 0 && (
+            {/* {job?.categories && job?.categories.length > 0 && (
               <div className="flex flex-col gap-3 text-left">
                 <div className="flex items-center gap-2.5 text-[#5B5FC7]">
                   <div className="w-7 h-7 rounded-lg bg-[#5B5FC7]/10 flex items-center justify-center">
@@ -341,28 +341,28 @@ const JobDetailPage = () => {
                   ))}
                 </div>
               </div>
-            )}
+            )} */}
             <div className="flex flex-col gap-3">
               <div className="flex items-center gap-2.5 text-[#5B5FC7]">
-                <div className="w-7 h-7 rounded-lg bg-[#5B5FC7]/10 flex items-center justify-center">
+                {/* <div className="w-7 h-7 rounded-lg bg-[#5B5FC7]/10 flex items-center justify-center">
                   <FileText className="w-4 h-4 stroke-[2.5]" />
-                </div>
+                </div> */}
                 <h3 className="text-sm font-bold tracking-wide uppercase">
                   Job Description
                 </h3>
               </div>
-              <div className="pl-9 text-xs text-gray-600 leading-relaxed font-normal">
+              <div className="pl-5 text-xs text-gray-600 leading-relaxed font-normal">
                 <p>{jobSummary}</p>
               </div>
             </div>
 
             <div className="flex flex-col gap-3">
               <div className="flex items-center gap-2.5 text-[#5B5FC7]">
-                <div className="w-7 h-7 rounded-lg bg-[#5B5FC7]/10 flex items-center justify-center">
+                {/* <div className="w-7 h-7 rounded-lg bg-[#5B5FC7]/10 flex items-center justify-center">
                   <Briefcase className="w-4 h-4 stroke-[2.5]" />
-                </div>
+                </div> */}
                 <h3 className="text-sm font-bold tracking-wide uppercase">
-                  Job Roles
+                  1 Job Roles
                 </h3>
               </div>
               <ul className="list-disc pl-9 text-xs text-gray-600 leading-relaxed flex flex-col gap-2.5 font-normal">
@@ -376,11 +376,11 @@ const JobDetailPage = () => {
 
             <div className="flex flex-col gap-3">
               <div className="flex items-center gap-2.5 text-[#5B5FC7]">
-                <div className="w-7 h-7 rounded-lg bg-[#5B5FC7]/10 flex items-center justify-center">
+                {/* <div className="w-7 h-7 rounded-lg bg-[#5B5FC7]/10 flex items-center justify-center">
                   <Award className="w-4 h-4 stroke-[2.5]" />
-                </div>
+                </div> */}
                 <h3 className="text-sm font-bold tracking-wide uppercase">
-                  Job Requirements
+                  2 Job Requirements
                 </h3>
               </div>
               <ul className="list-disc pl-9 text-xs text-gray-600 leading-relaxed flex flex-col gap-2.5 font-normal">
@@ -394,11 +394,11 @@ const JobDetailPage = () => {
 
             <div className="flex flex-col gap-3">
               <div className="flex items-center gap-2.5 text-[#5B5FC7]">
-                <div className="w-7 h-7 rounded-lg bg-[#5B5FC7]/10 flex items-center justify-center">
+                {/* <div className="w-7 h-7 rounded-lg bg-[#5B5FC7]/10 flex items-center justify-center">
                   <Gift className="w-4 h-4 stroke-[2.5]" />
-                </div>
+                </div> */}
                 <h3 className="text-sm font-bold tracking-wide uppercase">
-                  Benefits & Allowances
+                 3 Benefits & Allowances
                 </h3>
               </div>
               <ul className="list-disc pl-9 text-xs text-gray-600 leading-relaxed flex flex-col gap-2.5 font-normal">

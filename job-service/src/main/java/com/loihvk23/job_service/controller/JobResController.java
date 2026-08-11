@@ -92,7 +92,6 @@ public class JobResController {
 			@AuthenticationPrincipal UserDetails userDetails) {
 
 		String email = userDetails.getUsername();
-		jobDTO.setRecruiterEmail(email);
 
 		JobDTO jobSaveDto = jobService.createNewJob(jobDTO, email);
 

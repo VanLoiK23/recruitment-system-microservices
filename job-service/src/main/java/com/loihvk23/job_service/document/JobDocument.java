@@ -58,5 +58,7 @@ public class JobDocument {
 
     @CreatedDate
     private LocalDateTime createdAt;
+    
+    private LocalDateTime deadline;
 
 }

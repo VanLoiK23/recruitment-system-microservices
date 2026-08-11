@@ -1,20 +1,7 @@
 import React from "react";
+import experienceLevels from "../experience-level";
 
 const ExperiencePanel = ({ selectedExperience, onChange }) => {
-  const experienceLevels = [
-    "Intern",
-    "Fresher",
-    "Junior",
-    "Middle",
-    "Senior",
-    "Assistant Team Leader",
-    "Leader",
-    "Deputy Manager",
-    "Manager",
-    "Deputy Director",
-    "Director",
-    "All Levels"
-  ];
 
   return (
     <div className="absolute top-full left-30 mt-2 min-w-[220px] bg-white border border-gray-100 shadow-[0_8px_30px_rgb(0,0,0,0.12)] rounded-xl p-4 z-50 flex flex-col gap-3.5 max-h-[350px] overflow-y-auto">

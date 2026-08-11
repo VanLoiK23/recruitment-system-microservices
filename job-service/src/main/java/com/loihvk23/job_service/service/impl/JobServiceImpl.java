@@ -138,6 +138,10 @@ public class JobServiceImpl implements JobService {
 			throw new DuplicateResourceException("This job you has already post it");
 		}
 
+		if (jobDTO.getDeadline() != null && jobDTO.getDeadline().isBefore(LocalDateTime.now())) {
+			throw new IllegalArgumentException("Expiry time must be after now !");
+		}
+
 		jobDTO.setCreatedAt(LocalDateTime.now());
 		JobDocument jobDocument = jobRepository.save(jobMapper.toDocument(jobDTO));
 		JobDTO jobSaveDto = jobMapper.toDTO(jobDocument);
@@ -156,6 +160,11 @@ public class JobServiceImpl implements JobService {
 			throw new IllegalArgumentException(
 					"You can't edit job (This job wasn't been created by " + recruiterEmail + ")");
 		}
+
+		if (jobDTO.getDeadline() != null && jobDTO.getDeadline().isBefore(LocalDateTime.now())) {
+			throw new IllegalArgumentException("Expiry time must be after now !");
+		}
+
 		jobDTO.setId(jobId);
 
 		JobDocument jobDocument = jobRepository.save(jobMapper.toDocument(jobDTO));

@@ -1,8 +1,7 @@
 import React from "react";
+import workTypes from "../work-type";
 
 const WorkTypePanel = ({ selectedType, onChange }) => {
-  const workTypes = ["In Office", "Remote", "Hybrid", "Oversea"];
-
   return (
     <div className="absolute top-full left-70 mt-2 min-w-[180px] bg-white border border-gray-100 shadow-[0_8px_30px_rgb(0,0,0,0.12)] rounded-xl p-4 z-50 flex flex-col gap-3.5">
       {workTypes.map((type, index) => (

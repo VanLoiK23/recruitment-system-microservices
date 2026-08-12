@@ -43,7 +43,7 @@ export default function App() {
         onLogout={handleLogout} 
       /> */}
 
-      {auth?.user.role !== "candidate" ? (
+      {auth?.user?.role !== "candidate" ? (
         <div className="grid grid-cols-[260px_1fr] min-h-screen">
           <SideBar />
           <main className="page-content ">

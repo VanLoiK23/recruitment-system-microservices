@@ -2,6 +2,7 @@ package com.loihvk23.job_service.controller;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -10,6 +11,7 @@ import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -24,8 +26,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.loihvk23.job_service.dto.JobDTO;
 import com.loihvk23.job_service.dto.request.AdvanceFilterRequest;
-import com.loihvk23.job_service.dto.response.JobAppliedResponse;
 import com.loihvk23.job_service.dto.response.JobManagementResponse;
+import com.loihvk23.job_service.dto.response.JobPostedResponse;
 import com.loihvk23.job_service.service.JobService;
 import com.loihvk23.job_service.service.SavedJobService;
 import com.loihvk23.job_service.service.UserAppliedJobService;
@@ -87,13 +89,45 @@ public class JobResController {
 		return ResponseEntity.ok(jobSlice);
 	}
 
+	@PostMapping("/approve/{id}")
+	public ResponseEntity<JobDTO> approveJob(@PathVariable(name = "id") String jobId,
+			@AuthenticationPrincipal UserDetails userDetails) {
+		JobDTO jobDTO = jobService.approveJob(jobId);
+
+		return ResponseEntity.ok(jobDTO);
+	}
+
+	@PostMapping("/draft")
+	public ResponseEntity<JobDTO> saveDraftJob(@RequestBody JobDTO jobDTO,
+			@AuthenticationPrincipal UserDetails userDetails) {
+
+		String email = userDetails.getUsername();
+
+		JobDTO jobSaveDto = jobService.saveDraft(jobDTO, email);
+
+		return ResponseEntity.status(HttpStatus.CREATED).body(jobSaveDto);
+	}
+
+	@GetMapping("/draft")
+	public ResponseEntity<JobDTO> getJobDraft(@AuthenticationPrincipal UserDetails userDetails) {
+
+		String email = userDetails.getUsername();
+
+		JobDTO jobSaveDto = jobService.getJobDraft(email);
+
+		return ResponseEntity.status(HttpStatus.CREATED).body(jobSaveDto);
+	}
+
 	@PostMapping
 	public ResponseEntity<JobDTO> createNewJob(@RequestBody @Valid JobDTO jobDTO,
 			@AuthenticationPrincipal UserDetails userDetails) {
 
 		String email = userDetails.getUsername();
+		List<String> roles = userDetails.getAuthorities().stream().map(GrantedAuthority::getAuthority)
+				.collect(Collectors.toList());
+		String role = (roles.size() > 0) ? roles.get(0) : null;
 
-		JobDTO jobSaveDto = jobService.createNewJob(jobDTO, email);
+		JobDTO jobSaveDto = jobService.createNewJob(jobDTO, email, role);
 
 		return ResponseEntity.status(HttpStatus.CREATED).body(jobSaveDto);
 	}
@@ -103,8 +137,11 @@ public class JobResController {
 			@AuthenticationPrincipal UserDetails userDetails) {
 
 		String email = userDetails.getUsername();
+		List<String> roles = userDetails.getAuthorities().stream().map(GrantedAuthority::getAuthority)
+				.collect(Collectors.toList());
+		String role = (roles.size() > 0) ? roles.get(0) : null;
 
-		JobDTO jobSaveDto = jobService.updateJob(jobDTO, jobId, email);
+		JobDTO jobSaveDto = jobService.updateJob(jobDTO, jobId, email, role);
 
 		return ResponseEntity.ok(jobSaveDto);
 	}
@@ -114,8 +151,11 @@ public class JobResController {
 			@AuthenticationPrincipal UserDetails userDetails) {
 
 		String email = userDetails.getUsername();
+		List<String> roles = userDetails.getAuthorities().stream().map(GrantedAuthority::getAuthority)
+				.collect(Collectors.toList());
+		String role = (roles.size() > 0) ? roles.get(0) : null;
 
-		jobService.deleteJob(jobId, email);
+		jobService.deleteJob(jobId, email, role);
 
 		return ResponseEntity.ok(Map.of("success", true));
 	}
@@ -225,11 +265,13 @@ public class JobResController {
 			@RequestParam(name = "query", defaultValue = "") String query,
 			@AuthenticationPrincipal UserDetails userDetails) {
 		String recruiterEmail = userDetails.getUsername();
+		List<String> roles = userDetails.getAuthorities().stream().map(GrantedAuthority::getAuthority)
+				.collect(Collectors.toList());
 
 		Pageable pageable = PageRequest.of(page - 1, limit, Sort.by(Sort.Direction.DESC, sortBy));
 
-		JobAppliedResponse jobAppliedResponse = jobService.getJobAppliedByRecruiter(recruiterEmail, query, pageable);
+		JobPostedResponse jobPostedResponse = jobService.getJobPostedByRecruiter(recruiterEmail, query, pageable);
 
-		return ResponseEntity.ok(jobAppliedResponse);
+		return ResponseEntity.ok(jobPostedResponse);
 	}
 }

@@ -14,4 +14,5 @@ public interface SavedJobRepository extends MongoRepository<SavedJobDocument, St
 	List<SavedJobDocument> findByUserEmailAndJobId(String userEmail, String jobId);
 	List<SavedJobDocument> findByUserEmail(String userEmail);
 	Slice<SavedJobDocument> findByUserEmail(String userEmail, Pageable pageable);
+	boolean existsByUserEmailAndJobId(String userEmail, String jobId);
 }

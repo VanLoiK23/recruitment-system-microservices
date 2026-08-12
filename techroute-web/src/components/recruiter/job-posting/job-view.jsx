@@ -3,7 +3,7 @@ import {
   X, MapPin, DollarSign, Briefcase, 
   Layers, Users, Calendar, 
   Mail, Flame, Tag, Code2, AlignLeft,
-  Target, Gift, FolderOpen, Terminal, UserCheck
+  Target, Gift, FolderOpen, Terminal, UserCheck, Clock
 } from 'lucide-react';
 
 const JobViewDetail = ({ job, onClose }) => {
@@ -44,6 +44,12 @@ const JobViewDetail = ({ job, onClose }) => {
                 <Calendar size={16} className="text-[#5B5FC7]" /> 
                 <span>{job.createdAt || 'N/A'}</span>
               </div>
+              
+              <div className="flex items-center gap-2 bg-red-50 text-red-600 px-3 py-1 rounded-md border border-red-100 shadow-sm">
+                <Clock size={16} className="text-red-500" /> 
+                <span className="font-bold">Deadline: {job.deadline || 'N/A'}</span>
+              </div>
+
               <div className="flex items-center gap-2">
                 <Users size={16} className="text-[#5B5FC7]" /> 
                 <span>{job.applicantCount || 0} Applicants</span>

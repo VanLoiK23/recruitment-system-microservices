@@ -22,13 +22,14 @@ public class JobSchedulerService {
 
 	private final MongoTemplate mongoTemplate;
 
-	@Scheduled(cron = "0 0 0 * * ?", zone = "Asia/Ho_Chi_Minh")
+//	@Scheduled(cron = "0 0 0 * * ?", zone = "Asia/Ho_Chi_Minh")  // at 00:00 
+	@Scheduled(cron = "0 */15 * * * ?")
 	public void scheduleCloseExpiredJobs() {
 		log.info("Start scan job is expired in MongoDB...");
 
 		LocalDateTime now = LocalDateTime.now();
 
-		Query query = new Query(Criteria.where("deadline").lt(now).and("status").is("ACTIVE"));
+		Query query = new Query(Criteria.where("deadline").lt(now).and("status").is("OPENING"));
 
 		Update update = new Update().set("status", "CLOSED");
 		UpdateResult result = mongoTemplate.updateMulti(query, update, JobDocument.class);

@@ -11,13 +11,13 @@ import com.loihvk23.blog_service.document.BlogDocument;
 public interface BlogRepository extends MongoRepository<BlogDocument, String> {
 	Slice<BlogDocument> findByTagsContaining(String tags, Pageable pageable);
 	
-	Slice<BlogDocument> findByTitleContainingIgnoreCaseAndCategoryId(String title, String categoryId, Pageable pageable);
+	Slice<BlogDocument> findByTitleContainingIgnoreCaseAndCategoryIdAndStatus(String title, String categoryId, String status, Pageable pageable);
 
-    Slice<BlogDocument> findByTitleContainingIgnoreCase(String title, Pageable pageable);
+    Slice<BlogDocument> findByTitleContainingIgnoreCaseAndStatus(String title, String status, Pageable pageable);
 
-    Slice<BlogDocument> findByCategoryId(String categoryId, Pageable pageable);	
+    Slice<BlogDocument> findByCategoryIdAndStatus(String categoryId, String status, Pageable pageable);	
     
-	Slice<BlogDocument> findByTagsIn(List<String> tags, Pageable pageable);
+	Slice<BlogDocument> findByTagsInAndStatus(List<String> tags, String status, Pageable pageable);
 
 	Slice<BlogDocument> findAllBy(Pageable pageable);
 	

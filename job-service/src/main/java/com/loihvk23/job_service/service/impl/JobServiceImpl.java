@@ -6,9 +6,12 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
@@ -36,8 +39,8 @@ import com.loihvk23.job_service.document.UserAppliedJobDocument;
 import com.loihvk23.job_service.dto.JobDTO;
 import com.loihvk23.job_service.dto.request.AdvanceFilterRequest;
 import com.loihvk23.job_service.dto.request.JobEvent;
-import com.loihvk23.job_service.dto.response.JobAppliedResponse;
 import com.loihvk23.job_service.dto.response.JobManagementResponse;
+import com.loihvk23.job_service.dto.response.JobPostedResponse;
 import com.loihvk23.job_service.exception.DuplicateResourceException;
 import com.loihvk23.job_service.exception.ResourceNotFoundException;
 import com.loihvk23.job_service.mapper.JobMapper;
@@ -96,7 +99,9 @@ public class JobServiceImpl implements JobService {
 
 	@Override
 	public Slice<JobDTO> findByRecruiter(String recruiterEmail, Pageable pageable) {
-		Slice<JobDocument> jobDocuments = jobRepository.findByRecruiterEmail(recruiterEmail, pageable);
+		String statusNotLike = "DRAFT";
+		Slice<JobDocument> jobDocuments = jobRepository.findByRecruiterEmailAndStatusIsNot(recruiterEmail,
+				statusNotLike, pageable);
 		Slice<JobDTO> jobDTOs = jobDocuments.map(jobMapper::toDTO);
 
 		return jobDTOs;
@@ -110,44 +115,95 @@ public class JobServiceImpl implements JobService {
 	}
 
 	@Override
-	public JobAppliedResponse getJobAppliedByRecruiter(String recruiterEmail, String query, Pageable pageable) {
+	public JobPostedResponse getJobPostedByRecruiter(String recruiterEmail, String query, Pageable pageable) {
 		if (query == null || query.isBlank()) {
-			return JobAppliedResponse.builder().jobSlice(findByRecruiter(recruiterEmail, pageable))
+			return JobPostedResponse.builder().jobSlice(findByRecruiter(recruiterEmail, pageable))
 					.totalElement(getTotalElementJobByRecruiter(recruiterEmail)).build();
 
 		}
-		Slice<JobDocument> jobDocuments = jobRepository.findByRecruiterEmailAndTitleContainingIgnoreCase(recruiterEmail,
-				query, pageable);
+		String statusNotLike = "DRAFT";
+
+		Slice<JobDocument> jobDocuments = jobRepository.findByRecruiterEmailAndTitleContainingIgnoreCaseAndStatusIsNot(
+				recruiterEmail, query, statusNotLike, pageable);
 		Slice<JobDTO> jobDTOs = jobDocuments.map(jobMapper::toDTO);
 
-		return JobAppliedResponse.builder().jobSlice(jobDTOs)
+		return JobPostedResponse.builder().jobSlice(jobDTOs)
 				.totalElement(
 						(int) jobRepository.countByRecruiterEmailAndTitleContainingIgnoreCase(recruiterEmail, query))
 				.build();
 	}
 
 	@Override
+	public JobDTO approveJob(String jobId) {
+		JobDocument jobDocument = jobRepository.findById(jobId)
+				.orElseThrow(() -> new IllegalArgumentException("Job does not exist"));
+
+		jobDocument.setStatus("OPENING");
+
+		JobDocument jobSaveDocument = jobRepository.save(jobDocument);
+		return jobMapper.toDTO(jobSaveDocument);
+	}
+
+	@Override
 	@Transactional
-	public JobDTO createNewJob(JobDTO jobDTO, String recruiterEmail) {
+	public JobDTO saveDraft(JobDTO jobDTO, String recruiterEmail) {
+		Optional<JobDocument> existingDraft = jobRepository.findFirstByRecruiterEmailAndStatus(recruiterEmail, "DRAFT");
+
+		JobDocument draftToSave;
+
+		if (existingDraft.isPresent()) {
+			draftToSave = jobMapper.toDocument(jobDTO);
+			draftToSave.setId(existingDraft.get().getId());
+		} else {
+			draftToSave = jobMapper.toDocument(jobDTO);
+			draftToSave.setId(null);
+		}
+
+		draftToSave.setRecruiterEmail(recruiterEmail);
+		draftToSave.setStatus("DRAFT");
+
+		JobDocument savedDocument = jobRepository.save(draftToSave);
+		return jobMapper.toDTO(savedDocument);
+	}
+
+	@Override
+	public JobDTO getJobDraft(String recruiterEmail) {
+		JobDocument jobDocument = jobRepository.findFirstByRecruiterEmailAndStatus(recruiterEmail, "DRAFT")
+				.orElse(null);
+
+		return jobMapper.toDTO(jobDocument);
+	}
+
+	@Override
+	@Transactional
+	public JobDTO createNewJob(JobDTO jobDTO, String recruiterEmail, String role) {
 		jobDTO.setRecruiterEmail(recruiterEmail);
 
-		List<JobDocument> jobDocumentsExist = jobRepository.findByRecruiterEmailAndTitleAndLocationAndStatus(
-				jobDTO.getRecruiterEmail(), jobDTO.getTitle(), jobDTO.getLocation(), jobDTO.getStatus());
-
-		if (jobDocumentsExist != null && !jobDocumentsExist.isEmpty()) {
+		if (jobRepository.existsByRecruiterEmailAndTitleAndLocationAndDeadlineAfter(jobDTO.getRecruiterEmail(),
+				jobDTO.getTitle(), jobDTO.getLocation(), LocalDateTime.now())) {
 			throw new DuplicateResourceException("This job you has already post it");
 		}
 
 		if (jobDTO.getDeadline() != null && jobDTO.getDeadline().isBefore(LocalDateTime.now())) {
-			throw new IllegalArgumentException("Expiry time must be after now !");
+			throw new IllegalArgumentException("Expiry time must be after current time !");
+		}
+
+		if (jobDTO.getDeadline() == null) {
+			jobDTO.setDeadline(LocalDateTime.now().plusDays(30));
+		}
+
+		if (!"ROLE_ADMIN".equalsIgnoreCase(role) && jobDTO.getStatus().equalsIgnoreCase("OPENING")) {
+			throw new IllegalArgumentException("You can't publish direct job (Not authorization) !");
 		}
 
 		jobDTO.setCreatedAt(LocalDateTime.now());
+		jobDTO.setStatus("PENDING");
 		JobDocument jobDocument = jobRepository.save(jobMapper.toDocument(jobDTO));
 		JobDTO jobSaveDto = jobMapper.toDTO(jobDocument);
 
 		JobEvent jobEvent = JobEvent.builder().id(jobSaveDto.getId()).title(jobSaveDto.getTitle())
-				.recruiterEmail(recruiterEmail).status(jobSaveDto.getStatus()).build();
+				.recruiterEmail(recruiterEmail).status(jobSaveDto.getStatus()).deadline(jobSaveDto.getDeadline())
+				.build();
 		rabbitTemplate.convertAndSend(RabbitMQConfig.JOB_EXCHANGE, RabbitMQConfig.JOB_UPSERTED_KEY, jobEvent);
 
 		return jobSaveDto;
@@ -155,38 +211,68 @@ public class JobServiceImpl implements JobService {
 
 	@Override
 	@Transactional
-	public JobDTO updateJob(JobDTO jobDTO, String jobId, String recruiterEmail) {
-		if (!jobDTO.getRecruiterEmail().equalsIgnoreCase(recruiterEmail)) {
+	public JobDTO updateJob(JobDTO jobDTO, String jobId, String recruiterEmail, String role) {
+		JobDocument jobDocument = jobRepository.findById(jobId)
+				.orElseThrow(() -> new ResourceNotFoundException("Job does not exist. Cannot update!"));
+
+		boolean isAdmin = "ROLE_ADMIN".equalsIgnoreCase(role);
+		if (!isAdmin && !jobDocument.getRecruiterEmail().equalsIgnoreCase(recruiterEmail)) {
 			throw new IllegalArgumentException(
-					"You can't edit job (This job wasn't been created by " + recruiterEmail + ")");
+					"You cannot edit this job (This job was not created by " + recruiterEmail + ")");
 		}
 
 		if (jobDTO.getDeadline() != null && jobDTO.getDeadline().isBefore(LocalDateTime.now())) {
-			throw new IllegalArgumentException("Expiry time must be after now !");
+			throw new IllegalArgumentException("Expiry time must be after current time!");
+		}
+
+		if (!isAdmin) {
+			boolean isTitleChanged = !jobDocument.getTitle().equalsIgnoreCase(jobDTO.getTitle());
+			boolean isDescChanged = !jobDocument.getDescription().equalsIgnoreCase(jobDTO.getDescription());
+			boolean isMinSalaryChanged = !Objects.equals(jobDocument.getMinSalary(), jobDTO.getMinSalary());
+			boolean isMaxSalaryChanged = !Objects.equals(jobDocument.getMaxSalary(), jobDTO.getMaxSalary());
+
+			boolean isBenefitsChanged = !new HashSet<>(optionalList(jobDocument.getBenefits()))
+					.equals(new HashSet<>(optionalList(jobDTO.getBenefits())));
+			boolean isRequirementsChanged = !new HashSet<>(optionalList(jobDocument.getRequirements()))
+					.equals(new HashSet<>(optionalList(jobDTO.getRequirements())));
+
+			// if any sensitive data has changed send admin approves
+			if (isTitleChanged || isDescChanged || isMinSalaryChanged || isMaxSalaryChanged || isBenefitsChanged
+					|| isRequirementsChanged) {
+				jobDTO.setStatus("PENDING");
+			} else {
+				jobDTO.setStatus(jobDocument.getStatus());
+			}
 		}
 
 		jobDTO.setId(jobId);
+		jobDTO.setRecruiterEmail(jobDocument.getRecruiterEmail());
 
-		JobDocument jobDocument = jobRepository.save(jobMapper.toDocument(jobDTO));
-		JobDTO jobSaveDto = jobMapper.toDTO(jobDocument);
+		JobDocument jobSaveDocument = jobRepository.save(jobMapper.toDocument(jobDTO));
+		JobDTO jobSaveDto = jobMapper.toDTO(jobSaveDocument);
 
 		JobEvent jobEvent = JobEvent.builder().id(jobSaveDto.getId()).title(jobSaveDto.getTitle())
-				.recruiterEmail(recruiterEmail).status(jobSaveDto.getStatus()).build();
+				.recruiterEmail(jobSaveDto.getRecruiterEmail()).status(jobSaveDto.getStatus())
+				.deadline(jobSaveDto.getDeadline()).build();
 
 		rabbitTemplate.convertAndSend(RabbitMQConfig.JOB_EXCHANGE, RabbitMQConfig.JOB_UPSERTED_KEY, jobEvent);
 
 		return jobSaveDto;
 	}
 
+	private <T> List<T> optionalList(List<T> list) {
+		return list == null ? Collections.emptyList() : list;
+	}
+
 	@Override
 	@Transactional
-	public void deleteJob(String jobId, String recruiterEmail) {
+	public void deleteJob(String jobId, String recruiterEmail, String role) {
 		JobDocument jobDocument = jobRepository.findById(jobId)
 				.orElseThrow(() -> new ResourceNotFoundException("Job isn't exist. Can not delete !!"));
 
 		JobDTO jobDTO = jobMapper.toDTO(jobDocument);
 
-		if (!jobDTO.getRecruiterEmail().equalsIgnoreCase(recruiterEmail)) {
+		if (!"ROLE_ADMIN".equalsIgnoreCase(role) && !jobDTO.getRecruiterEmail().equalsIgnoreCase(recruiterEmail)) {
 			throw new IllegalArgumentException(
 					"You can't delete job (This job wasn't been created by " + recruiterEmail + ")");
 		}
@@ -203,19 +289,17 @@ public class JobServiceImpl implements JobService {
 		JobDocument jobDocument = jobRepository.findById(jobId)
 				.orElseThrow(() -> new ResourceNotFoundException("Job isn't exist. Can not see !!"));
 
-		if (email == null || jobDocument == null) {
+		if (email == null) {
 			return jobMapper.toDTO(jobDocument);
 		}
 
-		Set<String> savedJobIds = savedJobRepository.findByUserEmailAndJobId(email, jobId).stream()
-				.map(SavedJobDocument::getJobId).collect(Collectors.toSet());
-
-		Set<String> appliedJobIds = userAppliedJobRepository.findByCandidateEmailAndJobId(email, jobId).stream()
-				.map(UserAppliedJobDocument::getJobId).collect(Collectors.toSet());
+		if (jobDocument.getDeadline() != null && jobDocument.getDeadline().isBefore(LocalDateTime.now())) {
+			return null;
+		}
 
 		JobDTO jobDTO = jobMapper.toDTO(jobDocument);
-		jobDTO.setIsSaved(savedJobIds.contains(jobId));
-		jobDTO.setIsApplied(appliedJobIds.contains(jobId));
+		jobDTO.setIsSaved(savedJobRepository.existsByUserEmailAndJobId(email, jobId));
+		jobDTO.setIsApplied(userAppliedJobRepository.existsByCandidateEmailAndJobId(email, jobId));
 		return jobDTO;
 	}
 
@@ -264,6 +348,8 @@ public class JobServiceImpl implements JobService {
 			criterias.add(Criteria.where("hotJob").is(true));
 		}
 
+		criterias.add(Criteria.where("status").is("OPENING").and("deadline").gt(LocalDateTime.now()));
+
 		if (!criterias.isEmpty()) {
 			query.addCriteria(new Criteria().andOperator(criterias.toArray(new Criteria[0])));
 		}
@@ -306,8 +392,9 @@ public class JobServiceImpl implements JobService {
 
 	@Override
 	public Slice<JobDTO> findJobRelevants(List<String> technologies, String jobId, Pageable pageable, String email) {
-		Slice<JobDocument> jobDocumentSlices = jobRepository.findByTechnologiesInAndIdNot(technologies, jobId,
-				pageable);
+		String statusActive = "OPENING";
+		Slice<JobDocument> jobDocumentSlices = jobRepository.findByTechnologiesInAndIdNotAndStatusAndDeadlineAfter(
+				technologies, jobId, statusActive, LocalDateTime.now(), pageable);
 
 		Slice<JobDTO> jobDTOs = jobDocumentSlices.map(jobMapper::toDTO);
 

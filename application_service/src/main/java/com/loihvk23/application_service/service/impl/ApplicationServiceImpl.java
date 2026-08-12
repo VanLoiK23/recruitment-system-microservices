@@ -24,6 +24,7 @@ import com.loihvk23.application_service.service.JobCacheService;
 
 import jakarta.persistence.EntityExistsException;
 import jakarta.transaction.Transactional;
+import jakarta.ws.rs.BadRequestException;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -48,7 +49,11 @@ public class ApplicationServiceImpl implements ApplicationService {
 		}
 
 		if (!jobCacheDTO.getStatus().equalsIgnoreCase("opening")) {
-			throw new IllegalArgumentException("The Job you are applying does not open . Try again !!");
+			throw new BadRequestException("This job is no longer active!");
+		}
+
+		if (jobCacheDTO.getDeadline() != null && jobCacheDTO.getDeadline().isBefore(LocalDateTime.now())) {
+			throw new BadRequestException("This job application deadline has expired!");
 		}
 
 		List<ApplicationEntity> applicationEntities = applicationRepository.findByCandidateEmailAndJobId(emailCandidate,
@@ -60,7 +65,7 @@ public class ApplicationServiceImpl implements ApplicationService {
 							|| app.getStatus().equalsIgnoreCase("REVIEWING"));
 
 			if (hasActiveApplication) {
-				throw new EntityExistsException("You have apply for this Job and wait the system approves!");
+				throw new EntityExistsException("You have apply for this Job and wait the recruiter approves!");
 			}
 		}
 
@@ -91,14 +96,7 @@ public class ApplicationServiceImpl implements ApplicationService {
 			throw new ResourceNotFoundException("Job isn't exist!");
 		}
 
-		List<ApplicationEntity> applicationEntities = applicationRepository.findByCandidateEmailAndJobId(emailCandidate,
-				jobId);
-
-		if (applicationEntities != null && !applicationEntities.isEmpty()) {
-			return true;
-		}
-
-		return false;
+		return applicationRepository.existsByCandidateEmailAndJobId(emailCandidate, jobId);
 	}
 
 	// if non valid throw exception

@@ -42,12 +42,7 @@ public class SavedJobServiceImpl implements SavedJobService {
 
 	@Override
 	public boolean checkJobIsSaved(String jobId, String userEmail) {
-		List<SavedJobDocument> savedJobDocuments = savedJobRepository.findByUserEmailAndJobId(userEmail, jobId);
-
-		if (savedJobDocuments != null && !savedJobDocuments.isEmpty()) {
-			return true;
-		}
-		return false;
+		return savedJobRepository.existsByUserEmailAndJobId(userEmail, jobId);
 	}
 
 	@Override

@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -18,6 +19,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
+@CompoundIndex(name = "tech_status_deadline_idx", def = "{'technologies': 1, 'status': 1, 'deadline': 1}")
 public class JobDocument {
 	@Id
 	private String id;

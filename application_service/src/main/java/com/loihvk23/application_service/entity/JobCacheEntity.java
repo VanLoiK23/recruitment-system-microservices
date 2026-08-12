@@ -1,5 +1,7 @@
 package com.loihvk23.application_service.entity;
 
+import java.time.LocalDateTime;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
@@ -15,4 +17,6 @@ public class JobCacheEntity {
 	private String title;
 	private String recruiterEmail;
 	private String status;
+	private LocalDateTime deadline;
+
 }

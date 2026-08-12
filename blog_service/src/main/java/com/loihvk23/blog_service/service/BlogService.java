@@ -14,11 +14,13 @@ public interface BlogService {
 	
 	BlogDTO findById(String blogId);
 	
+	BlogDTO findByIdWatch(String blogId);
+	
 	BlogDTO approveBlog(String blogId);
 
 	BlogDTO createBlog(BlogDTO blogDTO,String email, String role);
 	
 	BlogDTO updateBlog(BlogDTO blogDTO,String email, String role);
 
-	void deleteBlog(String blogId, String email);
+	void deleteBlog(String blogId, String email, String role);
 }

@@ -23,8 +23,9 @@ public class JobEventListener {
 	public void consumJobEvent(JobEvent jobEvent, @Header(AmqpHeaders.RECEIVED_ROUTING_KEY) String routingKey) {
 		System.out.println("Receive a message from Job Service: " + jobEvent.getId());
 
-		JobCacheDTO jobCacheDTO = JobCacheDTO.builder().id(jobEvent.getId())
-				.recruiterEmail(jobEvent.getRecruiterEmail()).status(jobEvent.getStatus()).build();
+		JobCacheDTO jobCacheDTO = JobCacheDTO.builder().id(jobEvent.getId()).title(jobEvent.getTitle())
+				.recruiterEmail(jobEvent.getRecruiterEmail()).status(jobEvent.getStatus())
+				.deadline(jobEvent.getDeadline()).build();
 
 		if (RabbitMQConfig.JOB_UPSERTED_KEY.equals(routingKey)) {
 

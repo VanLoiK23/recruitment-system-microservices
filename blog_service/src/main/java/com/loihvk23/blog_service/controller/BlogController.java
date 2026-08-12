@@ -51,7 +51,7 @@ public class BlogController {
 
 	@GetMapping("/{id}")
 	public ResponseEntity<?> getDetailBlog(@PathVariable(name = "id", required = true) String blogId) {
-		BlogDTO blog = blogService.findById(blogId);
+		BlogDTO blog = blogService.findByIdWatch(blogId);
 
 		return ResponseEntity.ok(blog);
 	}
@@ -80,7 +80,7 @@ public class BlogController {
 
 		return ResponseEntity.ok(blog);
 	}
-	
+
 	@PutMapping
 	public ResponseEntity<?> updateBlog(@RequestBody @Valid BlogDTO blogDTO,
 			@AuthenticationPrincipal UserDetails userDetails) {
@@ -106,8 +106,11 @@ public class BlogController {
 			@AuthenticationPrincipal UserDetails userDetails) {
 
 		String email = userDetails.getUsername();
+		List<String> roles = userDetails.getAuthorities().stream().map(GrantedAuthority::getAuthority)
+				.collect(Collectors.toList());
+		String role = (roles.size() > 0) ? roles.get(0) : null;
 
-		blogService.deleteBlog(blogId, email);
+		blogService.deleteBlog(blogId, email, role);
 
 		return ResponseEntity.ok(Map.of("isSuccess", true));
 	}

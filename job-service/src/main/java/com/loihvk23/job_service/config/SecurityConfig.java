@@ -32,15 +32,20 @@ public class SecurityConfig {
 		http.csrf(csrf -> csrf.disable()).cors(cors -> cors.disable())
 				.authorizeHttpRequests(auth -> auth
 //						.requestMatchers("/admin/**").hasRole("ADMIN").requestMatchers("/recruiter/**").hasRole("RECRUITER")
-						.requestMatchers(HttpMethod.GET, "/api/jobs/posted").hasRole("RECRUITER")
+						.requestMatchers(HttpMethod.GET, "/api/jobs/posted").hasAnyRole("RECRUITER", "ADMIN")
+						
+						.requestMatchers(HttpMethod.GET, "/api/jobs/draft").hasAnyRole("RECRUITER", "ADMIN")
+						.requestMatchers(HttpMethod.POST, "/api/jobs/draft").hasAnyRole("RECRUITER", "ADMIN")
 						
 	                    .requestMatchers(HttpMethod.GET, "/api/jobs/**").permitAll()
 	                    
 	                    .requestMatchers(HttpMethod.POST, "/api/jobs/filter").permitAll()
 	                    
-	                    .requestMatchers(HttpMethod.POST, "/api/jobs").hasRole("RECRUITER")
+	                    .requestMatchers(HttpMethod.POST, "/api/jobs/approve/**").hasRole("ADMIN")
 	                    
-	                    .requestMatchers(HttpMethod.PUT, "/api/jobs/**").hasRole("RECRUITER")
+	                    .requestMatchers(HttpMethod.POST, "/api/jobs").hasAnyRole("RECRUITER", "ADMIN")
+	                    
+	                    .requestMatchers(HttpMethod.PUT, "/api/jobs/**").hasAnyRole("RECRUITER", "ADMIN")
 	                    
 	                    .requestMatchers(HttpMethod.DELETE, "/api/jobs/**").hasAnyRole("RECRUITER", "ADMIN")
 	                    

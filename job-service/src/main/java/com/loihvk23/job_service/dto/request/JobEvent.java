@@ -1,5 +1,7 @@
 package com.loihvk23.job_service.dto.request;
 
+import java.time.LocalDateTime;
+
 import lombok.Builder;
 import lombok.Data;
 
@@ -10,4 +12,5 @@ public class JobEvent {
 	private String title;
 	private String recruiterEmail;
 	private String status;
+	private LocalDateTime deadline;
 }

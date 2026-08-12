@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class JobAppliedResponse {
+public class JobPostedResponse {
 	private Slice<JobDTO> jobSlice;
 	private int totalElement;
 }

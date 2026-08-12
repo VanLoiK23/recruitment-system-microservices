@@ -14,6 +14,7 @@ import experienceLevels from "../../homepage/experience-level";
 import workTypes from "../../homepage/work-type";
 import cities from "../../city-province";
 import { toast } from "react-toastify";
+import axios from "../../../utils/axios.customize";
 
 const categoriesData = categories;
 
@@ -22,7 +23,7 @@ const JobEditModal = ({ job, onClose, onSave, isAdd }) => {
     title: "",
     minSalary: 0,
     maxSalary: 0,
-    status: "ACTIVE",
+    status: "PENDING",
     categories: [],
     roles: [""],
     technologies: [],
@@ -33,6 +34,7 @@ const JobEditModal = ({ job, onClose, onSave, isAdd }) => {
     location: cities[0],
     hotJob: false,
     description: "",
+    deadline: "",
   });
 
   const [techInput, setTechInput] = useState("");
@@ -46,7 +48,32 @@ const JobEditModal = ({ job, onClose, onSave, isAdd }) => {
         technologies: job.technologies || [],
         requirements: job.requirements?.length ? job.requirements : [""],
         benefits: job.benefits?.length ? job.benefits : [""],
+        deadline: job.deadline ? job.deadline.substring(0, 10) : "",
       });
+    }
+
+    const fetchJobDraft = async () => {
+      try {
+        const data = await axios.get("jobs/draft");
+
+        if (data) {
+          setFormData({
+            ...data,
+            categories: data.categories || [],
+            roles: data.roles?.length ? data.roles : [""],
+            technologies: data.technologies || [],
+            requirements: data.requirements?.length ? data.requirements : [""],
+            benefits: data.benefits?.length ? data.benefits : [""],
+            deadline: data.deadline ? data.deadline.substring(0, 10) : "",
+          });
+        }
+      } catch (err) {
+        toast.error(err.message);
+      }
+    };
+
+    if (isAdd) {
+      fetchJobDraft();
     }
   }, [job]);
 
@@ -151,6 +178,11 @@ const JobEditModal = ({ job, onClose, onSave, isAdd }) => {
       return null;
     }
 
+    if (!formData.deadline) {
+      toast.warn("Job deadline is required.");
+      return null;
+    }
+
     const cleanedRequirements = formData.requirements
       .map((r) => r.trim())
       .filter(Boolean);
@@ -176,6 +208,9 @@ const JobEditModal = ({ job, onClose, onSave, isAdd }) => {
       roles: cleanedRoles,
       requirements: cleanedRequirements,
       benefits: cleanedBenefits,
+      deadline: formData.deadline.includes(" ")
+        ? formData.deadline
+        : `${formData.deadline} 23:59:59`,
     };
   };
 
@@ -199,17 +234,24 @@ const JobEditModal = ({ job, onClose, onSave, isAdd }) => {
     e.preventDefault();
 
     let cleanedData;
-    if (!formData.status === "DRAFT") {
+    let isDraft;
+    if (formData.status !== "DRAFT") {
       cleanedData = validateForm();
 
       if (!cleanedData) return;
     } else {
       cleanedData = formData;
+      const formattedDeadline = formData.deadline.includes(" ")
+        ? formData.deadline
+        : `${formData.deadline} 23:59:59`;
+
+      cleanedData = { ...formData, deadline: formattedDeadline };
+      isDraft = true;
     }
 
     cleanedData = cleanFormData(cleanedData);
 
-    onSave(cleanedData);
+    onSave(cleanedData, isDraft);
     console.log("Valid Data submitted:", cleanedData);
   };
 
@@ -266,9 +308,12 @@ const JobEditModal = ({ job, onClose, onSave, isAdd }) => {
                 onChange={handleChange}
                 className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:border-[#5B5FC7] focus:ring-1 focus:ring-[#5B5FC7] transition-all"
               >
-                <option value="ACTIVE">ACTIVE</option>
-                <option value="DRAFT">DRAFT</option>
-                <option value="CLOSED">CLOSED</option>
+                <option value="PENDING">PENDING</option>
+                {isAdd ? (
+                  <option value="DRAFT">DRAFT</option>
+                ) : (
+                  <option value="CLOSED">CLOSED</option>
+                )}
               </select>
             </div>
 
@@ -363,7 +408,7 @@ const JobEditModal = ({ job, onClose, onSave, isAdd }) => {
               </select>
             </div>
 
-            <div className="md:col-span-2">
+            <div>
               <label className="block text-sm font-bold text-[#1A2238] mb-2">
                 Location
               </label>
@@ -379,6 +424,20 @@ const JobEditModal = ({ job, onClose, onSave, isAdd }) => {
                   </option>
                 ))}
               </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-bold text-[#1A2238] mb-2">
+                Deadline
+              </label>
+              <input
+                type="date"
+                name="deadline"
+                value={formData.deadline}
+                onChange={handleChange}
+                className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:border-[#5B5FC7] focus:ring-1 focus:ring-[#5B5FC7] transition-all"
+                required
+              />
             </div>
           </div>
 

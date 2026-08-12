@@ -37,13 +37,7 @@ public class UserAppliedJobServiceImpl implements UserAppliedJobService {
 
 	@Override
 	public boolean checkJobApplied(String jobId, String candidateEmail) {
-		List<UserAppliedJobDocument> jobApplied = userAppliedJobRepository.findByCandidateEmailAndJobId(candidateEmail,
-				jobId);
-
-		if (jobApplied == null || jobApplied.isEmpty()) {
-			return false;
-		}
-		return true;
+		return userAppliedJobRepository.existsByCandidateEmailAndJobId(candidateEmail, jobId);
 	}
 
 	@Override

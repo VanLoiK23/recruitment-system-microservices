@@ -88,18 +88,33 @@ const RecruitmentPostingPage = () => {
     setSearchQuery(query);
   };
 
-  const handleSave = async (formData) => {
+  const handleSave = async (formData, isDraft) => {
     try {
       let data;
 
-      if (showAddPopup) {
+      if (isDraft) {
+        data = await axios.post(`jobs/draft`, formData);
+      } else if (showAddPopup) {
         data = await axios.post(`jobs`, formData);
       } else {
         data = await axios.put(`jobs/${formData.id}`, formData);
       }
 
       if (data) {
-        toast.success("Upsert job successfully !");
+        if (isDraft) {
+          toast.success("Save job as Draft successful !");
+        } else {
+          toast.success("Upsert job successfully !");
+          setJobs((prevJobs) => {
+            const isExisting = prevJobs.some((job) => job.id === data.id);
+
+            if (isExisting) {
+              return prevJobs.map((job) => (job.id === data.id ? data : job));
+            } else {
+              return [data, ...prevJobs];
+            }
+          });
+        }
       }
     } catch (err) {
       const errorData = err.message;
@@ -132,7 +147,9 @@ const RecruitmentPostingPage = () => {
             setShowUpsertPopUp(false);
             setShowAddPopUp(false);
           }}
-          onSave={handleSave}
+          onSave={(formData, isDraft) => {
+            handleSave(formData, isDraft);
+          }}
           isAdd={showAddPopup}
         />
       )}

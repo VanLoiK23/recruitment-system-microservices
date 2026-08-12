@@ -21,6 +21,7 @@ import com.loihvk23.application_service.dto.response.ErrorResponse;
 
 import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.ws.rs.BadRequestException;
 
 @RestControllerAdvice
 public class GlobalHandlerException {
@@ -63,6 +64,15 @@ public class GlobalHandlerException {
 
 	@ExceptionHandler(IllegalArgumentException.class)
 	public ResponseEntity<ErrorResponse<String>> handleArgumentInvalidException(IllegalArgumentException exp) {
+		ErrorResponse<String> errorResponse = ErrorResponse.<String>builder().timestamp(LocalDateTime.now())
+				.status(HttpStatus.BAD_REQUEST.value()).error(HttpStatus.BAD_REQUEST.getReasonPhrase())
+				.message(exp.getMessage()).build();
+
+		return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+	}
+	
+	@ExceptionHandler(BadRequestException.class)
+	public ResponseEntity<ErrorResponse<String>> handleBadRequestException(BadRequestException exp) {
 		ErrorResponse<String> errorResponse = ErrorResponse.<String>builder().timestamp(LocalDateTime.now())
 				.status(HttpStatus.BAD_REQUEST.value()).error(HttpStatus.BAD_REQUEST.getReasonPhrase())
 				.message(exp.getMessage()).build();

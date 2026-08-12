@@ -14,4 +14,5 @@ public interface UserAppliedJobRepository extends MongoRepository<UserAppliedJob
 	List<UserAppliedJobDocument> findByCandidateEmailAndJobId(String candidateEmail, String jobId);
 	List<UserAppliedJobDocument> findByCandidateEmail(String candidateEmail);
 	Slice<UserAppliedJobDocument> findByCandidateEmail(String candidateEmail, Pageable pageable);
+	boolean existsByCandidateEmailAndJobId(String candidateEmail, String jobId);
 }

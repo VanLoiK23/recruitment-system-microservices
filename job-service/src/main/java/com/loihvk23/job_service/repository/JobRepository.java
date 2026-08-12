@@ -1,6 +1,8 @@
 package com.loihvk23.job_service.repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
@@ -11,15 +13,18 @@ import com.loihvk23.job_service.document.JobDocument;
 
 @Repository
 public interface JobRepository extends MongoRepository<JobDocument, String> {
-	List<JobDocument> findByRecruiterEmailAndTitleAndLocationAndStatus(String recruiterEmail, String title,
-			String location, String status);
+	boolean existsByRecruiterEmailAndTitleAndLocationAndDeadlineAfter(String recruiterEmail, String title,
+			String location, LocalDateTime now);
 
-	Slice<JobDocument> findByTechnologiesInAndIdNot(List<String> technologies, String jobId, Pageable pageable);
+	Optional<JobDocument> findFirstByRecruiterEmailAndStatus(String recruiterEmail, String status);
 
-	Slice<JobDocument> findByRecruiterEmail(String recruiterEmail, Pageable pageable);
+	Slice<JobDocument> findByTechnologiesInAndIdNotAndStatusAndDeadlineAfter(List<String> technologies, String jobId,
+			String status, LocalDateTime now, Pageable pageable);
 
-	Slice<JobDocument> findByRecruiterEmailAndTitleContainingIgnoreCase(String recruiterEmail, String title,
-			Pageable pageable);
+	Slice<JobDocument> findByRecruiterEmailAndStatusIsNot(String recruiterEmail, String status, Pageable pageable);
+
+	Slice<JobDocument> findByRecruiterEmailAndTitleContainingIgnoreCaseAndStatusIsNot(String recruiterEmail,
+			String title, String status, Pageable pageable);
 
 	Slice<JobDocument> findByMinSalaryGreaterThanEqual(Double minSalary, Pageable pageable);
 

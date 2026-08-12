@@ -38,22 +38,25 @@ public class BlogServiceImpl implements BlogService {
 
 	@Override
 	public Slice<BlogDTO> findBlogsByTitleAndCategory(String searchQuery, String category, Pageable pageable) {
-	    boolean hasQuery = searchQuery != null && !searchQuery.isBlank();
-	    boolean hasCategory = category != null && !category.isBlank() && !"All".equalsIgnoreCase(category);
+		boolean hasQuery = searchQuery != null && !searchQuery.isBlank();
+		boolean hasCategory = category != null && !category.isBlank() && !"All".equalsIgnoreCase(category);
 
-	    Slice<BlogDocument> blogsDocument;
+		Slice<BlogDocument> blogsDocument;
+		String statusPublish = "PUBLISHED";
 
-	    if (hasQuery && hasCategory) {
-	        blogsDocument = blogRepository.findByTitleContainingIgnoreCaseAndCategoryId(searchQuery, category, pageable);
-	    } else if (hasQuery) {
-	        blogsDocument = blogRepository.findByTitleContainingIgnoreCase(searchQuery, pageable);
-	    } else if (hasCategory) {
-	        blogsDocument = blogRepository.findByCategoryId(category, pageable);
-	    } else {
-	        return getBlogsSlice(pageable);
-	    }
+		if (hasQuery && hasCategory) {
+			blogsDocument = blogRepository.findByTitleContainingIgnoreCaseAndCategoryIdAndStatus(searchQuery, category,
+					statusPublish, pageable);
+		} else if (hasQuery) {
+			blogsDocument = blogRepository.findByTitleContainingIgnoreCaseAndStatus(searchQuery, statusPublish,
+					pageable);
+		} else if (hasCategory) {
+			blogsDocument = blogRepository.findByCategoryIdAndStatus(category, statusPublish, pageable);
+		} else {
+			return getBlogsSlice(pageable);
+		}
 
-	    return blogsDocument.map(blogMapper::toDTO);
+		return blogsDocument.map(blogMapper::toDTO);
 	}
 
 	@Override
@@ -67,8 +70,10 @@ public class BlogServiceImpl implements BlogService {
 		if (tags == null || tags.length == 0) {
 			throw new IllegalArgumentException("Tags is required");
 		}
+		String statusPublish = "PUBLISHED";
 
-		Slice<BlogDocument> blogsDocument = blogRepository.findByTagsIn(Arrays.asList(tags), pageable);
+		Slice<BlogDocument> blogsDocument = blogRepository.findByTagsInAndStatus(Arrays.asList(tags), statusPublish,
+				pageable);
 
 		Slice<BlogDTO> blogs = blogsDocument.map(blogMapper::toDTO);
 
@@ -79,6 +84,18 @@ public class BlogServiceImpl implements BlogService {
 	public BlogDTO findById(String blogId) {
 		BlogDocument blogDocument = blogRepository.findById(blogId)
 				.orElseThrow(() -> new IllegalArgumentException("Blog does not exist"));
+
+		return blogMapper.toDTO(blogDocument);
+	}
+	
+	@Override
+	public BlogDTO findByIdWatch(String blogId) {
+		BlogDocument blogDocument = blogRepository.findById(blogId)
+				.orElseThrow(() -> new IllegalArgumentException("Blog does not exist"));
+
+		if (!BlogStatus.PUBLISHED.equals(blogDocument.getStatus())) {
+			return null;
+		}
 
 		return blogMapper.toDTO(blogDocument);
 	}
@@ -155,7 +172,7 @@ public class BlogServiceImpl implements BlogService {
 				existingBlog.setStatus(blogDTO.getStatus());
 			}
 		} else {
-			//set to Draft wait admin approve
+			// set to Draft wait admin approve
 			blogDTO.setStatus(BlogStatus.DRAFT);
 			existingBlog.setStatus(blogDTO.getStatus());
 		}
@@ -171,11 +188,11 @@ public class BlogServiceImpl implements BlogService {
 	}
 
 	@Override
-	public void deleteBlog(String blogId, String email) {
+	public void deleteBlog(String blogId, String email, String role) {
 		BlogDocument blog = blogRepository.findById(blogId)
 				.orElseThrow(() -> new IllegalArgumentException("The blog does not exist !"));
 
-		if (!blog.getAuthorEmail().equalsIgnoreCase(email)) {
+		if (!"ROLE_ADMIN".equalsIgnoreCase(role) && !blog.getAuthorEmail().equalsIgnoreCase(email)) {
 			throw new IllegalArgumentException("The blog isn't created by user with email: " + email);
 		}
 		blogRepository.delete(blog);

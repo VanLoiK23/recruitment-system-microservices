@@ -15,4 +15,6 @@ public interface ApplicationRepository extends JpaRepository<ApplicationEntity, 
 	Slice<ApplicationEntity> findByCandidateEmail(String candidateEmail, Pageable pageable);
 
 	Slice<ApplicationEntity> findByJobIdAndStatus(String jobId, String status, Pageable pageable);
+	
+	boolean existsByCandidateEmailAndJobId(String candidateEmail, String jobId);
 }

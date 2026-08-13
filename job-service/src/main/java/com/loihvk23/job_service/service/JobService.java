@@ -18,7 +18,7 @@ public interface JobService {
 
 	int getTotalElementJobByRecruiter(String recruiterEmail);
 
-	JobPostedResponse getJobPostedByRecruiter(String recruiterEmail, String query, Pageable pageable);
+	JobPostedResponse getJobPostedByRecruiter(String recruiterEmail, String query, String status, Pageable pageable);
 
 	JobDTO approveJob(String jobId);
 

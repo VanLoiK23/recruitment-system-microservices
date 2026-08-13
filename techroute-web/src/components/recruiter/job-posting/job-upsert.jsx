@@ -211,6 +211,9 @@ const JobEditModal = ({ job, onClose, onSave, isAdd }) => {
       deadline: formData.deadline.includes(" ")
         ? formData.deadline
         : `${formData.deadline} 23:59:59`,
+      location: formData.location ? formData.location : cities[0],
+      workType: formData.workType ? formData.workType : workTypes[0],
+      jobLevel: formData.jobLevel ? formData.jobLevel : experienceLevels[0],
     };
   };
 
@@ -343,7 +346,8 @@ const JobEditModal = ({ job, onClose, onSave, isAdd }) => {
                 name="minSalary"
                 value={formData.minSalary}
                 onChange={(e) => {
-                  if (Number.isInteger(e.target.value)) {
+                  const val = e.target.value;
+                  if (val === "" || Number.isInteger(Number(val))) {
                     handleChange(e);
                   }
                 }}
@@ -362,7 +366,8 @@ const JobEditModal = ({ job, onClose, onSave, isAdd }) => {
                 name="maxSalary"
                 value={formData.maxSalary}
                 onChange={(e) => {
-                  if (Number.isInteger(e.target.value)) {
+                  const val = e.target.value;
+                  if (val === "" || Number.isInteger(Number(val))) {
                     handleChange(e);
                   }
                 }}

@@ -21,6 +21,11 @@ const NavBar = () => {
   // }, []);
 
   const handleLogout = async () => {
+    if (!auth.isAuthenticated) {
+      toast.error("You aren't logged in !");
+      return;
+    }
+
     const check = window.confirm("Do you want to logout ?");
 
     if (!check) {

@@ -13,9 +13,9 @@ import CircleLoading from "../../components/animation/animate-loading";
 import { toast } from "react-toastify";
 import JobViewDetail from "../../components/recruiter/job-posting/job-view";
 import JobUpsertModal from "../../components/recruiter/job-posting/job-upsert";
-const RecruitmentPostingPage = () => {
-  const [jobs, setJobs] = useState([]);
-  const [jobActive, setJobActive] = useState({});
+const BlogManagementPage = () => {
+  const [blogs, setBlogs] = useState([]);
+  const [blogActive, setBlogActive] = useState({});
 
   const [previous, setPrevious] = useState(false);
   const [pageActive, setPageActive] = useState(1);
@@ -32,19 +32,19 @@ const RecruitmentPostingPage = () => {
   const [showAddPopup, setShowAddPopUp] = useState(false);
 
   useEffect(() => {
-    const fetchJobPostings = async () => {
+    const fetchBlogs = async () => {
       try {
         setLoading(true);
-        let url = `jobs/posted?&page=${pageActive}&limit=${limit}`;
+        let url = `blogs/posted?&page=${pageActive}&limit=${limit}`;
         if (searchQuery) url += `&query=${encodeURIComponent(searchQuery)}`;
         if (statusFilter) url += `&status=${statusFilter}`;
 
         const data = await axios.get(url);
 
         if (data) {
-          setJobs(data?.jobSlice?.content);
-          setPrevious(!data?.jobSlice?.first);
-          setNext(!data?.jobSlice?.last);
+          setBlogs(data?.blogSlice?.content);
+          setPrevious(!data?.blogSlice?.first);
+          setNext(!data?.blogSlice?.last);
           setTotalElements(data?.totalElement);
         }
       } catch (err) {
@@ -55,7 +55,7 @@ const RecruitmentPostingPage = () => {
     };
 
     const timer = setTimeout(() => {
-      fetchJobPostings();
+        fetchBlogs();
     }, 300);
 
     return () => clearTimeout(timer);
@@ -65,22 +65,22 @@ const RecruitmentPostingPage = () => {
     setPageActive(newPage);
   };
 
-  const handleDelete = async (jobId) => {
-    const check = window.confirm("Do you want delete this Job");
+  const handleDelete = async (blogId) => {
+    const check = window.confirm("Do you want delete this Blog");
 
     if (!check) {
       return;
     }
     try {
-      const data = await axios.delete(`jobs/${jobId}`);
+      const data = await axios.delete(`blogs/${blogId}`);
 
       if (data.success) {
-        toast.success("Job delete successfully");
-        setJobs((prev) => {
-          return prev.filter((job) => job.id !== jobId);
+        toast.success("Blog delete successfully");
+        setBlogs((prev) => {
+          return prev.filter((blog) => blog.id !== blogId);
         });
       } else {
-        toast.warn("Job delete failed");
+        toast.warn("Blog delete failed");
       }
     } catch (err) {
       toast.error(err.message);
@@ -98,25 +98,25 @@ const RecruitmentPostingPage = () => {
       let data;
 
       if (isDraft) {
-        data = await axios.post(`jobs/draft`, formData);
+        data = await axios.post(`blogs/draft`, formData);
       } else if (showAddPopup) {
-        data = await axios.post(`jobs`, formData);
+        data = await axios.post(`blogs`, formData);
       } else {
-        data = await axios.put(`jobs/${formData.id}`, formData);
+        data = await axios.put(`blogs/${formData.id}`, formData);
       }
 
       if (data) {
         if (isDraft) {
-          toast.success("Save job as Draft successful !");
+          toast.success("Save blog as Draft successful !");
         } else {
-          toast.success("Upsert job successfully !");
-          setJobs((prevJobs) => {
-            const isExisting = prevJobs.some((job) => job.id === data.id);
+          toast.success("Upsert blog successfully !");
+          setBlogs((prevBlogs) => {
+            const isExisting = prevBlogs.some((blog) => blog.id === data.id);
 
             if (isExisting) {
-              return prevJobs.map((job) => (job.id === data.id ? data : job));
+              return prevBlogs.map((blog) => (blog.id === data.id ? data : blog));
             } else {
-              return [data, ...prevJobs];
+              return [data, ...prevBlogs];
             }
           });
         }
@@ -139,7 +139,7 @@ const RecruitmentPostingPage = () => {
 
   return (
     <div className="w-full h-full min-h-screen bg-[#EAF2FF] p-8 font-sans">
-      {showViewPopup && (
+      {/* {showViewPopup && (
         <JobViewDetail
           job={jobActive}
           onClose={() => setShowViewPopUp(false)}
@@ -157,12 +157,12 @@ const RecruitmentPostingPage = () => {
           }}
           isAdd={showAddPopup}
         />
-      )}
+      )} */}
 
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-2xl font-bold text-gray-800">
-            Recruitment Posting Management
+            Blog Posting Management
           </h1>
           <p className="text-gray-500 mt-1 text-sm">
             Create and manage open job positions in the company
@@ -398,4 +398,4 @@ const RecruitmentPostingPage = () => {
   );
 };
 
-export default RecruitmentPostingPage;
+export default BlogManagementPage;

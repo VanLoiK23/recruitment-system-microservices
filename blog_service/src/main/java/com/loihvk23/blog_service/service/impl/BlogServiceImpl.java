@@ -1,14 +1,22 @@
 package com.loihvk23.blog_service.service.impl;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
+import org.springframework.data.domain.SliceImpl;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import com.loihvk23.blog_service.BlogStatus;
 import com.loihvk23.blog_service.document.BlogDocument;
 import com.loihvk23.blog_service.dto.BlogDTO;
+import com.loihvk23.blog_service.dto.response.BlogPostedResponse;
 import com.loihvk23.blog_service.mapper.BlogMapper;
 import com.loihvk23.blog_service.repository.BlogRepository;
 import com.loihvk23.blog_service.repository.CategoryRepository;
@@ -25,6 +33,8 @@ public class BlogServiceImpl implements BlogService {
 	private final BlogMapper blogMapper;
 
 	private final CategoryRepository categoryRepository;
+
+	private final MongoTemplate mongoTemplate;
 
 	@Override
 	public Slice<BlogDTO> getBlogsSlice(Pageable pageable) {
@@ -87,7 +97,7 @@ public class BlogServiceImpl implements BlogService {
 
 		return blogMapper.toDTO(blogDocument);
 	}
-	
+
 	@Override
 	public BlogDTO findByIdWatch(String blogId) {
 		BlogDocument blogDocument = blogRepository.findById(blogId)
@@ -196,6 +206,55 @@ public class BlogServiceImpl implements BlogService {
 			throw new IllegalArgumentException("The blog isn't created by user with email: " + email);
 		}
 		blogRepository.delete(blog);
+	}
+
+	@Override
+	public BlogPostedResponse findBlogsPosted(String recruiterEmail, String searchQuery, String category, String status,
+			Pageable pageable) {
+		boolean hasSearch = StringUtils.hasText(searchQuery);
+		boolean hasCategory = category != null && !category.isBlank() && !"All".equalsIgnoreCase(category);
+		boolean hasStatus = status != null && !status.isBlank() && !"All".equalsIgnoreCase(status);
+
+		Query query = new Query();
+		List<Criteria> criterias = new ArrayList<Criteria>();
+
+		if (hasSearch) {
+			String keyworld = searchQuery.trim();
+
+			criterias.add(Criteria.where("title").regex(keyworld, "i"));
+		}
+
+		if (hasCategory) {
+			criterias.add(Criteria.where("categoryId").is(category));
+		}
+
+		if (hasStatus) {
+			criterias.add(Criteria.where("status").is(status));
+		}
+
+		criterias.add(Criteria.where("authorEmail").is(recruiterEmail));
+
+		if (!criterias.isEmpty()) {
+			query.addCriteria(new Criteria().andOperator(criterias.toArray(new Criteria[0])));
+		}
+
+		long total = mongoTemplate.count(query, BlogDocument.class);
+
+		query.with(pageable);
+
+		List<BlogDocument> blogDocuments = mongoTemplate.find(query, BlogDocument.class);
+
+		boolean hasNext = (pageable.getOffset() + blogDocuments.size()) < total;
+
+		List<BlogDTO> blogDTOs = blogDocuments.stream().map(blogMapper::toDTO).toList();
+
+		Slice<BlogDTO> blogSlice = new SliceImpl<>(blogDTOs, pageable, hasNext);
+
+		BlogPostedResponse response = new BlogPostedResponse();
+		response.setBlogSlice(blogSlice);
+		response.setTotalElement((int) total);
+
+		return response;
 	}
 
 }

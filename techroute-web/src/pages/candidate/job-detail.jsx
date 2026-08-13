@@ -10,6 +10,7 @@ import {
   FileText,
   Flame,
   Tag,
+  Clock,
 } from "lucide-react";
 import JobDetailCard from "../../components/detail/job-card";
 import axios from "../../utils/axios.customize";
@@ -278,9 +279,12 @@ const JobDetailPage = () => {
                 )}
               </div>
               <div className="hidden md:flex flex-row flex-wrap max-w-[70%] items-center py-1 px-3 text-gray-400 text-xs font-medium gap-2">
-                {job.createdAt}
+                <Clock className="w-3.5 h-3.5 text-gray-500 stroke-2" />
+                &nbsp;{job.deadline}
                 <span className="w-1 h-1 rounded-full bg-gray-400" />
-                <span>{job.applicantCount}&nbsp;Applicants</span>
+                <span>
+                  {job.applicantCount ? job.applicantCount : 0}&nbsp;Applicants
+                </span>
               </div>
               <div className="flex flex-col justify-center">
                 <div className="flex md:hidden flex-row whitespace-nowrap w-full items-center py-1 px-3 text-gray-400 text-xs font-medium gap-2">
@@ -398,7 +402,7 @@ const JobDetailPage = () => {
                   <Gift className="w-4 h-4 stroke-[2.5]" />
                 </div> */}
                 <h3 className="text-sm font-bold tracking-wide uppercase">
-                 3 Benefits & Allowances
+                  3 Benefits & Allowances
                 </h3>
               </div>
               <ul className="list-disc pl-9 text-xs text-gray-600 leading-relaxed flex flex-col gap-2.5 font-normal">

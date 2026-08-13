@@ -47,10 +47,6 @@ const router = createBrowserRouter([
         path: "blog/:id",
         element: <BlogDetail />,
       },
-      {
-        path: "job-posting",
-        element: <RecruitmentPostingPage />,
-      },
       // Private
       {
         element: <ProtectedRoute />,
@@ -81,6 +77,10 @@ const router = createBrowserRouter([
             children: [
               // { index: true, element: <CandidateDashboard /> },
               // { path: "today-schedule", element: <TodaySchedule /> },
+              {
+                path: "job-posting",
+                element: <RecruitmentPostingPage />,
+              },
               {
                 path: "profile",
                 element: <ProfilePage />,

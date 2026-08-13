@@ -49,7 +49,7 @@ function JobDetailCard({
         </div>
         <div className="flex flex-row items-center gap-1 text-gray-400 bg-gray-50 py-1 px-2.5 rounded-[7px] border border-gray-100">
           <Clock className="w-3.5 h-3.5 text-gray-500 stroke-2" />
-          <span>Application deadline: {job?.createdAt || "25-07-2026"}</span>
+          <span>Application deadline: {job?.deadline || "NAD"}</span>
         </div>
       </div>
       <div className="flex flex-row items-center justify-between gap-2 pt-1">

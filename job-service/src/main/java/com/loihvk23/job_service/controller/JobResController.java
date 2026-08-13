@@ -263,14 +263,14 @@ public class JobResController {
 			@RequestParam(name = "limit", defaultValue = "7") int limit,
 			@RequestParam(name = "sortBy", defaultValue = "createdAt") String sortBy,
 			@RequestParam(name = "query", defaultValue = "") String query,
+			@RequestParam(name = "status", defaultValue = "") String status,
 			@AuthenticationPrincipal UserDetails userDetails) {
 		String recruiterEmail = userDetails.getUsername();
-		List<String> roles = userDetails.getAuthorities().stream().map(GrantedAuthority::getAuthority)
-				.collect(Collectors.toList());
 
 		Pageable pageable = PageRequest.of(page - 1, limit, Sort.by(Sort.Direction.DESC, sortBy));
 
-		JobPostedResponse jobPostedResponse = jobService.getJobPostedByRecruiter(recruiterEmail, query, pageable);
+		JobPostedResponse jobPostedResponse = jobService.getJobPostedByRecruiter(recruiterEmail, query, status,
+				pageable);
 
 		return ResponseEntity.ok(jobPostedResponse);
 	}

@@ -25,6 +25,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.loihvk23.blog_service.dto.BlogDTO;
+import com.loihvk23.blog_service.dto.response.BlogPostedResponse;
 import com.loihvk23.blog_service.service.BlogService;
 
 import jakarta.validation.Valid;
@@ -113,5 +114,22 @@ public class BlogController {
 		blogService.deleteBlog(blogId, email, role);
 
 		return ResponseEntity.ok(Map.of("isSuccess", true));
+	}
+
+	@GetMapping("/posted")
+	public ResponseEntity<?> getBlogPosted(@RequestParam(name = "page", defaultValue = "1") int page,
+			@RequestParam(name = "limit", defaultValue = "7") int limit,
+			@RequestParam(name = "sortBy", defaultValue = "createdAt") String sortBy,
+			@RequestParam(name = "query", defaultValue = "", required = false) String searchQuery,
+			@RequestParam(name = "status", defaultValue = "", required = false) String status,
+			@RequestParam(name = "category", defaultValue = "", required = false) String category,
+			@AuthenticationPrincipal UserDetails userDetails) {
+		String email = userDetails.getUsername();
+
+		Pageable pageable = PageRequest.of(page - 1, limit, Sort.by(Sort.Direction.DESC, sortBy));
+
+		BlogPostedResponse blogPostedResponse = blogService.findBlogsPosted(email, searchQuery, category, status, pageable);
+
+		return ResponseEntity.ok(blogPostedResponse);
 	}
 }

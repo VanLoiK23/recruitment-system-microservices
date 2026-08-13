@@ -26,7 +26,7 @@ const SideBar = () => {
     {
       title: "Recruitment Posting Management",
       icon: <Briefcase size={20} />,
-      path: "/job-posting",
+      path: "/recruiter/job-posting",
     },
     {
       title: "Hồ sơ ứng viên",
@@ -46,6 +46,11 @@ const SideBar = () => {
   ];
 
   const handleLogout = async () => {
+    if (!auth.isAuthenticated) {
+      toast.error("You aren't logged in !");
+      return;
+    }
+
     const check = window.confirm("Do you want to logout?");
 
     if (!check) {

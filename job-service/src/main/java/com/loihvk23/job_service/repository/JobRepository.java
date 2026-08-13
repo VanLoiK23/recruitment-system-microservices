@@ -26,6 +26,11 @@ public interface JobRepository extends MongoRepository<JobDocument, String> {
 	Slice<JobDocument> findByRecruiterEmailAndTitleContainingIgnoreCaseAndStatusIsNot(String recruiterEmail,
 			String title, String status, Pageable pageable);
 
+	Slice<JobDocument> findByRecruiterEmailAndStatus(String recruiterEmail, String status, Pageable pageable);
+
+	Slice<JobDocument> findByRecruiterEmailAndTitleContainingIgnoreCaseAndStatus(String recruiterEmail, String title,
+			String status, Pageable pageable);
+
 	Slice<JobDocument> findByMinSalaryGreaterThanEqual(Double minSalary, Pageable pageable);
 
 	Slice<JobDocument> findByMaxSalaryLessThanEqual(Double maxSalary, Pageable pageable);
@@ -44,5 +49,10 @@ public interface JobRepository extends MongoRepository<JobDocument, String> {
 
 	long countByRecruiterEmail(String recruiterEmail);
 
-	long countByRecruiterEmailAndTitleContainingIgnoreCase(String recruiterEmail, String title);
+	long countByRecruiterEmailAndTitleContainingIgnoreCaseAndStatus(String recruiterEmail, String title, String status);
+
+	long countByRecruiterEmailAndTitleContainingIgnoreCaseAndStatusIsNot(String recruiterEmail, String title,
+			String status);
+
+	long countByRecruiterEmailAndStatus(String recruiterEmail, String status);
 }

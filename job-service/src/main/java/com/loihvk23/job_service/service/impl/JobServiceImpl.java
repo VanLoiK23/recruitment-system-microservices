@@ -115,22 +115,44 @@ public class JobServiceImpl implements JobService {
 	}
 
 	@Override
-	public JobPostedResponse getJobPostedByRecruiter(String recruiterEmail, String query, Pageable pageable) {
-		if (query == null || query.isBlank()) {
-			return JobPostedResponse.builder().jobSlice(findByRecruiter(recruiterEmail, pageable))
-					.totalElement(getTotalElementJobByRecruiter(recruiterEmail)).build();
+	public JobPostedResponse getJobPostedByRecruiter(String recruiterEmail, String query, String status,
+			Pageable pageable) {
 
+		boolean isNotFilterQuery = query == null || query.isBlank();
+		boolean isNotFilterStatus = status == null || status.isBlank();
+
+		if (isNotFilterQuery && isNotFilterStatus) {
+			Slice<JobDTO> jobDTOs = findByRecruiter(recruiterEmail, pageable);
+			int total = getTotalElementJobByRecruiter(recruiterEmail);
+
+			return JobPostedResponse.builder().jobSlice(jobDTOs).totalElement(total).build();
 		}
-		String statusNotLike = "DRAFT";
 
-		Slice<JobDocument> jobDocuments = jobRepository.findByRecruiterEmailAndTitleContainingIgnoreCaseAndStatusIsNot(
-				recruiterEmail, query, statusNotLike, pageable);
+		String statusNotLike = "DRAFT";
+		Slice<JobDocument> jobDocuments;
+		long totalElement = 0;
+
+		if (!isNotFilterQuery && !isNotFilterStatus) {
+			jobDocuments = jobRepository.findByRecruiterEmailAndTitleContainingIgnoreCaseAndStatus(recruiterEmail,
+					query.trim(), status, pageable);
+
+			totalElement = jobRepository.countByRecruiterEmailAndTitleContainingIgnoreCaseAndStatus(recruiterEmail,
+					query.trim(), status);
+		} else if (!isNotFilterQuery) {
+			jobDocuments = jobRepository.findByRecruiterEmailAndTitleContainingIgnoreCaseAndStatusIsNot(recruiterEmail,
+					query.trim(), statusNotLike, pageable);
+
+			totalElement = jobRepository.countByRecruiterEmailAndTitleContainingIgnoreCaseAndStatusIsNot(recruiterEmail,
+					query.trim(), statusNotLike);
+		} else {
+			jobDocuments = jobRepository.findByRecruiterEmailAndStatus(recruiterEmail, status, pageable);
+
+			totalElement = jobRepository.countByRecruiterEmailAndStatus(recruiterEmail, status);
+		}
+
 		Slice<JobDTO> jobDTOs = jobDocuments.map(jobMapper::toDTO);
 
-		return JobPostedResponse.builder().jobSlice(jobDTOs)
-				.totalElement(
-						(int) jobRepository.countByRecruiterEmailAndTitleContainingIgnoreCase(recruiterEmail, query))
-				.build();
+		return JobPostedResponse.builder().jobSlice(jobDTOs).totalElement((int) totalElement).build();
 	}
 
 	@Override
@@ -239,9 +261,13 @@ public class JobServiceImpl implements JobService {
 			// if any sensitive data has changed send admin approves
 			if (isTitleChanged || isDescChanged || isMinSalaryChanged || isMaxSalaryChanged || isBenefitsChanged
 					|| isRequirementsChanged) {
-				jobDTO.setStatus("PENDING");
+				if (!"CLOSED".equalsIgnoreCase(jobDTO.getStatus()) || "OPENING".equalsIgnoreCase(jobDTO.getStatus())) {
+					jobDTO.setStatus("PENDING");
+				}
 			} else {
-				jobDTO.setStatus(jobDocument.getStatus());
+				if ("OPENING".equalsIgnoreCase(jobDocument.getStatus())) {
+					jobDTO.setStatus(jobDocument.getStatus());
+				}
 			}
 		}
 

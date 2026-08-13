@@ -10,20 +10,30 @@ import com.loihvk23.blog_service.document.BlogDocument;
 
 public interface BlogRepository extends MongoRepository<BlogDocument, String> {
 	Slice<BlogDocument> findByTagsContaining(String tags, Pageable pageable);
-	
-	Slice<BlogDocument> findByTitleContainingIgnoreCaseAndCategoryIdAndStatus(String title, String categoryId, String status, Pageable pageable);
 
-    Slice<BlogDocument> findByTitleContainingIgnoreCaseAndStatus(String title, String status, Pageable pageable);
+	Slice<BlogDocument> findByTitleContainingIgnoreCaseAndCategoryIdAndStatus(String title, String categoryId,
+			String status, Pageable pageable);
 
-    Slice<BlogDocument> findByCategoryIdAndStatus(String categoryId, String status, Pageable pageable);	
-    
+	Slice<BlogDocument> findByTitleContainingIgnoreCaseAndStatus(String title, String status, Pageable pageable);
+
+	Slice<BlogDocument> findByCategoryIdAndStatus(String categoryId, String status, Pageable pageable);
+
 	Slice<BlogDocument> findByTagsInAndStatus(List<String> tags, String status, Pageable pageable);
 
 	Slice<BlogDocument> findAllBy(Pageable pageable);
-	
+
 	List<BlogDocument> findByAuthorEmail(String authorEmail);
+
+	Slice<BlogDocument> findByAuthorEmailAndTitleContainingIgnoreCaseAndCategoryIdAndStatus(String authorEmail,
+			String title, String categoryId, String status, Pageable pageable);
+
+	Slice<BlogDocument> findByAuthorEmailAndTitleContainingIgnoreCase(String authorEmail, String title,
+			Pageable pageable);
 	
+	Slice<BlogDocument> findByAuthorEmailAndCategoryIdAndStatus(String authorEmail,
+			String title, String categoryId, String status, Pageable pageable);
+
 	boolean existsByAuthorEmailAndTitle(String authorEmail, String title);
-	
+
 	boolean existsByAuthorEmailAndContent(String authorEmail, String content);
 }

@@ -42,6 +42,7 @@ public class SecurityConfig {
 	                    .requestMatchers(HttpMethod.POST, "/api/jobs/filter").permitAll()
 	                    
 	                    .requestMatchers(HttpMethod.POST, "/api/jobs/approve/**").hasRole("ADMIN")
+	                    .requestMatchers(HttpMethod.POST, "/api/jobs/reject/**").hasRole("ADMIN")
 	                    
 	                    .requestMatchers(HttpMethod.POST, "/api/jobs").hasAnyRole("RECRUITER", "ADMIN")
 	                    

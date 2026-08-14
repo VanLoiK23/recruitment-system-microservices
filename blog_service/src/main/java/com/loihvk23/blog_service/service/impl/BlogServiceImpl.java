@@ -2,7 +2,12 @@ package com.loihvk23.blog_service.service.impl;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
@@ -15,6 +20,7 @@ import org.springframework.util.StringUtils;
 
 import com.loihvk23.blog_service.BlogStatus;
 import com.loihvk23.blog_service.document.BlogDocument;
+import com.loihvk23.blog_service.document.CategoryDocument;
 import com.loihvk23.blog_service.dto.BlogDTO;
 import com.loihvk23.blog_service.dto.response.BlogPostedResponse;
 import com.loihvk23.blog_service.mapper.BlogMapper;
@@ -111,11 +117,11 @@ public class BlogServiceImpl implements BlogService {
 	}
 
 	@Override
-	public BlogDTO approveBlog(String blogId) {
+	public BlogDTO updateStatusByAdmin(String blogId, BlogStatus status) {
 		BlogDocument blogDocument = blogRepository.findById(blogId)
 				.orElseThrow(() -> new IllegalArgumentException("Blog does not exist"));
 
-		blogDocument.setStatus(BlogStatus.PUBLISHED);
+		blogDocument.setStatus(status);
 
 		BlogDocument blogSaved = blogRepository.save(blogDocument);
 		return blogMapper.toDTO(blogSaved);
@@ -219,9 +225,11 @@ public class BlogServiceImpl implements BlogService {
 		List<Criteria> criterias = new ArrayList<Criteria>();
 
 		if (hasSearch) {
-			String keyworld = searchQuery.trim();
+			String keyword = searchQuery.trim();
 
-			criterias.add(Criteria.where("title").regex(keyworld, "i"));
+			Criteria searchCriteria = new Criteria().orOperator(Criteria.where("title").regex(keyword, "i"),
+					Criteria.where("tags").regex(keyword, "i"), Criteria.where("categoryId").regex(keyword, "i"));//fix
+			criterias.add(searchCriteria);
 		}
 
 		if (hasCategory) {
@@ -230,6 +238,8 @@ public class BlogServiceImpl implements BlogService {
 
 		if (hasStatus) {
 			criterias.add(Criteria.where("status").is(status));
+		} else {
+			criterias.add(Criteria.where("status").ne("DRAFT"));
 		}
 
 		criterias.add(Criteria.where("authorEmail").is(recruiterEmail));
@@ -248,7 +258,20 @@ public class BlogServiceImpl implements BlogService {
 
 		List<BlogDTO> blogDTOs = blogDocuments.stream().map(blogMapper::toDTO).toList();
 
-		Slice<BlogDTO> blogSlice = new SliceImpl<>(blogDTOs, pageable, hasNext);
+		List<String> categoriesId = blogDTOs.stream().map(BlogDTO::getCategoryId).collect(Collectors.toList());
+		Iterable<CategoryDocument> categories = categoryRepository.findAllById(categoriesId);
+		Map<String, String> categoryMap = new HashMap<String, String>();
+
+		categories.forEach(item -> {
+			categoryMap.put(item.getId(), item.getName());
+		});
+
+		List<BlogDTO> adjustBlogDTOs = blogDTOs.stream().map(blog -> {
+			blog.setCategory(categoryMap.get(blog.getCategoryId()));
+			return blog;
+		}).collect(Collectors.toList());
+
+		Slice<BlogDTO> blogSlice = new SliceImpl<>(adjustBlogDTOs, pageable, hasNext);
 
 		BlogPostedResponse response = new BlogPostedResponse();
 		response.setBlogSlice(blogSlice);

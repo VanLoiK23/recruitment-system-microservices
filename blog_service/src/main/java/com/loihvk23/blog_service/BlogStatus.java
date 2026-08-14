@@ -1,5 +1,5 @@
 package com.loihvk23.blog_service;
 
 public enum BlogStatus {
-	DRAFT, PUBLISHED
+	DRAFT, PENDING, PUBLISHED, REJECTED
 }

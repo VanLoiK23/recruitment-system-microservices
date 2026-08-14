@@ -30,12 +30,13 @@ public class SecurityConfig {
 		http.csrf(csrf -> csrf.disable()).cors(cors -> cors.disable())
 				.authorizeHttpRequests(auth -> auth.requestMatchers(HttpMethod.GET, "/api/blogs/**").permitAll()
 
+						.requestMatchers(HttpMethod.PUT, "/api/blogs/approve/**").hasRole("ADMIN")
+						.requestMatchers(HttpMethod.PUT, "/api/blogs/reject/**").hasRole("ADMIN")
+						
 						.requestMatchers(HttpMethod.POST, "/api/blogs/**").hasAnyRole("RECRUITER", "ADMIN")
 						.requestMatchers(HttpMethod.PUT, "/api/blogs/**").hasAnyRole("RECRUITER", "ADMIN")
 
 						.requestMatchers(HttpMethod.DELETE, "/api/blogs/**").hasAnyRole("RECRUITER", "ADMIN")
-
-						.requestMatchers(HttpMethod.PUT, "/api/blogs/approve/**").hasRole("ADMIN")
 
 						.requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
 						

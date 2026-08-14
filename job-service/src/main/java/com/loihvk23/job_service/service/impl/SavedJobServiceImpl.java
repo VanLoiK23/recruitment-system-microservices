@@ -59,7 +59,7 @@ public class SavedJobServiceImpl implements SavedJobService {
 
 		Map<String, JobDetailHolder> jobDetailMap = new HashMap<String, JobDetailHolder>();
 		jobsIterable.forEach((job) -> {
-			jobDetailMap.put(job.getId(), new JobDetailHolder(job.getTitle(), job.getStatus()));
+			jobDetailMap.put(job.getId(), new JobDetailHolder(job.getTitle(), job.getStatus().toString()));
 		});
 
 		Slice<JobManagementResponse> saveJobDTOs = saveJobs.map(savedJob -> {

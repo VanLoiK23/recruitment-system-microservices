@@ -6,6 +6,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 
+import com.loihvk23.job_service.JobStatus;
 import com.loihvk23.job_service.dto.JobDTO;
 import com.loihvk23.job_service.dto.request.AdvanceFilterRequest;
 import com.loihvk23.job_service.dto.response.JobPostedResponse;
@@ -20,8 +21,8 @@ public interface JobService {
 
 	JobPostedResponse getJobPostedByRecruiter(String recruiterEmail, String query, String status, Pageable pageable);
 
-	JobDTO approveJob(String jobId);
-
+	JobDTO updateStatusByAdmin(String jobId, JobStatus status);
+	
 	JobDTO saveDraft(JobDTO jobDTO, String recruiterEmail);
 
 	JobDTO getJobDraft(String recruiterEmail);

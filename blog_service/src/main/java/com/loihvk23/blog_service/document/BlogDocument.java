@@ -44,6 +44,8 @@ public class BlogDocument {
     @Builder.Default
     private BlogStatus status = BlogStatus.DRAFT;
     
+	private String reason;
+    
     @Field(name = "view_count")
     @Builder.Default
     private Long viewCount = 0L; 

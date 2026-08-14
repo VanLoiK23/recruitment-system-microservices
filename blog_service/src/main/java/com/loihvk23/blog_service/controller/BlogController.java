@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.loihvk23.blog_service.BlogStatus;
 import com.loihvk23.blog_service.dto.BlogDTO;
 import com.loihvk23.blog_service.dto.response.BlogPostedResponse;
 import com.loihvk23.blog_service.service.BlogService;
@@ -97,7 +98,14 @@ public class BlogController {
 
 	@PutMapping("/approve/{id}")
 	public ResponseEntity<?> approveBlog(@PathVariable(name = "id", required = true) String blogId) {
-		BlogDTO blog = blogService.approveBlog(blogId);
+		BlogDTO blog = blogService.updateStatusByAdmin(blogId, BlogStatus.PUBLISHED);
+
+		return ResponseEntity.ok(blog);
+	}
+	
+	@PutMapping("/reject/{id}")
+	public ResponseEntity<?> rejectBlog(@PathVariable(name = "id", required = true) String blogId) {
+		BlogDTO blog = blogService.updateStatusByAdmin(blogId, BlogStatus.REJECTED);
 
 		return ResponseEntity.ok(blog);
 	}

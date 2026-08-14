@@ -36,10 +36,14 @@ public class BlogDTO {
 	@NotBlank(message = "Category is requied")
 	private String categoryId;
 
+	private String category;
+
 	private List<String> tags;
 
 	@Builder.Default
 	private BlogStatus status = BlogStatus.DRAFT;
+	
+	private String reason;
 
 	@Builder.Default
 	private Long viewCount = 0L;

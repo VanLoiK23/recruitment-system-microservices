@@ -32,6 +32,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import com.loihvk23.job_service.JobStatus;
 import com.loihvk23.job_service.config.RabbitMQConfig;
 import com.loihvk23.job_service.document.JobDocument;
 import com.loihvk23.job_service.document.SavedJobDocument;
@@ -156,11 +157,11 @@ public class JobServiceImpl implements JobService {
 	}
 
 	@Override
-	public JobDTO approveJob(String jobId) {
+	public JobDTO updateStatusByAdmin(String jobId, JobStatus status) {
 		JobDocument jobDocument = jobRepository.findById(jobId)
 				.orElseThrow(() -> new IllegalArgumentException("Job does not exist"));
 
-		jobDocument.setStatus("OPENING");
+		jobDocument.setStatus(status);
 
 		JobDocument jobSaveDocument = jobRepository.save(jobDocument);
 		return jobMapper.toDTO(jobSaveDocument);
@@ -182,7 +183,7 @@ public class JobServiceImpl implements JobService {
 		}
 
 		draftToSave.setRecruiterEmail(recruiterEmail);
-		draftToSave.setStatus("DRAFT");
+		draftToSave.setStatus(JobStatus.DRAFT);
 
 		JobDocument savedDocument = jobRepository.save(draftToSave);
 		return jobMapper.toDTO(savedDocument);
@@ -214,18 +215,22 @@ public class JobServiceImpl implements JobService {
 			jobDTO.setDeadline(LocalDateTime.now().plusDays(30));
 		}
 
-		if (!"ROLE_ADMIN".equalsIgnoreCase(role) && jobDTO.getStatus().equalsIgnoreCase("OPENING")) {
+		if (!"ROLE_ADMIN".equalsIgnoreCase(role) && JobStatus.OPENING.equals(jobDTO.getStatus())) {
 			throw new IllegalArgumentException("You can't publish direct job (Not authorization) !");
 		}
 
 		jobDTO.setCreatedAt(LocalDateTime.now());
-		jobDTO.setStatus("PENDING");
+		if ("ROLE_ADMIN".equalsIgnoreCase(role)) {
+			jobDTO.setStatus(JobStatus.OPENING);
+		} else {
+			jobDTO.setStatus(JobStatus.PENDING);
+		}
 		JobDocument jobDocument = jobRepository.save(jobMapper.toDocument(jobDTO));
 		JobDTO jobSaveDto = jobMapper.toDTO(jobDocument);
 
 		JobEvent jobEvent = JobEvent.builder().id(jobSaveDto.getId()).title(jobSaveDto.getTitle())
-				.recruiterEmail(recruiterEmail).status(jobSaveDto.getStatus()).deadline(jobSaveDto.getDeadline())
-				.build();
+				.recruiterEmail(recruiterEmail).status(jobSaveDto.getStatus().toString())
+				.deadline(jobSaveDto.getDeadline()).build();
 		rabbitTemplate.convertAndSend(RabbitMQConfig.JOB_EXCHANGE, RabbitMQConfig.JOB_UPSERTED_KEY, jobEvent);
 
 		return jobSaveDto;
@@ -259,13 +264,15 @@ public class JobServiceImpl implements JobService {
 					.equals(new HashSet<>(optionalList(jobDTO.getRequirements())));
 
 			// if any sensitive data has changed send admin approves
-			if (isTitleChanged || isDescChanged || isMinSalaryChanged || isMaxSalaryChanged || isBenefitsChanged
+			if (JobStatus.REJECTED.equals(jobDocument.getStatus())) {
+				jobDTO.setStatus(JobStatus.PENDING);
+			} else if (isTitleChanged || isDescChanged || isMinSalaryChanged || isMaxSalaryChanged || isBenefitsChanged
 					|| isRequirementsChanged) {
-				if (!"CLOSED".equalsIgnoreCase(jobDTO.getStatus()) || "OPENING".equalsIgnoreCase(jobDTO.getStatus())) {
-					jobDTO.setStatus("PENDING");
+				if (!JobStatus.CLOSED.equals(jobDTO.getStatus()) || JobStatus.OPENING.equals(jobDTO.getStatus())) {
+					jobDTO.setStatus(JobStatus.PENDING);
 				}
 			} else {
-				if ("OPENING".equalsIgnoreCase(jobDocument.getStatus())) {
+				if (JobStatus.OPENING.equals(jobDocument.getStatus())) {
 					jobDTO.setStatus(jobDocument.getStatus());
 				}
 			}
@@ -278,7 +285,7 @@ public class JobServiceImpl implements JobService {
 		JobDTO jobSaveDto = jobMapper.toDTO(jobSaveDocument);
 
 		JobEvent jobEvent = JobEvent.builder().id(jobSaveDto.getId()).title(jobSaveDto.getTitle())
-				.recruiterEmail(jobSaveDto.getRecruiterEmail()).status(jobSaveDto.getStatus())
+				.recruiterEmail(jobSaveDto.getRecruiterEmail()).status(jobSaveDto.getStatus().toString())
 				.deadline(jobSaveDto.getDeadline()).build();
 
 		rabbitTemplate.convertAndSend(RabbitMQConfig.JOB_EXCHANGE, RabbitMQConfig.JOB_UPSERTED_KEY, jobEvent);
@@ -495,7 +502,7 @@ public class JobServiceImpl implements JobService {
 			res.setId(job.getId());
 			res.setJobId(job.getId());
 			res.setTitle(job.getTitle());
-			res.setStatus(job.getStatus());
+			res.setStatus(job.getStatus().toString());
 			res.setCreatedAt(viewedAtMap.get(job.getId()));
 			return res;
 		}).sorted(Comparator.comparing(JobManagementResponse::getCreatedAt,

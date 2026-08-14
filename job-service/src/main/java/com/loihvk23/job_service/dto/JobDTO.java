@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.loihvk23.job_service.JobStatus;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -35,7 +36,10 @@ public class JobDTO {
 	@NotBlank(message = "Description must be not empty")
 	private String description;
 	
-	private String status;
+	@Builder.Default
+	private JobStatus status = JobStatus.DRAFT;
+	
+	private String reason;
 	
 	private String recruiterEmail;
 	

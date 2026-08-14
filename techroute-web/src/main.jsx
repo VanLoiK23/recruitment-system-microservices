@@ -21,6 +21,7 @@ import CvBuilderLanding from "./pages/candidate/cv-builder.jsx";
 import TechBlog from "./pages/blog/tech-blog.jsx";
 import BlogDetail from "./pages/blog/tech-blog-detail.jsx";
 import RecruitmentPostingPage from "./pages/recruiter/recruitment-posting.jsx";
+import BlogManagementPage from "./pages/recruiter/blog-management.jsx";
 const router = createBrowserRouter([
   {
     path: "/",
@@ -80,6 +81,10 @@ const router = createBrowserRouter([
               {
                 path: "job-posting",
                 element: <RecruitmentPostingPage />,
+              },
+              {
+                path: "blogs",
+                element: <BlogManagementPage />,
               },
               {
                 path: "profile",

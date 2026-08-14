@@ -3,6 +3,7 @@ package com.loihvk23.blog_service.service;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 
+import com.loihvk23.blog_service.BlogStatus;
 import com.loihvk23.blog_service.dto.BlogDTO;
 import com.loihvk23.blog_service.dto.response.BlogPostedResponse;
 
@@ -17,7 +18,7 @@ public interface BlogService {
 
 	BlogDTO findByIdWatch(String blogId);
 
-	BlogDTO approveBlog(String blogId);
+	BlogDTO updateStatusByAdmin(String blogId,BlogStatus status);
 
 	BlogDTO createBlog(BlogDTO blogDTO, String email, String role);
 

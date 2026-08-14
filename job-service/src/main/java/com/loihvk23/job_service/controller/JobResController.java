@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.loihvk23.job_service.JobStatus;
 import com.loihvk23.job_service.dto.JobDTO;
 import com.loihvk23.job_service.dto.request.AdvanceFilterRequest;
 import com.loihvk23.job_service.dto.response.JobManagementResponse;
@@ -92,7 +93,15 @@ public class JobResController {
 	@PostMapping("/approve/{id}")
 	public ResponseEntity<JobDTO> approveJob(@PathVariable(name = "id") String jobId,
 			@AuthenticationPrincipal UserDetails userDetails) {
-		JobDTO jobDTO = jobService.approveJob(jobId);
+		JobDTO jobDTO = jobService.updateStatusByAdmin(jobId,JobStatus.OPENING);
+
+		return ResponseEntity.ok(jobDTO);
+	}
+	
+	@PostMapping("/reject/{id}")
+	public ResponseEntity<JobDTO> rejectJob(@PathVariable(name = "id") String jobId,
+			@AuthenticationPrincipal UserDetails userDetails) {
+		JobDTO jobDTO = jobService.updateStatusByAdmin(jobId,JobStatus.REJECTED);
 
 		return ResponseEntity.ok(jobDTO);
 	}

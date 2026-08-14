@@ -7,6 +7,9 @@ import {
   Edit,
   Trash2,
   Eye,
+  CircleHelp,
+  X,
+  AlertCircle,
 } from "lucide-react";
 import axios from "../../utils/axios.customize";
 import CircleLoading from "../../components/animation/animate-loading";
@@ -30,6 +33,9 @@ const RecruitmentPostingPage = () => {
   const [showViewPopup, setShowViewPopUp] = useState(false);
   const [showUpsertPopup, setShowUpsertPopUp] = useState(false);
   const [showAddPopup, setShowAddPopUp] = useState(false);
+
+  const [showReason, setShowReason] = useState(false);
+  const [reason, setReason] = useState("");
 
   useEffect(() => {
     const fetchJobPostings = async () => {
@@ -79,6 +85,7 @@ const RecruitmentPostingPage = () => {
         setJobs((prev) => {
           return prev.filter((job) => job.id !== jobId);
         });
+        setTotalElements((prev) => Math.max(0, prev - 1));
       } else {
         toast.warn("Job delete failed");
       }
@@ -159,6 +166,52 @@ const RecruitmentPostingPage = () => {
         />
       )}
 
+      {showReason && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="relative w-full max-w-md bg-white rounded-2xl p-6 shadow-2xl border border-gray-100 animate-in zoom-in-95 duration-200">
+            <button
+              onClick={() => {
+                setShowReason(false);
+                setReason("");
+              }}
+              className="absolute top-4 right-4 p-2 text-gray-400 hover:text-slate-700 hover:bg-slate-100 rounded-full transition-colors"
+            >
+              <X size={18} />
+            </button>
+
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-full bg-rose-50 border border-rose-100 flex items-center justify-center text-rose-500 shrink-0">
+                <AlertCircle size={20} />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-slate-800">
+                  Rejection Reason
+                </h3>
+                <p className="text-xs text-gray-500">
+                  Feedback from the administration team
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-rose-50/50 border border-rose-100 rounded-xl p-4 text-sm text-rose-950 font-medium whitespace-pre-wrap leading-relaxed">
+              {reason || "No specific reason provided."}
+            </div>
+
+            <div className="mt-6 flex justify-end">
+              <button
+                onClick={() => {
+                  setShowReason(false);
+                  setReason("");
+                }}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-sm font-semibold transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-2xl font-bold text-gray-800">
@@ -211,7 +264,8 @@ const RecruitmentPostingPage = () => {
             <option value="OPENING">OPENING</option>
             <option value="PENDING">PENDING</option>
             <option value="CLOSED">CLOSED</option>
-            <option value="">ALL</option>
+            <option value="REJECTED">REJECTED</option>
+            <option value="">All status</option>
           </select>
         </button>
       </div>
@@ -242,7 +296,13 @@ const RecruitmentPostingPage = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {loading ?? <CircleLoading />}
+              {loading ?? (
+                <tr>
+                  <td colSpan={6} className="py-16 text-center">
+                    <CircleLoading />
+                  </td>
+                </tr>
+              )}
               {jobs.length === 0 && (
                 <tr>
                   <td colSpan={6} className="py-12 text-center">
@@ -303,7 +363,7 @@ const RecruitmentPostingPage = () => {
                             : ""
                         }
                         ${
-                          job.status === "CLOSED"
+                          job.status === "CLOSED" || job.status === "REJECTED"
                             ? "bg-red-100 text-red-700"
                             : ""
                         }
@@ -345,6 +405,18 @@ const RecruitmentPostingPage = () => {
                       >
                         <Trash2 size={18} />
                       </button>
+                      {job.status === "REJECTED" && (
+                        <button
+                          className="p-2 text-gray-400 hover:text-amber-500 hover:bg-amber-50 rounded-lg transition-colors cursor-pointer"
+                          title="Why was this rejected?"
+                          onClick={() => {
+                            setShowReason(true);
+                            setReason(job?.reason);
+                          }}
+                        >
+                          <CircleHelp size={18} />
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>

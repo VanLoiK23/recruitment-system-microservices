@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import {
   Search,
   Plus,
@@ -14,14 +14,22 @@ import {
   CircleHelp,
   AlertCircle,
   X,
+  Folder,
 } from "lucide-react";
 import axios from "../../utils/axios.customize";
 import CircleLoading from "../../components/animation/animate-loading";
 import { toast } from "react-toastify";
+import BlogViewDetail from "../../components/recruiter/blog/blog-view";
+import BlogUpsertModal from "../../components/recruiter/blog/blog-upsert";
+import { AuthContext } from "../../components/context/auth.context";
 
 const BlogManagementPage = () => {
+  const { auth } = useContext(AuthContext);
+
   const [blogs, setBlogs] = useState([]);
   const [blogActive, setBlogActive] = useState({});
+
+  const [categories, setCategories] = useState([]);
 
   const [previous, setPrevious] = useState(false);
   const [pageActive, setPageActive] = useState(1);
@@ -32,6 +40,7 @@ const BlogManagementPage = () => {
 
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("");
 
   const [showViewPopup, setShowViewPopUp] = useState(false);
   const [showUpsertPopup, setShowUpsertPopUp] = useState(false);
@@ -40,6 +49,8 @@ const BlogManagementPage = () => {
   const [showReason, setShowReason] = useState(false);
   const [reason, setReason] = useState("");
 
+  const [loadingUpsert, setLoadingUpsert] = useState(false);
+
   useEffect(() => {
     const fetchBlogs = async () => {
       try {
@@ -47,6 +58,7 @@ const BlogManagementPage = () => {
         let url = `blogs/posted?page=${pageActive}&limit=${limit}`;
         if (searchQuery) url += `&query=${encodeURIComponent(searchQuery)}`;
         if (statusFilter) url += `&status=${statusFilter}`;
+        if (categoryFilter) url += `&category=${categoryFilter}`;
 
         const data = await axios.get(url);
 
@@ -68,7 +80,23 @@ const BlogManagementPage = () => {
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [pageActive, searchQuery, statusFilter, limit]);
+  }, [pageActive, searchQuery, statusFilter, categoryFilter, limit]);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const data = await axios.get("categories");
+
+        if (data) {
+          setCategories(data);
+        }
+      } catch (err) {
+        toast.error(err.message);
+      }
+    };
+
+    fetchCategories();
+  }, []);
 
   const onChangePage = (newPage) => {
     setPageActive(newPage);
@@ -83,7 +111,7 @@ const BlogManagementPage = () => {
     try {
       const data = await axios.delete(`blogs/${blogId}`);
 
-      if (data?.success || data) {
+      if (data?.success) {
         toast.success("Blog deleted successfully!");
         setBlogs((prev) => prev.filter((blog) => blog.id !== blogId));
         setTotalElements((prev) => Math.max(0, prev - 1));
@@ -102,29 +130,63 @@ const BlogManagementPage = () => {
 
   const handleSave = async (formData, isDraft) => {
     try {
+      setLoadingUpsert(true);
       let data;
+
+      const formDataAdjusted = new FormData();
+      const { thumbnailFile, thumbnailUrl, ...cleanBlogData } = formData;
+
+      const blogBlob = new Blob(
+        [
+          JSON.stringify({
+            ...cleanBlogData,
+            authorName: auth?.user?.fullName,
+          }),
+        ],
+        {
+          type: "application/json",
+        }
+      );
+
+      formDataAdjusted.append("blog", blogBlob);
+
+      if (thumbnailFile) {
+        formDataAdjusted.append("thumbnailFile", thumbnailFile);
+      }
+
       if (isDraft) {
-        data = await axios.post(`blogs/draft`, formData);
+        data = await axios.post(`blogs/draft`, formDataAdjusted);
       } else if (showAddPopup) {
-        data = await axios.post(`blogs`, formData);
+        data = await axios.post(`blogs`, formDataAdjusted);
       } else {
-        data = await axios.put(`blogs/${formData.id}`, formData);
+        data = await axios.put(`blogs/${cleanBlogData.id}`, formDataAdjusted);
       }
 
       if (data) {
         if (isDraft) {
           toast.success("Blog saved as Draft successfully!");
         } else {
-          toast.success("Blog published successfully!");
+          toast.success("Upsert Blog successfully!");
+
+          const category = categories.filter(
+            (item) => item.id == data.categoryId
+          )[0];
+
+          const adjData = {
+            ...data,
+            category: category ? category.name : "",
+          };
+
+          console.log("Update " + category.name);
 
           setBlogs((prevBlogs) => {
-            const isExisting = prevBlogs.some((blog) => blog.id === data.id);
+            const isExisting = prevBlogs.some((blog) => blog.id === adjData.id);
             if (isExisting) {
               return prevBlogs.map((blog) =>
-                blog.id === data.id ? data : blog
+                blog.id === adjData.id ? adjData : blog
               );
             } else {
-              return [data, ...prevBlogs];
+              return [adjData, ...prevBlogs];
             }
           });
         }
@@ -140,6 +202,8 @@ const BlogManagementPage = () => {
       } else {
         toast.error(errorData || "An error occurred!");
       }
+    } finally {
+      setLoadingUpsert(false);
     }
   };
 
@@ -168,6 +232,28 @@ const BlogManagementPage = () => {
 
   return (
     <div className="w-full min-h-screen bg-[#F4F7FE] p-6 md:p-8 font-sans antialiased text-slate-800">
+      {showViewPopup && (
+        <BlogViewDetail
+          blog={blogActive}
+          onClose={() => setShowViewPopUp(false)}
+          renderStatusBadge={renderStatusBadge}
+        />
+      )}
+      {showUpsertPopup && (
+        <BlogUpsertModal
+          blog={blogActive}
+          onClose={() => {
+            setShowUpsertPopUp(false);
+            setShowAddPopUp(false);
+          }}
+          onSave={(formData, isDraft) => {
+            handleSave(formData, isDraft);
+          }}
+          isAdd={showAddPopup}
+          categories={categories}
+          loading={loadingUpsert}
+        />
+      )}
       {showReason && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="relative w-full max-w-md bg-white rounded-2xl p-6 shadow-2xl border border-gray-100 animate-in zoom-in-95 duration-200">
@@ -251,26 +337,51 @@ const BlogManagementPage = () => {
           />
         </div>
 
-        <button className="relative flex items-center gap-2 px-4 py-2.5 border border-gray-200 text-gray-600 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium">
-          <Filter size={18} />
-          <select
-            name="statusFilter"
-            onChange={(e) => {
-              setStatusFilter(e.target.value);
-            }}
-            defaultValue=""
-            className="border-0 outline-0"
-            id="statusFilter"
-          >
-            <option value="" disabled>
-              Filter status
-            </option>
-            <option value="PUBLISHED">Published</option>
-            <option value="PENDING">Pending</option>
-            <option value="REJECTED">Rejected</option>
-            <option value="">All status</option>
-          </select>
-        </button>
+        <div className="flex gap-2">
+          <button className="relative mr-5 flex items-center gap-2 px-4 py-2.5 border border-gray-200 text-gray-600 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium">
+            <Folder size={18} />
+            <select
+              name="categoryFilter"
+              onChange={(e) => {
+                setCategoryFilter(e.target.value);
+              }}
+              defaultValue=""
+              className="border-0 outline-0"
+              id="categoryFilter"
+            >
+              <option value="" disabled>
+                Filter Category
+              </option>
+              {categories.map((category, index) => (
+                <option key={index} value={category.id}>
+                  {category.name}
+                </option>
+              ))}
+              <option value="">All category</option>
+            </select>
+          </button>
+
+          <button className="relative flex items-center gap-2 px-4 py-2.5 border border-gray-200 text-gray-600 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium">
+            <Filter size={18} />
+            <select
+              name="statusFilter"
+              onChange={(e) => {
+                setStatusFilter(e.target.value);
+              }}
+              defaultValue=""
+              className="border-0 outline-0"
+              id="statusFilter"
+            >
+              <option value="" disabled>
+                Filter status
+              </option>
+              <option value="PUBLISHED">Published</option>
+              <option value="PENDING">Pending</option>
+              <option value="REJECTED">Rejected</option>
+              <option value="">All status</option>
+            </select>
+          </button>
+        </div>
       </div>
 
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
@@ -445,7 +556,7 @@ const BlogManagementPage = () => {
                             title="Why was this rejected?"
                             onClick={() => {
                               setShowReason(true);
-                              setReason(job?.reason);
+                              setReason(blog?.reason);
                             }}
                           >
                             <CircleHelp size={18} />

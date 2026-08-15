@@ -8,11 +8,12 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 
 import com.loihvk23.blog_service.document.CategoryDocument;
 
-
-public interface CategoryRepository extends MongoRepository<CategoryDocument, String>{
+public interface CategoryRepository extends MongoRepository<CategoryDocument, String> {
 	List<CategoryDocument> findByName(String name);
-	
+
+	List<CategoryDocument> findByNameContainingIgnoreCase(String name);
+
 	Slice<CategoryDocument> findAllBy(Pageable pageable);
-	
+
 	boolean existsByName(String name);
 }

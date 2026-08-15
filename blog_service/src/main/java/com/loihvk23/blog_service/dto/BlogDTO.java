@@ -25,7 +25,6 @@ public class BlogDTO {
 	@NotBlank(message = "Content is requied")
 	private String content;
 
-	@NotBlank(message = "Url image is requied")
 	private String thumbnailUrl;
 
 	private String authorEmail;

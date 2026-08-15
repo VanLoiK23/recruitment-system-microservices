@@ -1,12 +1,11 @@
 package com.loihvk23.blog_service.service.impl;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Pageable;
@@ -17,6 +16,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.loihvk23.blog_service.BlogStatus;
 import com.loihvk23.blog_service.document.BlogDocument;
@@ -27,6 +27,7 @@ import com.loihvk23.blog_service.mapper.BlogMapper;
 import com.loihvk23.blog_service.repository.BlogRepository;
 import com.loihvk23.blog_service.repository.CategoryRepository;
 import com.loihvk23.blog_service.service.BlogService;
+import com.loihvk23.blog_service.service.CloudinaryService;
 
 import io.jsonwebtoken.lang.Arrays;
 import lombok.RequiredArgsConstructor;
@@ -41,6 +42,8 @@ public class BlogServiceImpl implements BlogService {
 	private final CategoryRepository categoryRepository;
 
 	private final MongoTemplate mongoTemplate;
+
+	private final CloudinaryService cloudinaryService;
 
 	@Override
 	public Slice<BlogDTO> getBlogsSlice(Pageable pageable) {
@@ -128,20 +131,76 @@ public class BlogServiceImpl implements BlogService {
 	}
 
 	@Override
-	public BlogDTO createBlog(BlogDTO blogDTO, String email, String role) {
+	public BlogDTO saveBlogDraft(BlogDTO blogDTO, MultipartFile thumbnailFile, String email) throws IOException {
+		BlogDocument blog = blogRepository.findByAuthorEmailAndStatus(email, "DRAFT").orElse(null);
+		String oldUrl = (blog != null) ? blog.getThumbnailUrl() : "";
 
-		if (blogDTO.getId() != null && !blogDTO.getId().isBlank()) {
+		if (blog != null) {
+			blogDTO.setId(blog.getId());
+		}
+
+		if (blogDTO.getId() == null || blogDTO.getId().isBlank()) {
+			blogDTO.setId(null);
+		}
+
+		String urlImg = (thumbnailFile != null && !thumbnailFile.isEmpty()) ? cloudinaryService.uploadImg(thumbnailFile)
+				: oldUrl;
+
+		if (thumbnailFile != null && !thumbnailFile.isEmpty()) {
+			deleteFileImgInBlogDraf(email);
+		}
+
+		if (!urlImg.isBlank()) {
+			blogDTO.setThumbnailUrl(urlImg);
+		}
+		blogDTO.setAuthorEmail(email);
+		blogDTO.setStatus(BlogStatus.DRAFT);
+		BlogDocument blogDocumentSaved = blogRepository.save(blogMapper.toDocument(blogDTO));
+
+		return blogMapper.toDTO(blogDocumentSaved);
+	}
+
+	@Override
+	public BlogDTO fetchBlogDraft(String email) {
+		BlogDocument blogDocument = blogRepository.findByAuthorEmailAndStatus(email, "DRAFT").orElse(null);
+
+		return blogMapper.toDTO(blogDocument);
+	}
+
+	private void deleteFileImgInBlogDraf(String email) throws IOException {
+		BlogDocument blog = blogRepository.findByAuthorEmailAndStatus(email, "DRAFT").orElse(null);
+
+		if (blog != null && blog.getThumbnailUrl() != null && !blog.getThumbnailUrl().isBlank()) {
+			cloudinaryService.deleteFile(blog.getThumbnailUrl());
+		}
+	}
+
+	@Override
+	public BlogDTO createBlog(BlogDTO blogDTO, MultipartFile thumbnailFile, String email, String role)
+			throws IOException {
+		String statusDraft = "DRAFT";
+		BlogDocument blog = blogRepository.findByAuthorEmailAndStatus(email, statusDraft).orElse(null);
+
+		if (blogDTO.getId() != null && !blogDTO.getId().isBlank() && blog == null) {
 			throw new IllegalArgumentException("ID must not be provided when creating a new blog post!");
 		}
 
+		if (blog != null) {
+			blogDTO.setId(blog.getId());
+		}
+
+		if (blogDTO.getId() == null || blogDTO.getId().isBlank()) {
+			blogDTO.setId(null);
+		}
+		
 		categoryRepository.findById(blogDTO.getCategoryId())
 				.orElseThrow(() -> new IllegalArgumentException("Category does not exist"));
 
-		if (blogRepository.existsByAuthorEmailAndTitle(email, blogDTO.getTitle())) {
+		if (blogRepository.existsByAuthorEmailAndTitleAndStatusIsNot(email, blogDTO.getTitle(), statusDraft)) {
 			throw new IllegalArgumentException("You have already posted a blog with the same title");
 		}
 
-		if (blogRepository.existsByAuthorEmailAndContent(email, blogDTO.getContent())) {
+		if (blogRepository.existsByAuthorEmailAndContentAndStatusIsNot(email, blogDTO.getContent(), statusDraft)) {
 			throw new IllegalArgumentException("You have already posted a blog with the same content");
 		}
 
@@ -152,11 +211,24 @@ public class BlogServiceImpl implements BlogService {
 				throw new IllegalArgumentException("You don't have permission to publish a blog post directly!");
 			}
 
-			if (blogDTO.getStatus() == null) {
-				blogDTO.setStatus(BlogStatus.DRAFT);
-			}
+			blogDTO.setStatus(BlogStatus.PENDING);
 		}
 
+		if (thumbnailFile == null || thumbnailFile.isEmpty()) {
+			if (blog != null && blog.getThumbnailUrl() != null && !blog.getThumbnailUrl().isBlank()) {
+				blogDTO.setThumbnailUrl(blog.getThumbnailUrl());
+			} else {
+				throw new IllegalArgumentException("Thumbnail img is required !");
+			}
+		} else {
+			String urlImg = cloudinaryService.uploadImg(thumbnailFile);
+
+			blogDTO.setThumbnailUrl(urlImg);
+
+			deleteFileImgInBlogDraf(email);
+		}
+
+		blogDTO.setViewCount(0L);
 		blogDTO.setCreatedAt(LocalDateTime.now());
 		blogDTO.setAuthorEmail(email);
 
@@ -167,7 +239,9 @@ public class BlogServiceImpl implements BlogService {
 	}
 
 	@Override
-	public BlogDTO updateBlog(BlogDTO blogDTO, String email, String role) {
+	public BlogDTO updateBlog(String blogId, BlogDTO blogDTO, MultipartFile thumbnailFile, String email, String role)
+			throws IOException {
+		blogDTO.setId(blogId);
 		if (blogDTO.getId() == null || blogDTO.getId().isBlank()) {
 			throw new IllegalArgumentException("Blog ID is required for update!");
 		}
@@ -188,9 +262,25 @@ public class BlogServiceImpl implements BlogService {
 				existingBlog.setStatus(blogDTO.getStatus());
 			}
 		} else {
-			// set to Draft wait admin approve
-			blogDTO.setStatus(BlogStatus.DRAFT);
+			// set to Pending wait admin approve
+			blogDTO.setStatus(BlogStatus.PENDING);
 			existingBlog.setStatus(blogDTO.getStatus());
+		}
+
+		if ((thumbnailFile == null || thumbnailFile.isEmpty())
+				&& (existingBlog.getThumbnailUrl() == null || existingBlog.getThumbnailUrl().isBlank())) {
+			throw new IllegalArgumentException("Thumbnail img is required !");
+		}
+
+		if (thumbnailFile != null && !thumbnailFile.isEmpty()) {
+			String urlImg = cloudinaryService.uploadImg(thumbnailFile);
+
+			if (!urlImg.isBlank()) {
+				cloudinaryService.deleteFile(existingBlog.getThumbnailUrl());
+				blogDTO.setThumbnailUrl(urlImg);
+			}
+		} else {
+			blogDTO.setThumbnailUrl(existingBlog.getThumbnailUrl());
 		}
 
 		existingBlog.setTitle(blogDTO.getTitle());
@@ -204,13 +294,14 @@ public class BlogServiceImpl implements BlogService {
 	}
 
 	@Override
-	public void deleteBlog(String blogId, String email, String role) {
+	public void deleteBlog(String blogId, String email, String role) throws IOException {
 		BlogDocument blog = blogRepository.findById(blogId)
 				.orElseThrow(() -> new IllegalArgumentException("The blog does not exist !"));
 
 		if (!"ROLE_ADMIN".equalsIgnoreCase(role) && !blog.getAuthorEmail().equalsIgnoreCase(email)) {
 			throw new IllegalArgumentException("The blog isn't created by user with email: " + email);
 		}
+		cloudinaryService.deleteFile(blog.getThumbnailUrl());
 		blogRepository.delete(blog);
 	}
 
@@ -227,8 +318,21 @@ public class BlogServiceImpl implements BlogService {
 		if (hasSearch) {
 			String keyword = searchQuery.trim();
 
-			Criteria searchCriteria = new Criteria().orOperator(Criteria.where("title").regex(keyword, "i"),
-					Criteria.where("tags").regex(keyword, "i"), Criteria.where("categoryId").regex(keyword, "i"));//fix
+			List<CategoryDocument> matchesCategories = categoryRepository.findByNameContainingIgnoreCase(keyword);
+
+			List<String> matchesCategoryIds = matchesCategories.stream().map(CategoryDocument::getId)
+					.collect(Collectors.toList());
+
+			List<Criteria> orConditions = new ArrayList<Criteria>();
+
+			orConditions.add(Criteria.where("title").regex(keyword, "i"));
+			orConditions.add(Criteria.where("tags").regex(keyword, "i"));
+
+			if (matchesCategoryIds != null && !matchesCategoryIds.isEmpty()) {
+				orConditions.add(Criteria.where("categoryId").in(matchesCategoryIds));
+			}
+
+			Criteria searchCriteria = new Criteria().orOperator(orConditions.toArray(new Criteria[0]));
 			criterias.add(searchCriteria);
 		}
 

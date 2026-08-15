@@ -1,28 +1,30 @@
 package com.loihvk23.blog_service.controller;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-
-import javax.management.relation.Role;
 
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.loihvk23.blog_service.BlogStatus;
 import com.loihvk23.blog_service.dto.BlogDTO;
@@ -70,28 +72,51 @@ public class BlogController {
 		return ResponseEntity.ok(blogs);
 	}
 
-	@PostMapping
-	public ResponseEntity<?> createBlog(@RequestBody @Valid BlogDTO blogDTO,
-			@AuthenticationPrincipal UserDetails userDetails) {
+	@PostMapping(value = "/draft", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	public ResponseEntity<?> saveBlogDraft(@RequestPart(name = "blog") BlogDTO blogDTO,
+			@RequestPart(name = "thumbnailFile", required = false) MultipartFile thumbnailFile,
+			@AuthenticationPrincipal UserDetails userDetails) throws IOException {
 		String email = userDetails.getUsername();
-		List<String> roles = userDetails.getAuthorities().stream().map(GrantedAuthority::getAuthority)
-				.collect(Collectors.toList());
-		String role = (roles.size() > 0) ? roles.get(0) : null;
 
-		BlogDTO blog = blogService.createBlog(blogDTO, email, role);
+		BlogDTO blog = blogService.saveBlogDraft(blogDTO, thumbnailFile, email);
 
 		return ResponseEntity.ok(blog);
 	}
 
-	@PutMapping
-	public ResponseEntity<?> updateBlog(@RequestBody @Valid BlogDTO blogDTO,
-			@AuthenticationPrincipal UserDetails userDetails) {
+	@GetMapping("/draft")
+	public ResponseEntity<?> getBlogDraft(@AuthenticationPrincipal UserDetails userDetails) {
+		String email = userDetails.getUsername();
+
+		BlogDTO blog = blogService.fetchBlogDraft(email);
+
+		return ResponseEntity.ok(blog);
+	}
+
+	@PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	public ResponseEntity<?> createBlog(@Valid @RequestPart(name = "blog") BlogDTO blogDTO,
+			@RequestPart(name = "thumbnailFile", required = false) MultipartFile thumbnailFile,
+			@AuthenticationPrincipal UserDetails userDetails) throws IOException {
 		String email = userDetails.getUsername();
 		List<String> roles = userDetails.getAuthorities().stream().map(GrantedAuthority::getAuthority)
 				.collect(Collectors.toList());
 		String role = (roles.size() > 0) ? roles.get(0) : null;
 
-		BlogDTO blog = blogService.updateBlog(blogDTO, email, role);
+		BlogDTO blog = blogService.createBlog(blogDTO, thumbnailFile, email, role);
+
+		return ResponseEntity.ok(blog);
+	}
+
+	@PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	public ResponseEntity<?> updateBlog(@PathVariable("id") String blogId,
+			@Valid @RequestPart(name = "blog") BlogDTO blogDTO,
+			@RequestPart(name = "thumbnailFile", required = false) MultipartFile thumbnailFile,
+			@AuthenticationPrincipal UserDetails userDetails) throws IOException {
+		String email = userDetails.getUsername();
+		List<String> roles = userDetails.getAuthorities().stream().map(GrantedAuthority::getAuthority)
+				.collect(Collectors.toList());
+		String role = (roles.size() > 0) ? roles.get(0) : null;
+
+		BlogDTO blog = blogService.updateBlog(blogId, blogDTO, thumbnailFile, email, role);
 
 		return ResponseEntity.ok(blog);
 	}
@@ -102,7 +127,7 @@ public class BlogController {
 
 		return ResponseEntity.ok(blog);
 	}
-	
+
 	@PutMapping("/reject/{id}")
 	public ResponseEntity<?> rejectBlog(@PathVariable(name = "id", required = true) String blogId) {
 		BlogDTO blog = blogService.updateStatusByAdmin(blogId, BlogStatus.REJECTED);
@@ -112,7 +137,7 @@ public class BlogController {
 
 	@DeleteMapping("/{id}")
 	public ResponseEntity<?> deleteBlog(@PathVariable(name = "id") String blogId,
-			@AuthenticationPrincipal UserDetails userDetails) {
+			@AuthenticationPrincipal UserDetails userDetails) throws IOException {
 
 		String email = userDetails.getUsername();
 		List<String> roles = userDetails.getAuthorities().stream().map(GrantedAuthority::getAuthority)
@@ -121,7 +146,7 @@ public class BlogController {
 
 		blogService.deleteBlog(blogId, email, role);
 
-		return ResponseEntity.ok(Map.of("isSuccess", true));
+		return ResponseEntity.ok(Map.of("success", true));
 	}
 
 	@GetMapping("/posted")
@@ -136,7 +161,8 @@ public class BlogController {
 
 		Pageable pageable = PageRequest.of(page - 1, limit, Sort.by(Sort.Direction.DESC, sortBy));
 
-		BlogPostedResponse blogPostedResponse = blogService.findBlogsPosted(email, searchQuery, category, status, pageable);
+		BlogPostedResponse blogPostedResponse = blogService.findBlogsPosted(email, searchQuery, category, status,
+				pageable);
 
 		return ResponseEntity.ok(blogPostedResponse);
 	}

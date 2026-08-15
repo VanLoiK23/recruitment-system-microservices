@@ -19,6 +19,12 @@ instance.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+
+    if (config.data instanceof FormData) {
+      delete config.headers["Content-Type"];
+    } else {
+      config.headers["Content-Type"] = "application/json";
+    }
     return config;
   },
   (error) => {
@@ -39,10 +45,18 @@ instance.interceptors.response.use(
 
     const originalRequest = error.config;
     //refresh access_token if it expires
-    if (error.response?.data?.status === 401 && !originalRequest._retry && error.response?.data?.message?.toLowerCase()?.includes("token")) {
+    if (
+      error.response?.data?.status === 401 &&
+      !originalRequest._retry &&
+      error.response?.data?.message?.toLowerCase()?.includes("token")
+    ) {
       originalRequest._retry = true;
       try {
-        const res =await instance.post(`auth/refresh`, {}, { withCredentials: true });
+        const res = await instance.post(
+          `auth/refresh`,
+          {},
+          { withCredentials: true }
+        );
 
         const newAccessToken = res.accessToken;
         localStorage.setItem("access_token", newAccessToken);
@@ -50,7 +64,7 @@ instance.interceptors.response.use(
 
         return instance(originalRequest);
       } catch (refreshError) {
-        console.log(refreshError)
+        console.log(refreshError);
         localStorage.removeItem("access_token");
         // window.location.href = "/auth";
         return Promise.reject(refreshError);

@@ -1,19 +1,16 @@
 package com.loihvk23.application_service.service;
 
-import java.io.IOException;
-
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
-import org.springframework.web.multipart.MultipartFile;
 
 import com.loihvk23.application_service.dto.ApplicationDTO;
-import com.loihvk23.application_service.dto.CvDTO;
 import com.loihvk23.application_service.dto.request.ApplicationRequest;
+import com.loihvk23.application_service.dto.response.JobApplicationsResponseDTO;
 
 public interface ApplicationService {
 	ApplicationDTO postApplicationApplyJob(ApplicationRequest request, String emailCandidate);
-	
-	boolean checkJobApply(String jobId,String emailCandidate);
+
+	boolean checkJobApply(String jobId, String emailCandidate);
 
 	ApplicationDTO updateStatusApplication(Long applicationId, String emailRecruiter, String status);
 
@@ -21,10 +18,8 @@ public interface ApplicationService {
 
 	void deleteApplicationById(Long applicationId, String emailCandidate);
 
-	Slice<ApplicationDTO> findApplicationsByJob(String jobId, String emailRecruiter, Pageable pageable);
-
-	Slice<ApplicationDTO> findApplicationsByJobAndStatus(String jobId, String status, String emailRecruiter,
-			Pageable pageable);
+	JobApplicationsResponseDTO findApplicationsByJob(String jobId, String emailRecruiter, String status, String query, Pageable pageable);
 
 	Slice<ApplicationDTO> findApplicationsOfCandidate(String emailCandidate, Pageable pageable);
+
 }

@@ -15,6 +15,7 @@ import com.loihvk23.application_service.dto.ApplicationDTO;
 import com.loihvk23.application_service.dto.JobCacheDTO;
 import com.loihvk23.application_service.dto.request.ApplicationRequest;
 import com.loihvk23.application_service.dto.request.UserAppliedJobEvent;
+import com.loihvk23.application_service.dto.response.JobApplicationsResponseDTO;
 import com.loihvk23.application_service.entity.ApplicationEntity;
 import com.loihvk23.application_service.exception.ResourceNotFoundException;
 import com.loihvk23.application_service.mapper.ApplicationMapper;
@@ -177,27 +178,28 @@ public class ApplicationServiceImpl implements ApplicationService {
 	}
 
 	@Override
-	public Slice<ApplicationDTO> findApplicationsByJob(String jobId, String emailRecruiter, Pageable pageable) {
+	public JobApplicationsResponseDTO findApplicationsByJob(String jobId, String emailRecruiter, String status,
+			String query, Pageable pageable) {
 		checkValidJobAndRecruiterEmail(jobId, emailRecruiter);
 
-		Slice<ApplicationEntity> applicationEntities = applicationRepository.findByJobId(jobId, pageable);
+		if (status != null && (status.isBlank() || status.equalsIgnoreCase("ALL"))) {
+			status = null;
+		}
 
+		if (query != null && query.isBlank()) {
+			query = null;
+		}
+
+		Slice<ApplicationEntity> applicationEntities = applicationRepository.findByJobIdAndStatusAndNameCandidate(jobId,
+				status, query, pageable);
 		Slice<ApplicationDTO> applicationDtos = applicationEntities.map(applicationMapper::toDTO);
 
-		return applicationDtos;
-	}
+		long totalCandidates = applicationRepository.countByJobId(jobId);
+		long numberHighScore = applicationRepository.countByJobIdAndScoreByAIGreaterThanEqual(jobId, 85);
+		long numberNotScan = applicationRepository.countByJobIdAndScoreByAIIsNull(jobId);
 
-	@Override
-	public Slice<ApplicationDTO> findApplicationsByJobAndStatus(String jobId, String status, String emailRecruiter,
-			Pageable pageable) {
-		checkValidJobAndRecruiterEmail(jobId, emailRecruiter);
-
-		Slice<ApplicationEntity> applicationEntities = applicationRepository.findByJobIdAndStatus(jobId, status,
-				pageable);
-
-		Slice<ApplicationDTO> applicationDtos = applicationEntities.map(applicationMapper::toDTO);
-
-		return applicationDtos;
+		return JobApplicationsResponseDTO.builder().totalCandidates(totalCandidates).numberHighScore(numberHighScore)
+				.numberNotScan(numberNotScan).applications(applicationDtos).build();
 	}
 
 	@Override
@@ -212,10 +214,14 @@ public class ApplicationServiceImpl implements ApplicationService {
 
 	@Override
 	public ApplicationDTO findDetailByCandidateOrRecruiter(Long applicationId, String email, String role) {
+		if (role == null || role.isBlank()) {
+			throw new IllegalArgumentException("User's role is required. This user has logged in without any role.");
+		}
+
 		ApplicationEntity applicationEntity = applicationRepository.findById(applicationId)
 				.orElseThrow(() -> new ResourceNotFoundException("The application doesn't exist. Try again !!"));
 
-		if (role.equalsIgnoreCase("candidate") && !applicationEntity.getCandidateEmail().equalsIgnoreCase(email)) {
+		if ("ROLE_CANDIDATE".equals(role) && !applicationEntity.getCandidateEmail().equalsIgnoreCase(email)) {
 			throw new IllegalArgumentException("You can't see detail this application. (Not authorization)");
 		}
 
@@ -224,9 +230,8 @@ public class ApplicationServiceImpl implements ApplicationService {
 			throw new ResourceNotFoundException("The job post linked to this application (Job ID: "
 					+ applicationEntity.getJobId() + ") is no longer available.");
 		}
-		if (role.equalsIgnoreCase("recruiter") && !jobCache.getRecruiterEmail().equalsIgnoreCase(email)) {
-			throw new IllegalArgumentException(
-					"You can't access list application (This job wasn't been created by " + email + ")");
+		if ("ROLE_RECRUITER".equals(role) && !jobCache.getRecruiterEmail().equalsIgnoreCase(email)) {
+			throw new IllegalArgumentException("You can't access this application (This application is private)");
 		}
 
 		return applicationMapper.toDTO(applicationEntity);

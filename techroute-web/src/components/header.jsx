@@ -3,6 +3,7 @@ import { AuthContext } from "./context/auth.context";
 import { useNavigate, NavLink } from "react-router-dom";
 import { toast } from "react-toastify";
 import axios from "../utils/axios.customize";
+import getInitials from "./get-avatar-name";
 
 const NavBar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -88,9 +89,7 @@ const NavBar = () => {
               onClick={() => setIsOpen(!isOpen)}
               className="w-10 h-10 rounded-full bg-[#5B5FC7]/10 text-[#5B5FC7] font-bold flex items-center justify-center hover:bg-[#5B5FC7]/20 transition-all focus:outline-none border border-[#5B5FC7]/20 cursor-pointer"
             >
-              {auth?.user?.fullName
-                ? auth.user.fullName.charAt(0).toUpperCase()
-                : "U"}
+              {getInitials(auth?.user?.fullName)}
             </button>
           ) : (
             <button
@@ -158,9 +157,7 @@ const NavBar = () => {
             onClick={() => setIsOpen(!isOpen)}
             className="w-10 h-10 rounded-full bg-[#5B5FC7]/10 text-[#5B5FC7] font-bold flex items-center justify-center hover:bg-[#5B5FC7]/20 transition-all focus:outline-none border border-[#5B5FC7]/20 cursor-pointer"
           >
-            {auth?.user?.fullName
-              ? auth.user.fullName.charAt(0).toUpperCase()
-              : "U"}
+            {getInitials(auth?.user?.fullName)}
           </button>
         ) : (
           <button

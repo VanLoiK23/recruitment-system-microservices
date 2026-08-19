@@ -62,7 +62,7 @@ const CvUploadTag = () => {
 
       if (data) {
         setCvs([...cvs, data]);
-        toast.success("Upload CV successfully !")
+        toast.success("Upload CV successfully !");
       }
     } catch (err) {
       toast.error(err.message);
@@ -80,7 +80,7 @@ const CvUploadTag = () => {
     }
 
     try {
-      const data = await axios.delete("applications/profile/cv/"+cvId);
+      const data = await axios.delete("applications/profile/cv/" + cvId);
 
       if (data.isSuccess) {
         setCvs((prev) => prev.filter((item) => item.id != cvId));
@@ -102,7 +102,7 @@ const CvUploadTag = () => {
         );
 
         if (data) {
-          console.log(data)
+          console.log(data);
           setCvs(data.content);
           setPrevious(!data?.first);
           setNext(!data?.last);
@@ -124,6 +124,16 @@ const CvUploadTag = () => {
         setPageActive(page);
       }
     }
+  };
+
+  const getUrlDownload = (url) => {
+    const isPdf = Boolean(url && url.toLowerCase().split("?")[0].endsWith(".pdf"));
+
+    if (isPdf) {
+      //add flag for download
+      return url.replace("/upload/", "/upload/fl_attachment/");
+    }
+    return url;
   };
 
   return (
@@ -234,7 +244,7 @@ const CvUploadTag = () => {
                   <td className="py-4 px-4">
                     <div className="flex items-center justify-center gap-2">
                       <a
-                        href={cv.fileUrl}
+                        href={getUrlDownload(cv.fileUrl)}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="p-2 text-gray-500 hover:text-[#5B5FC7] hover:bg-indigo-50 rounded-lg transition-colors cursor-pointer"

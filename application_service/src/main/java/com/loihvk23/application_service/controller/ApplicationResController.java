@@ -29,6 +29,7 @@ import org.springframework.web.multipart.MultipartFile;
 import com.loihvk23.application_service.dto.ApplicationDTO;
 import com.loihvk23.application_service.dto.CvDTO;
 import com.loihvk23.application_service.dto.request.ApplicationRequest;
+import com.loihvk23.application_service.dto.response.JobApplicationsResponseDTO;
 import com.loihvk23.application_service.dto.response.JobAppliedDTO;
 import com.loihvk23.application_service.service.ApplicationService;
 import com.loihvk23.application_service.service.CvService;
@@ -51,18 +52,17 @@ public class ApplicationResController {
 	public ResponseEntity<?> getApplicationsByJob(@PathVariable(name = "jobId") String jobId,
 			@RequestParam(name = "page", defaultValue = "1") int page,
 			@RequestParam(name = "limit", defaultValue = "7") int limit,
-			@RequestParam(name = "sortBy", defaultValue = "createdAt") String sortBy,
+			@RequestParam(name = "sortBy", defaultValue = "scoreByAI") String sortBy,
 			@RequestParam(name = "status", defaultValue = "") String status,
+			@RequestParam(name = "query", defaultValue = "") String query,
 			@AuthenticationPrincipal UserDetails userDetails) {
 		String emailRecruiter = userDetails.getUsername();
 
 		Pageable pageable = PageRequest.of(page - 1, limit, Sort.by(Sort.Direction.DESC, sortBy));
 
-		Slice<ApplicationDTO> applicationDtoSlice = (status == null || status.isBlank())
-				? applicationService.findApplicationsByJob(jobId, emailRecruiter, pageable)
-				: applicationService.findApplicationsByJobAndStatus(jobId, status, emailRecruiter, pageable);
+		JobApplicationsResponseDTO jobApplicationsResponseDTO = applicationService.findApplicationsByJob(jobId, emailRecruiter, status, query, pageable);
 
-		return ResponseEntity.ok(applicationDtoSlice);
+		return ResponseEntity.ok(jobApplicationsResponseDTO);
 	}
 
 	@GetMapping
@@ -85,14 +85,8 @@ public class ApplicationResController {
 			@AuthenticationPrincipal UserDetails userDetails) {
 		String email = userDetails.getUsername();
 
-		String roleWithPrefix = userDetails.getAuthorities().stream().map(GrantedAuthority::getAuthority).findFirst()
+		String role = userDetails.getAuthorities().stream().map(GrantedAuthority::getAuthority).findFirst()
 				.orElse("");
-
-		if (roleWithPrefix == null || roleWithPrefix.isBlank()) {
-			throw new IllegalArgumentException("User's role is required. This user has logged in without any role.");
-		}
-
-		String role = roleWithPrefix.replace("ROLE_", "");
 
 		ApplicationDTO applicationDTO = applicationService.findDetailByCandidateOrRecruiter(applicationId, email, role);
 
@@ -179,19 +173,6 @@ public class ApplicationResController {
 				status);
 
 		return ResponseEntity.ok(applicationDTO);
-	}
-
-	@GetMapping("/check-apply")
-	public ResponseEntity<?> checkJobApply(@RequestParam(name = "jobId") String jobId,
-			@AuthenticationPrincipal UserDetails userDetails) {
-		if (jobId == null || jobId.isBlank()) {
-			throw new IllegalArgumentException("Job Id is required");
-		}
-		String emailCandidate = userDetails.getUsername();
-
-		boolean checkApply = applicationService.checkJobApply(jobId, emailCandidate);
-
-		return ResponseEntity.ok(Map.of("isApply", checkApply));
 	}
 
 	@DeleteMapping("/{id}")

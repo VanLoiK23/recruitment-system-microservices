@@ -11,11 +11,14 @@ import {
 } from "lucide-react";
 import axios from "../../utils/axios.customize";
 import { toast } from "react-toastify";
+import getInitials from "../get-avatar-name";
 
 const SideBar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { auth, setAuth } = useContext(AuthContext);
+
+  const isMini = location.pathname.includes("/recruiter/candidates");
 
   const menuItems = [
     {
@@ -29,7 +32,7 @@ const SideBar = () => {
       path: "/recruiter/job-posting",
     },
     {
-      title: "Hồ sơ ứng viên",
+      title: "Candidate Profile",
       icon: <Users size={20} />,
       path: "/recruiter/candidates",
     },
@@ -80,33 +83,51 @@ const SideBar = () => {
   };
 
   return (
-    <div className="w-[260px]  bg-[#484CA8] font-sans flex flex-col shadow-2xl col-span-1 overflow-hidden">
-      <div className="flex flex-col items-center pt-8 px-4">
+    <div
+      className={`bg-[#484CA8] font-sans flex flex-col shadow-2xl overflow-hidden transition-all duration-300 ease-in-out shrink-0
+        ${isMini ? "w-[80px]" : "w-[260px]"}
+      `}
+    >
+      <div
+        className={`flex flex-col items-center pt-8 ${
+          isMini ? "px-2" : "px-4"
+        }`}
+      >
         <button
           type="button"
           onClick={() => navigate("/recruiter/profile")}
-          className="w-16 h-16 rounded-full bg-white/15 text-white text-2xl font-bold flex items-center justify-center 
-          hover:bg-white/25 transition-all focus:outline-none border border-white/30 cursor-pointer"
+          title="Profile"
+          className={`rounded-full bg-white/15 text-white font-bold flex items-center justify-center 
+          hover:bg-white/25 transition-all focus:outline-none border border-white/30 cursor-pointer shrink-0
+          ${isMini ? "w-11 h-11 text-xl" : "w-16 h-16 text-2xl"}
+          `}
         >
-          {auth?.user?.fullName
-            ? auth.user.fullName.charAt(0).toUpperCase()
-            : "U"}
+          {getInitials(auth?.user?.fullName)}
         </button>
 
-        <div className="flex flex-col items-center mt-3">
-          <div className="text-white font-bold text-lg">
-            {auth?.user?.fullName || "Username"}
+        {!isMini && (
+          <div className="flex flex-col items-center mt-3 overflow-hidden whitespace-nowrap">
+            <div className="text-white font-bold text-lg">
+              {auth?.user?.fullName || "Username"}
+            </div>
+            <span className="text-xs text-white/90 bg-white/15 px-3 py-1 rounded-full mt-1 font-medium border border-white/20">
+              Recruiter account
+            </span>
           </div>
-
-          <span className="text-xs text-white/90 bg-white/15 px-3 py-1 rounded-full mt-1 font-medium border border-white/20">
-            Recruiter account
-          </span>
-        </div>
+        )}
       </div>
 
-      <hr className="w-4/5 mx-auto border-white/20 my-6" />
+      <hr
+        className={`mx-auto border-white/20 ${
+          isMini ? "w-1/2 my-5" : "w-4/5 my-6"
+        }`}
+      />
 
-      <div className="flex-1 flex flex-col gap-2 px-4 overflow-y-auto">
+      <div
+        className={`flex-1 flex flex-col gap-2 overflow-y-auto ${
+          isMini ? "px-3" : "px-4"
+        }`}
+      >
         {menuItems.map((item, index) => {
           const isActive = location.pathname.includes(item.path);
 
@@ -114,29 +135,45 @@ const SideBar = () => {
             <button
               key={index}
               onClick={() => navigate(item.path)}
-              className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-all duration-300 cursor-pointer
+              title={isMini ? item.title : ""}
+              className={`w-full flex items-center rounded-xl transition-all duration-300 cursor-pointer overflow-hidden
                 ${
                   isActive
                     ? `bg-gray-200 text-[#484CA8] shadow-lg font-semibold`
                     : `text-white/80 hover:bg-white/15 hover:text-white`
                 }
+                ${isMini ? "justify-center p-3" : "gap-4 px-4 py-3"}
               `}
             >
-              {item.icon}
-              <span className="text-left leading-tight">{item.title}</span>
+              <div className="shrink-0">{item.icon}</div>
+              {!isMini && (
+                <span className="text-left leading-tight whitespace-nowrap">
+                  {item.title}
+                </span>
+              )}
             </button>
           );
         })}
       </div>
 
-      <div className="px-4 mt-auto pt-4 pb-6 border-t border-white/20">
+      <div
+        className={`mt-auto pt-4 pb-6 border-t border-white/20 ${
+          isMini ? "px-3" : "px-4"
+        }`}
+      >
         <button
           onClick={handleLogout}
-          className="w-full bg-red-400 flex items-center gap-4 px-4 py-3 rounded-xl text-white/80 hover:bg-red-500 hover:text-white transition-all duration-300"
+          title={isMini ? "Logout" : ""}
+          className={`w-full bg-red-400 flex items-center rounded-xl text-white/80 hover:bg-red-500 hover:text-white transition-all duration-300 overflow-hidden
+            ${isMini ? "justify-center p-3" : "gap-4 px-4 py-3"}
+          `}
         >
-          <LogOut size={20} />
-
-          <span className="font-medium">Logout</span>
+          <div className="shrink-0">
+            <LogOut size={20} />
+          </div>
+          {!isMini && (
+            <span className="font-medium whitespace-nowrap">Logout</span>
+          )}
         </button>
       </div>
     </div>

@@ -16,6 +16,7 @@ import CircleLoading from "../../components/animation/animate-loading";
 import { toast } from "react-toastify";
 import JobViewDetail from "../../components/recruiter/job-posting/job-view";
 import JobUpsertModal from "../../components/recruiter/job-posting/job-upsert";
+import getJobStatusStyle from "../../components/job-status-style";
 const RecruitmentPostingPage = () => {
   const [jobs, setJobs] = useState([]);
   const [jobActive, setJobActive] = useState({});
@@ -352,21 +353,7 @@ const RecruitmentPostingPage = () => {
                   <td className="py-4 px-6">
                     <span
                       className={`inline-flex px-3 py-1 rounded-full text-xs font-medium
-                        ${
-                          job.status === "OPENING"
-                            ? "bg-green-100 text-green-700"
-                            : ""
-                        }
-                        ${
-                          job.status === "PENDING"
-                            ? "bg-amber-100 text-amber-700"
-                            : ""
-                        }
-                        ${
-                          job.status === "CLOSED" || job.status === "REJECTED"
-                            ? "bg-red-100 text-red-700"
-                            : ""
-                        }
+                        ${getJobStatusStyle(job.status)}
                       `}
                     >
                       {job.status}

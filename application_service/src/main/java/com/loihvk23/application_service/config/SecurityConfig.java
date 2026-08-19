@@ -1,7 +1,5 @@
 package com.loihvk23.application_service.config;
 
-import java.util.List;
-
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -12,9 +10,6 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.CorsConfigurationSource;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import lombok.RequiredArgsConstructor;
 
@@ -34,29 +29,26 @@ public class SecurityConfig {
 
 	@Bean
 	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-		http.csrf(csrf -> csrf.disable()).cors(cors -> cors.disable())
-				.authorizeHttpRequests(auth -> auth
-//						.requestMatchers("/admin/**").hasRole("ADMIN").requestMatchers("/recruiter/**").hasRole("RECRUITER")
-						.requestMatchers(HttpMethod.GET, "/api/applications/job/**").hasRole("RECRUITER") // fetch list
-																											// application
-																											// follow
-																											// job
+		http.csrf(csrf -> csrf.disable()).cors(cors -> cors.disable()).authorizeHttpRequests(auth -> auth
+				.requestMatchers(HttpMethod.GET, "/api/applications/job/**").hasRole("RECRUITER") // fetch list
+																									// application
+																									// follow
+																									// job
 
-						.requestMatchers(HttpMethod.PUT, "/api/applications/*/status").hasRole("RECRUITER") // update
-																											// status
-																											// application
+				.requestMatchers(HttpMethod.PUT, "/api/applications/*/status").hasRole("RECRUITER") // update
+																									// status
+																									// application
+				.requestMatchers(HttpMethod.GET, "/api/applications/cv").hasRole("CANDIDATE")
+				.requestMatchers(HttpMethod.GET, "/api/applications").hasRole("CANDIDATE") // candidate watch
+																							// all application
+				.requestMatchers(HttpMethod.GET, "/api/applications/profile/**").hasRole("CANDIDATE")
+				.requestMatchers(HttpMethod.POST, "/api/applications").hasRole("CANDIDATE")
 
-						.requestMatchers(HttpMethod.GET, "/api/applications").hasRole("CANDIDATE") // candidate watch
-																									// all application
+				.requestMatchers(HttpMethod.DELETE, "/api/applications/**").hasRole("CANDIDATE")
 
-						.requestMatchers(HttpMethod.POST, "/api/applications").hasRole("CANDIDATE")
+				.requestMatchers(HttpMethod.GET, "/api/applications/**").hasAnyRole("RECRUITER", "CANDIDATE")
 
-						.requestMatchers(HttpMethod.DELETE, "/api/applications/**").hasRole("CANDIDATE")
-
-						.requestMatchers(HttpMethod.GET, "/api/applications/**").hasAnyRole("RECRUITER", "CANDIDATE")
-
-						.anyRequest().authenticated())
-				// turn off session in system, make sure STATE LESS
+				.anyRequest().authenticated())
 				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 				.addFilterBefore(headerAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 

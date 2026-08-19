@@ -26,41 +26,68 @@ public class FileStorageServiceImpl implements FileStorageService {
 		}
 
 		String originalFilename = file.getOriginalFilename();
-		if (originalFilename == null || (!originalFilename.endsWith(".pdf") && !originalFilename.endsWith(".docx") && !originalFilename.endsWith(".doc"))) {
+		if (originalFilename == null) {
+			throw new IllegalArgumentException("Invalid file name!");
+		}
+
+		String lowerFilename = originalFilename.toLowerCase();
+		boolean isPdf = lowerFilename.endsWith(".pdf");
+		boolean isWord = lowerFilename.endsWith(".docx") || lowerFilename.endsWith(".doc");
+
+		if (!isPdf && !isWord) {
 			throw new IllegalArgumentException("Only .pdf or .docx/.doc formats are accepted!");
 		}
 
 		String extension = originalFilename.substring(originalFilename.lastIndexOf("."));
-		String publicId = "recuriment_csv/" + UUID.randomUUID().toString() + extension;
+		String uniqueId = UUID.randomUUID().toString();
 
-		Map<?, ?> uploadResult = cloudinary.uploader().upload(file.getBytes(),
-				ObjectUtils.asMap("public_id", publicId, "resource_type", "raw"));
+		Map<?, ?> uploadResult;
+
+		if (isPdf) {
+			String publicId = "recuriment_csv/" + uniqueId;
+			uploadResult = cloudinary.uploader().upload(file.getBytes(),
+					ObjectUtils.asMap("public_id", publicId, "resource_type", "image", "format", "pdf"));
+		} else {
+			String publicId = "recuriment_csv/" + uniqueId + extension;
+			uploadResult = cloudinary.uploader().upload(file.getBytes(),
+					ObjectUtils.asMap("public_id", publicId, "resource_type", "raw"));
+		}
 
 		return uploadResult.get("secure_url").toString();
 	}
-	
+
 	@Override
-    public void deleteFile(String fileUrlOrPublicId) throws IOException {
-        if (fileUrlOrPublicId == null || fileUrlOrPublicId.isBlank()) {
-            return;
-        }
+	public void deleteFile(String fileUrlOrPublicId) throws IOException {
+		if (fileUrlOrPublicId == null || fileUrlOrPublicId.isBlank()) {
+			return;
+		}
 
-        String publicId = extractPublicId(fileUrlOrPublicId);
+		String publicId = extractPublicId(fileUrlOrPublicId);
+		String resourceType = isImageResourceType(fileUrlOrPublicId) ? "image" : "raw";
 
-        Map<?, ?> result = cloudinary.uploader().destroy(publicId, ObjectUtils.asMap("resource_type", "raw"));
-    }
+		cloudinary.uploader().destroy(publicId, ObjectUtils.asMap("resource_type", resourceType));
+	}
 
-    private String extractPublicId(String fileUrl) {
-        if (!fileUrl.startsWith("http://") && !fileUrl.startsWith("https://")) {
-            return fileUrl; 
-        }
-        
-        int uploadIndex = fileUrl.indexOf("/upload/");
-        if (uploadIndex != -1) {
-            String pathAfterUpload = fileUrl.substring(uploadIndex + 8);
-            return pathAfterUpload.replaceFirst("^v\\d+/", "");
-        }
-        
-        return fileUrl;
-    }
+	private boolean isImageResourceType(String fileUrl) {
+		return fileUrl.contains("/image/upload/") || fileUrl.toLowerCase().endsWith(".pdf");
+	}
+
+	private String extractPublicId(String fileUrl) {
+		if (!fileUrl.startsWith("http://") && !fileUrl.startsWith("https://")) {
+			return fileUrl;
+		}
+
+		int uploadIndex = fileUrl.indexOf("/upload/");
+		if (uploadIndex != -1) {
+			String pathAfterUpload = fileUrl.substring(uploadIndex + 8);
+			String cleanPath = pathAfterUpload.replaceFirst("^v\\d+/", "");
+
+			if (isImageResourceType(fileUrl) && cleanPath.endsWith(".pdf")) {
+				cleanPath = cleanPath.substring(0, cleanPath.lastIndexOf("."));
+			}
+			return cleanPath;
+		}
+
+		return fileUrl;
+	}
 }

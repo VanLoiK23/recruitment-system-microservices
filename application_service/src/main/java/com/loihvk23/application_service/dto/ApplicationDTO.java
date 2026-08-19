@@ -17,13 +17,13 @@ public class ApplicationDTO {
 	private Long id;
 
 	private String jobId;
-	
+
 	private String fullName;
-	
+
 	private String phone;
 
 	private String candidateEmail;
-	
+
 	private String cvUrl;
 
 	private String status;
@@ -32,4 +32,7 @@ public class ApplicationDTO {
 
 	@JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Ho_Chi_Minh")
 	private LocalDateTime createdAt;
+
+	@Builder.Default
+	private Integer scoreByAI = 0;
 }

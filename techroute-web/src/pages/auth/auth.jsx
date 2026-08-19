@@ -25,7 +25,7 @@ const AuthPage = () => {
 
   const navigate = useNavigate();
 
-  const {setAuth} = useContext(AuthContext);
+  const { setAuth } = useContext(AuthContext);
 
   //handle logic Login
   const handleLogin = async (e) => {
@@ -59,10 +59,17 @@ const AuthPage = () => {
 
         setAuth({
           isAuthenticated: true,
-          user: data.user
+          user: data.user,
         });
+        console.log(data.user)
         toast.success("Login successfully!");
-        navigate("/");
+        if (data.user.role === "recruiter") {
+          navigate("/recruiter/dashboard");
+        } else if (data.user.role === "admin") {
+          navigate("/admin/dashboard");
+        } else {
+          navigate("/");
+        }
       } else {
         toast.warn("Username or password incorrect!");
       }
@@ -79,7 +86,7 @@ const AuthPage = () => {
     const rawData = sessionStorage.getItem("userInfo");
     const accessToken = localStorage.getItem("access_token");
 
-    if(accessToken){
+    if (accessToken) {
       navigate("/");
     }
 

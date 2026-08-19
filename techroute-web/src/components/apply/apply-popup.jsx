@@ -171,6 +171,18 @@ const ApplyJobModal = ({ auth, job, onClose, updateApplySuccess }) => {
     }
   };
 
+  const getUrlDownload = (url) => {
+    const isPdf = Boolean(
+      url && url.toLowerCase().split("?")[0].endsWith(".pdf")
+    );
+
+    if (isPdf) {
+      //add flag for download
+      return url.replace("/upload/", "/upload/fl_attachment/");
+    }
+    return url;
+  };
+
   return (
     <div className="fixed inset-0 bg-black/60 flex justify-center items-center z-50 p-4">
       <div className="bg-white w-full max-w-4xl rounded-xl shadow-2xl flex flex-col max-h-[95vh] overflow-hidden">
@@ -288,7 +300,7 @@ const ApplyJobModal = ({ auth, job, onClose, updateApplySuccess }) => {
                     </div>
                     <div>
                       <a
-                        href={cv.fileUrl}
+                        href={getUrlDownload(cv.fileUrl)}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-gray-500"

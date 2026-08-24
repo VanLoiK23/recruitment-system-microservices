@@ -10,7 +10,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.loihvk23.profile_service.dto.ProfileDTO;
+import com.loihvk23.profile_service.dto.CandidateProfileDTO;
+import com.loihvk23.profile_service.dto.RecruiterProfileDTO;
 import com.loihvk23.profile_service.service.ProfileService;
 
 import lombok.RequiredArgsConstructor;
@@ -20,22 +21,42 @@ import lombok.RequiredArgsConstructor;
 @RequestMapping("/api/profile")
 public class profileController {
 	private final ProfileService profileService;
-	
-	@GetMapping
-	public ResponseEntity<?> fechInfoProfile(@AuthenticationPrincipal UserDetails userDetails){
+
+	@GetMapping("/candidate")
+	public ResponseEntity<?> fechInfoCandidateProfile(@AuthenticationPrincipal UserDetails userDetails) {
 		String email = userDetails.getUsername();
-		
-		ProfileDTO profileDTO = profileService.findProfileByEmail(email);
-		
-		return ResponseEntity.ok(profileDTO);
+
+		CandidateProfileDTO candidateProfileDTO = profileService.findCandidateProfileByEmail(email);
+
+		return ResponseEntity.ok(candidateProfileDTO);
 	}
-	
-	@PostMapping
-	public ResponseEntity<?> saveProfile(@RequestBody ProfileDTO profileDTO, @AuthenticationPrincipal UserDetails userDetails){
+
+	@PostMapping("/candidate")
+	public ResponseEntity<?> saveCandidateProfile(@RequestBody CandidateProfileDTO candidateProfileDTO,
+			@AuthenticationPrincipal UserDetails userDetails) {
 		String email = userDetails.getUsername();
-		
-		ProfileDTO profileSaveDto = profileService.saveProfile(profileDTO, email);
-		
+
+		CandidateProfileDTO profileSaveDto = profileService.saveCandidateProfile(candidateProfileDTO, email);
+
+		return ResponseEntity.status(HttpStatus.CREATED).body(profileSaveDto);
+	}
+
+	@GetMapping("/recruiter")
+	public ResponseEntity<?> fechInfoRecruiterProfile(@AuthenticationPrincipal UserDetails userDetails) {
+		String email = userDetails.getUsername();
+
+		RecruiterProfileDTO recruiterProfileDTO = profileService.findRecruiterProfileByEmail(email);
+
+		return ResponseEntity.ok(recruiterProfileDTO);
+	}
+
+	@PostMapping("/recruiter")
+	public ResponseEntity<?> saveRecruiterProfile(@RequestBody RecruiterProfileDTO recruiterProfileDTO,
+			@AuthenticationPrincipal UserDetails userDetails) {
+		String email = userDetails.getUsername();
+
+		RecruiterProfileDTO profileSaveDto = profileService.saveRecruiterProfile(recruiterProfileDTO, email);
+
 		return ResponseEntity.status(HttpStatus.CREATED).body(profileSaveDto);
 	}
 }

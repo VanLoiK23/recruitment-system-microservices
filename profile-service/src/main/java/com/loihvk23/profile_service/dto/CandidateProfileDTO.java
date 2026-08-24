@@ -1,32 +1,25 @@
-package com.loihvk23.profile_service.document;
+package com.loihvk23.profile_service.dto;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.index.Indexed;
-import org.springframework.data.mongodb.core.mapping.Document;
-
-import com.loihvk23.profile_service.document.embedded.Education;
-import com.loihvk23.profile_service.document.embedded.Language;
-import com.loihvk23.profile_service.document.embedded.Project;
-import com.loihvk23.profile_service.document.embedded.WorkExperience;
+import com.loihvk23.profile_service.dto.embedded.Education;
+import com.loihvk23.profile_service.dto.embedded.Language;
+import com.loihvk23.profile_service.dto.embedded.Project;
+import com.loihvk23.profile_service.dto.embedded.WorkExperience;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-@Document("candidate_profiles")
 @Data
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class ProfileDocument {
+public class CandidateProfileDTO {
 	
-	@Id
 	private String id;
-	@Indexed(unique = true)
 	private String emailCandidate;
 	
 	private String fullName;
@@ -47,9 +40,11 @@ public class ProfileDocument {
 	
 	private String summary;
 	
-	private boolean openToWork;
-	
-	private Integer totalPercent;
+	@Builder.Default
+    private Boolean openToWork = false;
+
+    @Builder.Default
+    private Integer totalPercent = 10;
 	
 	@Builder.Default
 	private List<String> skills = new ArrayList();
@@ -68,6 +63,6 @@ public class ProfileDocument {
     
     @Builder.Default
     private List<Project> projects = new ArrayList<>();
-
 }
+
 

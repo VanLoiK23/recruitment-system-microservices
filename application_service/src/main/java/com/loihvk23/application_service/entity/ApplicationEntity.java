@@ -51,4 +51,7 @@ public class ApplicationEntity {
 	@Builder.Default
 	@Column(nullable = true, name = "score_by_AI")
 	private Integer scoreByAI = 0;
+	
+	@Column(columnDefinition = "jsonb")
+	private String aiAnalysisResult;
 }

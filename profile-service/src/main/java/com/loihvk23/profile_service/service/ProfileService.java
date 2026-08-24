@@ -1,9 +1,14 @@
 package com.loihvk23.profile_service.service;
 
-import com.loihvk23.profile_service.dto.ProfileDTO;
+import com.loihvk23.profile_service.dto.CandidateProfileDTO;
+import com.loihvk23.profile_service.dto.RecruiterProfileDTO;
 
 public interface ProfileService {
-	ProfileDTO saveProfile(ProfileDTO profileDTO,String emailCandidate);
+	CandidateProfileDTO saveCandidateProfile(CandidateProfileDTO candidateProfileDTO,String emailCandidate);
 	
-	ProfileDTO findProfileByEmail(String emailCandidate);
+	CandidateProfileDTO findCandidateProfileByEmail(String emailCandidate);
+	
+	RecruiterProfileDTO saveRecruiterProfile(RecruiterProfileDTO recruiterProfileDTO,String emailRecruiter);
+	
+	RecruiterProfileDTO findRecruiterProfileByEmail(String emailRecruiter);
 }

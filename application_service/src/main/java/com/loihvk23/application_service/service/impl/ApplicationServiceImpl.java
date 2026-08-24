@@ -22,6 +22,7 @@ import com.loihvk23.application_service.mapper.ApplicationMapper;
 import com.loihvk23.application_service.repository.ApplicationRepository;
 import com.loihvk23.application_service.service.ApplicationService;
 import com.loihvk23.application_service.service.JobCacheService;
+import com.loihvk23.application_service.util.JsonUtils;
 
 import jakarta.persistence.EntityExistsException;
 import jakarta.transaction.Transactional;
@@ -235,6 +236,22 @@ public class ApplicationServiceImpl implements ApplicationService {
 		}
 
 		return applicationMapper.toDTO(applicationEntity);
+	}
+
+	@Override
+	public ApplicationDTO updateAIResultApplicationDTO(Long applicationId, String result) {
+		ApplicationEntity applicationEntity = applicationRepository.findById(applicationId)
+				.orElseThrow(() -> new ResourceNotFoundException("The application doesn't exist. Try again !!"));
+
+		String cleanResult = result.replace("```json", "").replace("```", "").trim();
+		if (!JsonUtils.isValidJson(cleanResult)) {
+			throw new IllegalArgumentException("Invalid format result of analysis from AI");
+		}
+		applicationEntity.setAiAnalysisResult(cleanResult);
+
+		ApplicationEntity applicationSaved = applicationRepository.save(applicationEntity);
+
+		return applicationMapper.toDTO(applicationSaved);
 	}
 
 }

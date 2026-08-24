@@ -2,6 +2,7 @@ package com.loihvk23.profile_service.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -16,7 +17,7 @@ import lombok.RequiredArgsConstructor;
 @EnableWebSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
-	
+
 	private final HeaderAuthenticationFilter headerAuthenticationFilter;
 
 	@Bean
@@ -27,8 +28,14 @@ public class SecurityConfig {
 	@Bean
 	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 		http.csrf(csrf -> csrf.disable()).cors(cors -> cors.disable())
-				.authorizeHttpRequests(auth -> auth
-						.anyRequest().authenticated())
+				.authorizeHttpRequests(
+						auth -> auth.requestMatchers(HttpMethod.GET, "/api/profile/candidate").hasRole("CANDIDATE")
+								.requestMatchers(HttpMethod.POST, "/api/profile/candidate").hasRole("CANDIDATE")
+								
+								.requestMatchers(HttpMethod.GET, "/api/profile/recruiter").hasRole("RECRUITER")
+								.requestMatchers(HttpMethod.POST, "/api/profile/recruiter").hasRole("RECRUITER")
+
+								.anyRequest().authenticated())
 				// turn off session in system, make sure STATE LESS
 				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 				.addFilterBefore(headerAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

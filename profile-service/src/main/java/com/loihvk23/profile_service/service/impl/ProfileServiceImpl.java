@@ -4,10 +4,14 @@ import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 
-import com.loihvk23.profile_service.document.ProfileDocument;
-import com.loihvk23.profile_service.dto.ProfileDTO;
-import com.loihvk23.profile_service.mapper.ProfileMapper;
-import com.loihvk23.profile_service.repository.ProfileRepository;
+import com.loihvk23.profile_service.document.CandidateProfileDocument;
+import com.loihvk23.profile_service.document.RecruiterProfileDocument;
+import com.loihvk23.profile_service.dto.CandidateProfileDTO;
+import com.loihvk23.profile_service.dto.RecruiterProfileDTO;
+import com.loihvk23.profile_service.mapper.CandidateProfileMapper;
+import com.loihvk23.profile_service.mapper.RecruiterProfileMapper;
+import com.loihvk23.profile_service.repository.CandidateProfileRepository;
+import com.loihvk23.profile_service.repository.RecruiterProfileRepository;
 import com.loihvk23.profile_service.service.ProfileService;
 
 import lombok.RequiredArgsConstructor;
@@ -16,41 +20,81 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class ProfileServiceImpl implements ProfileService {
 
-	private final ProfileRepository profileRepository;
+	private final CandidateProfileRepository candidateProfileRepository;
 
-	private final ProfileMapper profileMapper;
+	private final CandidateProfileMapper candidateProfileMapper;
+
+	private final RecruiterProfileRepository recruiterProfileRepository;
+
+	private final RecruiterProfileMapper recruiterProfileMapper;
 
 	@Override
-	public ProfileDTO saveProfile(ProfileDTO profileDTO,String emailCandidate) {
-		Optional<ProfileDocument> existingOpt = profileRepository.findByEmailCandidate(emailCandidate);
+	public CandidateProfileDTO saveCandidateProfile(CandidateProfileDTO candidateProfileDTO, String emailCandidate) {
+		Optional<CandidateProfileDocument> existingOpt = candidateProfileRepository
+				.findByEmailCandidate(emailCandidate);
 
-		//prevent duplicate profile
-		ProfileDocument documentToSave;
+		// prevent duplicate profile
+		CandidateProfileDocument documentToSave;
 
-	    if (existingOpt.isPresent()) {
-	        documentToSave = existingOpt.get();
-	        
-	        profileMapper.updateDocumentFromDTO(profileDTO, documentToSave);
-	        
-	    } else {
-	        documentToSave = profileMapper.toDocument(profileDTO);
-	        documentToSave.setEmailCandidate(emailCandidate);
-	    }
+		if (existingOpt.isPresent()) {
+			documentToSave = existingOpt.get();
 
-		return profileMapper.toDTO(profileRepository.save(documentToSave));
+			candidateProfileMapper.updateDocumentFromDTO(candidateProfileDTO, documentToSave);
+
+		} else {
+			documentToSave = candidateProfileMapper.toDocument(candidateProfileDTO);
+			documentToSave.setEmailCandidate(emailCandidate);
+		}
+
+		return candidateProfileMapper.toDTO(candidateProfileRepository.save(documentToSave));
 	}
 
 	@Override
-	public ProfileDTO findProfileByEmail(String emailCandidate) {
-		Optional<ProfileDocument> profileDocument = profileRepository.findByEmailCandidate(emailCandidate);
+	public CandidateProfileDTO findCandidateProfileByEmail(String emailCandidate) {
+		Optional<CandidateProfileDocument> candidateProfileDocument = candidateProfileRepository
+				.findByEmailCandidate(emailCandidate);
 
-		if (profileDocument.isPresent()) {
-			ProfileDTO profileDTO = profileMapper.toDTO(profileDocument.get());
+		if (candidateProfileDocument.isPresent()) {
+			CandidateProfileDTO candidateProfileDTO = candidateProfileMapper.toDTO(candidateProfileDocument.get());
 
-			return profileDTO;
+			return candidateProfileDTO;
 		}
 
 		return null;
 	}
 
+	@Override
+	public RecruiterProfileDTO saveRecruiterProfile(RecruiterProfileDTO recruiterProfileDTO, String emailRecruiter) {
+		Optional<RecruiterProfileDocument> existingOpt = recruiterProfileRepository
+				.findByEmailRecruiter(emailRecruiter);
+
+		// prevent duplicate profile
+		RecruiterProfileDocument documentToSave;
+
+		if (existingOpt.isPresent()) {
+			documentToSave = existingOpt.get();
+
+			recruiterProfileMapper.updateDocumentFromDTO(recruiterProfileDTO, documentToSave);
+
+		} else {
+			documentToSave = recruiterProfileMapper.toDocument(recruiterProfileDTO);
+			documentToSave.setEmailRecruiter(emailRecruiter);
+		}
+
+		return recruiterProfileMapper.toDTO(recruiterProfileRepository.save(documentToSave));
+	}
+
+	@Override
+	public RecruiterProfileDTO findRecruiterProfileByEmail(String emailRecruiter) {
+		Optional<RecruiterProfileDocument> recruiterProfileDocument = recruiterProfileRepository
+				.findByEmailRecruiter(emailRecruiter);
+
+		if (recruiterProfileDocument.isPresent()) {
+			RecruiterProfileDTO recruiterProfileDTO = recruiterProfileMapper.toDTO(recruiterProfileDocument.get());
+
+			return recruiterProfileDTO;
+		}
+
+		return null;
+	}
 }

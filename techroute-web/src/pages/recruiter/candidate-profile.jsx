@@ -736,30 +736,31 @@ const CandidatesManagement = () => {
                     </div>
 
                     <ul className="flex flex-col gap-2 mt-4 text-[12.5px] text-[#38364F] leading-relaxed">
-                      <li className="flex gap-2">
-                        <span className="w-4 h-4 rounded-full bg-[#E4F7EF] text-[#1C9A6C] flex items-center justify-center shrink-0 mt-0.5">
-                          ✓
-                        </span>
-                        Has 2 years of experience with Spring Boot & REST API,
-                        matching the core requirements of the JD.
-                      </li>
-                      <li className="flex gap-2">
-                        <span className="w-4 h-4 rounded-full bg-[#E4F7EF] text-[#1C9A6C] flex items-center justify-center shrink-0 mt-0.5">
-                          ✓
-                        </span>
-                        Has deployed systems using JWT and authorization,
-                        matching the security requirements.
-                      </li>
+                      {selectedCandidate?.aiAnalysisResult?.matched_points?.map(
+                        (point, index) => (
+                          <li key={index} className="flex gap-2">
+                            <span className="w-4 h-4 rounded-full bg-[#E4F7EF] text-[#1C9A6C] flex items-center justify-center shrink-0 mt-0.5">
+                              ✓
+                            </span>
+                            {point}
+                          </li>
+                        )
+                      )}
                     </ul>
 
-                    <div className="mt-3.5 bg-[#FCF1DC] border border-[#F3DDA6] rounded-xl p-3 flex gap-2 text-xs text-[#8A5A05] leading-relaxed">
-                      <span>⚠️</span>
-                      <div>
-                        <strong>Missing:</strong> Practical experience with
-                        Docker/CI-CD is only briefly mentioned, needs further
-                        confirmation.
-                      </div>
-                    </div>
+                    {selectedCandidate?.aiAnalysisResult?.missing_points?.map(
+                      (missing, index) => (
+                        <div
+                          key={index}
+                          className="mt-3.5 bg-[#FCF1DC] border border-[#F3DDA6] rounded-xl p-3 flex gap-2 text-xs text-[#8A5A05] leading-relaxed"
+                        >
+                          <span>⚠️</span>
+                          <div>
+                            <strong>Missing/Note:</strong> {missing}
+                          </div>
+                        </div>
+                      )
+                    )}
 
                     <div className="flex gap-2 mt-4">
                       <button className="flex-1 font-['Sora'] text-[13px] font-bold text-white bg-gradient-to-br from-[#5D5CDE] to-[#4338CA] py-2.5 rounded-lg text-center hover:opacity-90 transition">
@@ -796,7 +797,9 @@ const CandidatesManagement = () => {
                         Experience
                       </div>
                       <div className="text-[13px] text-[#1B1A2E] font-medium mt-0.5">
-                        2 years
+                        {selectedCandidate?.aiAnalysisResult?.experience_years
+                          ? `${aiData.experience_years} years`
+                          : "Unknown"}
                       </div>
                     </div>
                   </div>
@@ -807,23 +810,16 @@ const CandidatesManagement = () => {
                     Highlighted Skills
                   </h4>
                   <div className="flex flex-wrap gap-2">
-                    {[
-                      "Java",
-                      "Spring Boot",
-                      "REST API",
-                      "PostgreSQL",
-                      "JWT",
-                    ].map((tag, i) => (
-                      <span
-                        key={i}
-                        className="text-xs px-3 py-1.5 rounded-full bg-[#F5F4FF] text-[#4338CA] font-medium"
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                    <span className="text-xs px-3 py-1.5 rounded-full bg-[#FCE7EB] text-[#D6455D] font-medium">
-                      Docker (briefly)
-                    </span>
+                    {selectedCandidate?.aiAnalysisResult?.skills?.map(
+                      (tag, i) => (
+                        <span
+                          key={i}
+                          className="text-xs px-3 py-1.5 rounded-full bg-[#F5F4FF] text-[#4338CA] font-medium"
+                        >
+                          {tag}
+                        </span>
+                      )
+                    )}
                   </div>
                 </div>
               </div>

@@ -23,6 +23,7 @@ import BlogDetail from "./pages/blog/tech-blog-detail.jsx";
 import RecruitmentPostingPage from "./pages/recruiter/recruitment-posting.jsx";
 import BlogManagementPage from "./pages/recruiter/blog-management.jsx";
 import CandidatesManagement from "./pages/recruiter/candidate-profile.jsx";
+import RecruiterProfile from "./pages/recruiter/profile.jsx";
 const router = createBrowserRouter([
   {
     path: "/",
@@ -48,6 +49,10 @@ const router = createBrowserRouter([
       {
         path: "blog/:id",
         element: <BlogDetail />,
+      },
+      {
+        path: "profile",
+        element: <RecruiterProfile />,
       },
       // Private
       {
@@ -93,7 +98,7 @@ const router = createBrowserRouter([
               },
               {
                 path: "profile",
-                element: <ProfilePage />,
+                element: <RecruiterProfile />,
               },
             ],
           },

@@ -35,4 +35,6 @@ public class ApplicationDTO {
 
 	@Builder.Default
 	private Integer scoreByAI = 0;
+	
+	private String aiAnalysisResult;
 }

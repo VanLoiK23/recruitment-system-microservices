@@ -16,9 +16,12 @@ public interface ApplicationService {
 
 	ApplicationDTO findDetailByCandidateOrRecruiter(Long applicationId, String email, String role);
 
+	ApplicationDTO updateAIResultApplicationDTO(Long applicationId, String result);
+
 	void deleteApplicationById(Long applicationId, String emailCandidate);
 
-	JobApplicationsResponseDTO findApplicationsByJob(String jobId, String emailRecruiter, String status, String query, Pageable pageable);
+	JobApplicationsResponseDTO findApplicationsByJob(String jobId, String emailRecruiter, String status, String query,
+			Pageable pageable);
 
 	Slice<ApplicationDTO> findApplicationsOfCandidate(String emailCandidate, Pageable pageable);
 

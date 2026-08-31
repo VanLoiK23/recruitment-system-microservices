@@ -17,6 +17,7 @@ import { toast } from "react-toastify";
 import JobViewDetail from "../../components/recruiter/job-posting/job-view";
 import JobUpsertModal from "../../components/recruiter/job-posting/job-upsert";
 import getJobStatusStyle from "../../components/job-status-style";
+import getDynamicStatus from "../../components/get-dynamic-status-job";
 const RecruitmentPostingPage = () => {
   const [jobs, setJobs] = useState([]);
   const [jobActive, setJobActive] = useState({});
@@ -356,7 +357,7 @@ const RecruitmentPostingPage = () => {
                         ${getJobStatusStyle(job.status)}
                       `}
                     >
-                      {job.status}
+                      {getDynamicStatus(job)}
                     </span>
                   </td>
                   <td className="py-4 px-6 text-sm text-gray-600 whitespace-nowrap">

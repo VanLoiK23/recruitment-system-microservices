@@ -42,6 +42,7 @@ import com.loihvk23.job_service.dto.request.AdvanceFilterRequest;
 import com.loihvk23.job_service.dto.request.JobEvent;
 import com.loihvk23.job_service.dto.response.JobManagementResponse;
 import com.loihvk23.job_service.dto.response.JobPostedResponse;
+import com.loihvk23.job_service.dto.response.StatsJobRespone;
 import com.loihvk23.job_service.exception.DuplicateResourceException;
 import com.loihvk23.job_service.exception.ResourceNotFoundException;
 import com.loihvk23.job_service.mapper.JobMapper;
@@ -511,6 +512,15 @@ public class JobServiceImpl implements JobService {
 		boolean hasNext = responseList.size() > pageable.getPageSize();
 
 		return new SliceImpl<>(responseList, pageable, hasNext);
+	}
+
+	@Override
+	public StatsJobRespone getStatsJobForRecruite(String recruiterEmail) {
+		StatsJobRespone rs = StatsJobRespone.builder()
+				.totalCandidates(jobRepository.sumTotalCandidatesByRecruiter(recruiterEmail))
+				.totalJobs(jobRepository.countByRecruiterEmail(recruiterEmail)).build();
+
+		return rs;
 	}
 
 }

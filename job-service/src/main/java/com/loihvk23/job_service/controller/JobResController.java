@@ -29,6 +29,7 @@ import com.loihvk23.job_service.dto.JobDTO;
 import com.loihvk23.job_service.dto.request.AdvanceFilterRequest;
 import com.loihvk23.job_service.dto.response.JobManagementResponse;
 import com.loihvk23.job_service.dto.response.JobPostedResponse;
+import com.loihvk23.job_service.dto.response.StatsJobRespone;
 import com.loihvk23.job_service.service.JobService;
 import com.loihvk23.job_service.service.SavedJobService;
 import com.loihvk23.job_service.service.UserAppliedJobService;
@@ -93,15 +94,15 @@ public class JobResController {
 	@PostMapping("/approve/{id}")
 	public ResponseEntity<JobDTO> approveJob(@PathVariable(name = "id") String jobId,
 			@AuthenticationPrincipal UserDetails userDetails) {
-		JobDTO jobDTO = jobService.updateStatusByAdmin(jobId,JobStatus.OPENING);
+		JobDTO jobDTO = jobService.updateStatusByAdmin(jobId, JobStatus.OPENING);
 
 		return ResponseEntity.ok(jobDTO);
 	}
-	
+
 	@PostMapping("/reject/{id}")
 	public ResponseEntity<JobDTO> rejectJob(@PathVariable(name = "id") String jobId,
 			@AuthenticationPrincipal UserDetails userDetails) {
-		JobDTO jobDTO = jobService.updateStatusByAdmin(jobId,JobStatus.REJECTED);
+		JobDTO jobDTO = jobService.updateStatusByAdmin(jobId, JobStatus.REJECTED);
 
 		return ResponseEntity.ok(jobDTO);
 	}
@@ -282,5 +283,14 @@ public class JobResController {
 				pageable);
 
 		return ResponseEntity.ok(jobPostedResponse);
+	}
+
+	@GetMapping("/stats/recruiter")
+	public ResponseEntity<?> getStatsJobByRecruiter(@AuthenticationPrincipal UserDetails userDetails) {
+		String recruiterEmail = userDetails.getUsername();
+
+		StatsJobRespone respone = jobService.getStatsJobForRecruite(recruiterEmail);
+
+		return ResponseEntity.ok(respone);
 	}
 }

@@ -7,6 +7,7 @@ import getJobStatusStyle from "../../components/job-status-style";
 import axios from "../../utils/axios.customize";
 import { PDFViewer } from "@react-pdf/renderer";
 import CvTemplate from "../../pdf-templates/cv-template";
+import getDynamicStatus from "../../components/get-dynamic-status-job";
 
 const getScoreColor = (score) => {
   if (score === null) return "#A6A4B8";
@@ -242,7 +243,7 @@ const CandidatesManagement = () => {
                         job.status
                       )}`}
                     >
-                      {job.status}
+                      {getDynamicStatus(job)}
                     </span>
                     <span className="text-[11.5px] text-[#6B6980]">
                       {job.applicantCount || 0} candidates

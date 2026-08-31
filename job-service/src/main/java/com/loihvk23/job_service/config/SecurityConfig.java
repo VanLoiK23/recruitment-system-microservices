@@ -19,7 +19,7 @@ import lombok.RequiredArgsConstructor;
 public class SecurityConfig {
 
 //	private final JwtAuthenticationFilter jwtAuthenticationFilter;
-	
+
 	private final HeaderAuthenticationFilter headerAuthenticationFilter;
 
 	@Bean
@@ -29,28 +29,28 @@ public class SecurityConfig {
 
 	@Bean
 	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-		http.csrf(csrf -> csrf.disable()).cors(cors -> cors.disable())
-				.authorizeHttpRequests(auth -> auth
+		http.csrf(csrf -> csrf.disable()).cors(cors -> cors.disable()).authorizeHttpRequests(auth -> auth
 //						.requestMatchers("/admin/**").hasRole("ADMIN").requestMatchers("/recruiter/**").hasRole("RECRUITER")
-						.requestMatchers(HttpMethod.GET, "/api/jobs/posted").hasAnyRole("RECRUITER", "ADMIN")
-						
-						.requestMatchers(HttpMethod.GET, "/api/jobs/draft").hasAnyRole("RECRUITER", "ADMIN")
-						.requestMatchers(HttpMethod.POST, "/api/jobs/draft").hasAnyRole("RECRUITER", "ADMIN")
-						
-	                    .requestMatchers(HttpMethod.GET, "/api/jobs/**").permitAll()
-	                    
-	                    .requestMatchers(HttpMethod.POST, "/api/jobs/filter").permitAll()
-	                    
-	                    .requestMatchers(HttpMethod.POST, "/api/jobs/approve/**").hasRole("ADMIN")
-	                    .requestMatchers(HttpMethod.POST, "/api/jobs/reject/**").hasRole("ADMIN")
-	                    
-	                    .requestMatchers(HttpMethod.POST, "/api/jobs").hasAnyRole("RECRUITER", "ADMIN")
-	                    
-	                    .requestMatchers(HttpMethod.PUT, "/api/jobs/**").hasAnyRole("RECRUITER", "ADMIN")
-	                    
-	                    .requestMatchers(HttpMethod.DELETE, "/api/jobs/**").hasAnyRole("RECRUITER", "ADMIN")
-	                    
-						.anyRequest().authenticated())
+				.requestMatchers(HttpMethod.GET, "/api/jobs/posted").hasAnyRole("RECRUITER", "ADMIN")
+				.requestMatchers(HttpMethod.GET, "/api/jobs/stats/recruiter").hasRole("RECRUITER")
+
+				.requestMatchers(HttpMethod.GET, "/api/jobs/draft").hasAnyRole("RECRUITER", "ADMIN")
+				.requestMatchers(HttpMethod.POST, "/api/jobs/draft").hasAnyRole("RECRUITER", "ADMIN")
+
+				.requestMatchers(HttpMethod.GET, "/api/jobs/**").permitAll()
+
+				.requestMatchers(HttpMethod.POST, "/api/jobs/filter").permitAll()
+
+				.requestMatchers(HttpMethod.POST, "/api/jobs/approve/**").hasRole("ADMIN")
+				.requestMatchers(HttpMethod.POST, "/api/jobs/reject/**").hasRole("ADMIN")
+
+				.requestMatchers(HttpMethod.POST, "/api/jobs").hasAnyRole("RECRUITER", "ADMIN")
+
+				.requestMatchers(HttpMethod.PUT, "/api/jobs/**").hasAnyRole("RECRUITER", "ADMIN")
+
+				.requestMatchers(HttpMethod.DELETE, "/api/jobs/**").hasAnyRole("RECRUITER", "ADMIN")
+
+				.anyRequest().authenticated())
 				// turn off session in system, make sure STATE LESS
 				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 				.addFilterBefore(headerAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

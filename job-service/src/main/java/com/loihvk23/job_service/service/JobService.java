@@ -5,11 +5,13 @@ import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
+import org.springframework.scheduling.support.SimpleTriggerContext;
 
 import com.loihvk23.job_service.JobStatus;
 import com.loihvk23.job_service.dto.JobDTO;
 import com.loihvk23.job_service.dto.request.AdvanceFilterRequest;
 import com.loihvk23.job_service.dto.response.JobPostedResponse;
+import com.loihvk23.job_service.dto.response.StatsJobRespone;
 import com.loihvk23.job_service.dto.response.JobManagementResponse;
 
 public interface JobService {
@@ -51,4 +53,6 @@ public interface JobService {
 	void saveViewedJobHistory(String emailCandidate, String jobId);
 
 	Slice<JobManagementResponse> getViewdJobs(String emailCandidate, Pageable pageable);
+	
+	StatsJobRespone getStatsJobForRecruite(String recruiterEmail);
 }

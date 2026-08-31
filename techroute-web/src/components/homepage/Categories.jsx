@@ -11,6 +11,9 @@ const categories = [
       "Data Engineer / Scientist / Analyst",
       "IT Support Specialist",
       "UX/UI Designer",
+      "Business Analyst (BA)",
+      "Project Manager / Product Manager (PM)",
+      "QA / Tester",
     ],
   },
   {

@@ -49,6 +49,17 @@ services:
     networks:
       - recruitment-network
 
+  matching-service:
+    build:
+      context: ./matching-service       
+      dockerfile: Dockerfile
+    container_name: matching-service
+    ports:
+      - "8000:8000"
+    restart: always
+    networks:
+      - recruitment-network
+
 volumes:
   rabbitmq_data:
   redis_data:

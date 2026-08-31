@@ -3,10 +3,11 @@ import CloseButton from "../button/button-close";
 import ReactQuill from "react-quill-new";
 import "react-quill-new/dist/quill.snow.css";
 import { toast } from "react-toastify";
-import axios from "../../utils/axios.customize";
+import instance from "../../utils/axios.customize";
 import { Pencil, Eye, ChevronRight } from "lucide-react";
 import CircleLoading from "../animation/animate-loading";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
 const ApplyJobModal = ({ auth, job, onClose, updateApplySuccess }) => {
   const navigate = useNavigate();
@@ -69,7 +70,7 @@ const ApplyJobModal = ({ auth, job, onClose, updateApplySuccess }) => {
   useEffect(() => {
     const loadListCv = async () => {
       try {
-        const data = await axios.get("applications/cv");
+        const data = await instance.get("applications/cv");
 
         if (data) {
           setCvList(data);
@@ -85,7 +86,7 @@ const ApplyJobModal = ({ auth, job, onClose, updateApplySuccess }) => {
   useEffect(() => {
     const fetchGeneralInfo = async () => {
       try {
-        const data = await axios.get("profile");
+        const data = await instance.get("profile");
         if (data) {
           console.log(data);
           setProfileInfo(data);
@@ -109,7 +110,7 @@ const ApplyJobModal = ({ auth, job, onClose, updateApplySuccess }) => {
 
     setLoading(true);
     try {
-      const data = await axios.post("applications/upload", formData, {
+      const data = await instance.post("applications/upload", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
@@ -151,7 +152,7 @@ const ApplyJobModal = ({ auth, job, onClose, updateApplySuccess }) => {
     }
 
     try {
-      const data = await axios.post("applications", {
+      const data = await instance.post("applications", {
         ...infoApply,
         cvUrl:
           cvList.filter((cv) => cv.id === selectedCvId)[0]?.fileUrl || "user",
@@ -162,12 +163,40 @@ const ApplyJobModal = ({ auth, job, onClose, updateApplySuccess }) => {
         toast.success("Apply job successfully !");
         updateApplySuccess(job.id);
         onClose();
+
+        scanCV();
       } else {
         toast.warn("Apply job failed");
       }
     } catch (err) {
       toast.error(err.message);
       console.error(`Status code from Backend [${err.code}]:`, err.message);
+    }
+  };
+
+  const scanCV = async () => {
+    try {
+      let cvData = "";
+      if (selectedCvId === "user") {
+        const rs = await instance.get("profile");
+
+        if (rs) {
+          cvData = rs;
+        }
+      } else {
+        cvData = cvList.filter((cv) => cv.id === selectedCvId)[0]?.fileUrl;
+      }
+      if (!cvData) {
+        console.log("Can't get data CV");
+        return;
+      }
+      const data = await axios.post("http://localhost/scan", cvData);
+
+      if (data) {
+        console.log("Scanning successfully !");
+      }
+    } catch (err) {
+      console.log(err);
     }
   };
 

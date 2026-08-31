@@ -1,50 +1,52 @@
 import React, { useEffect, useState } from "react";
 import getInitials from "../../components/get-avatar-name";
 import { toast } from "react-toastify";
-import axios from "axios";
+import axios from "../../utils/axios.customize";
+import CircleLoading from "../../components/animation/animate-loading";
+import getDynamicStatus from "../../components/get-dynamic-status-job";
+import { useLocation } from "react-router-dom";
+import EditProfileRecruiterModal from "../../components/recruiter/profile/update-profile";
+
+const AVATAR_COLORS = [
+  "#5D5CDE",
+  "#D946EF",
+  "#C026C8",
+  "#4338CA",
+  "#6E6BF0",
+  "#0EA5E9",
+  "#10B981",
+  "#F59E0B",
+];
 
 const RecruiterProfile = () => {
+  const [isCopied, setIsCopied] = useState(false);
+
   const [profile, setProfile] = useState({
-    fullName: "Huỳnh Văn Lợi",
-    role: "Senior IT Recruiter",
-    company: "TechCore Solutions",
-    email: "loihv.23ite@vku.udn.vn",
-    phone: "0905 123 456",
-    location: "Da Nang, Vietnam",
-    about:
-      "Dedicated to sourcing and acquiring top-tier software engineering talents (Java Spring, React, Node.js) for high-tech product development. Passionate about enhancing candidate experience and optimizing recruitment pipelines through automation and AI-driven screening.",
-    avatarColor: "#5D5CDE",
-    stats: {
-      totalJobs: 24,
-      activeJobs: 4,
-      totalCandidates: 856,
-      hired: 42,
-    },
+    fullName: "",
+    role: "",
+    company: "",
+    email: "",
+    phone: "",
+    location: "",
+    about: "",
   });
 
-  const [activeJobs, setActiveJobs] = useState([
-    {
-      id: 1,
-      title: "Backend Java Developer (Spring Boot)",
-      location: "Da Nang (Hybrid)",
-      candidates: 32,
-      status: "Hiring",
-    },
-    {
-      id: 2,
-      title: "Frontend React Developer",
-      location: "Da Nang (Onsite)",
-      candidates: 21,
-      status: "Hiring",
-    },
-    {
-      id: 3,
-      title: "Data Engineer",
-      location: "Remote",
-      candidates: 14,
-      status: "Closing Soon",
-    },
-  ]);
+  const [stats, setStats] = useState({
+    totalJobs: 0,
+    totalCandidates: 0,
+    hired: 0,
+  });
+
+  const [activeJobs, setActiveJobs] = useState([]);
+
+  const [previous, setPrevious] = useState(false);
+  const [pageActive, setPageActive] = useState(1);
+  const [limit, setLimit] = useState(6);
+  const [next, setNext] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [totalElements, setTotalElements] = useState(0);
+
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -59,24 +61,129 @@ const RecruiterProfile = () => {
         toast.error(err.messages);
       }
     };
+
+    fetchProfile();
+
+    const fetchStats = async () => {
+      try {
+        const data = await axios.get("jobs/stats/recruiter");
+
+        if (data) {
+          setStats(data);
+        }
+      } catch (err) {
+        console.log(err.messages);
+        toast.error(err.messages);
+      }
+    };
+
+    fetchStats();
   }, []);
+
+  useEffect(() => {
+    const fetchJobPostings = async () => {
+      try {
+        setLoading(true);
+        let url = `jobs/posted?&page=${pageActive}&limit=${limit}&status=OPENING`;
+
+        const data = await axios.get(url);
+
+        if (data) {
+          setActiveJobs(data?.jobSlice?.content);
+          setPrevious(!data?.jobSlice?.first);
+          setNext(!data?.jobSlice?.last);
+          setTotalElements(data?.totalElement);
+        }
+      } catch (err) {
+        toast.error(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchJobPostings();
+  }, [pageActive]);
+
+  const getAvatarColor = (identifier = "") => {
+    let hash = 0;
+    for (let i = 0; i < identifier.length; i++) {
+      hash = identifier.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const index = Math.abs(hash) % AVATAR_COLORS.length;
+    return AVATAR_COLORS[index];
+  };
+
+  const handleShareProfile = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+
+      setIsCopied(true);
+
+      setTimeout(() => {
+        setIsCopied(false);
+      }, 2000);
+    } catch (err) {
+      console.error("Cant copy link: ", err);
+    }
+  };
+
+  const onChangePage = (newPage) => {
+    setPageActive(newPage);
+  };
+
+  const handleSaveProfile = (updatedProfile) => {
+    setProfile(updatedProfile);
+    saveProfile(updatedProfile);
+  };
+  const saveProfile = async (updatedProfile) => {
+    if (!updatedProfile.fullName) {
+      toast.warn("Fullname is required!");
+      return;
+    }
+    if (!updatedProfile.company) {
+      toast.warn("Company is required!");
+      return;
+    }
+    if (!updatedProfile.role) {
+      toast.warn("Role is required!");
+      return;
+    }
+    if (!updatedProfile.phone) {
+      toast.warn("Phone is required!");
+      return;
+    }
+    if (!updatedProfile.location) {
+      toast.warn("Location is required!");
+      return;
+    }
+    if (!updatedProfile.about) {
+      toast.warn("Brief introduce is required!");
+      return;
+    }
+    try {
+      const data = await axios.post("profile/recruiter", updatedProfile);
+
+      if (data) {
+        toast.success("Save profile successfully !");
+        setIsEditModalOpen(false);
+      }
+    } catch (err) {
+      toast.error(err.message);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#F7F6FC] text-[#1B1A2E] font-['Be_Vietnam_Pro',sans-serif] antialiased p-8">
       <div className="max-w-6xl mx-auto">
         <div className="bg-white rounded-2xl shadow-[0_4px_20px_rgba(44,42,130,0.06)] overflow-hidden mb-6">
-          <div className="h-40 bg-gradient-to-r from-[#5D5CDE] via-[#D946EF] to-[#C026C8] relative">
-            <button className="absolute top-4 right-4 bg-white/20 hover:bg-white/30 text-white backdrop-blur-sm px-4 py-2 rounded-lg font-['Sora'] text-xs font-semibold transition-colors">
-              Change Cover
-            </button>
-          </div>
+          <div className="h-40 bg-gradient-to-r from-[#5D5CDE] via-[#D946EF] to-[#C026C8] relative"></div>
 
           <div className="px-8 pb-8 relative">
             <div className="flex justify-between items-end mb-4">
               <div className="relative -mt-16 flex items-end gap-5">
                 <div
                   className="w-32 h-32 rounded-2xl flex items-center justify-center font-['Sora'] font-bold text-4xl text-white border-4 border-white shadow-lg shrink-0"
-                  style={{ backgroundColor: profile.avatarColor }}
+                  style={{ backgroundColor: getAvatarColor(profile.fullName) }}
                 >
                   {getInitials(profile.fullName)}
                 </div>
@@ -94,12 +201,31 @@ const RecruiterProfile = () => {
               </div>
 
               <div className="mb-2 flex gap-3">
-                <button className="font-['Sora'] text-[13px] font-bold text-[#38364F] bg-white border border-[#E7E5F3] px-5 py-2.5 rounded-lg hover:bg-gray-50 transition-colors">
-                  Share Profile
+                <button
+                  onClick={handleShareProfile}
+                  className="font-['Sora'] text-[13px] font-bold text-[#38364F] bg-white border border-[#E7E5F3] px-5 py-2.5 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
+                >
+                  {isCopied ? (
+                    <>
+                      <span className="text-[#1C9A6C]">✓</span> Copied Link
+                    </>
+                  ) : (
+                    "Share Profile"
+                  )}
                 </button>
-                <button className="font-['Sora'] text-[13px] font-bold text-white bg-gradient-to-br from-[#5D5CDE] to-[#4338CA] px-5 py-2.5 rounded-lg hover:opacity-90 transition-opacity shadow-sm">
+                <button
+                  onClick={() => setIsEditModalOpen(true)}
+                  className="font-['Sora'] text-[13px] font-bold text-white bg-gradient-to-br from-[#5D5CDE] to-[#4338CA] px-5 py-2.5 rounded-lg hover:opacity-90 transition-opacity shadow-sm"
+                >
                   Edit Profile
                 </button>
+
+                <EditProfileRecruiterModal
+                  isOpen={isEditModalOpen}
+                  onClose={() => setIsEditModalOpen(false)}
+                  profile={profile}
+                  onSave={handleSaveProfile}
+                />
               </div>
             </div>
           </div>
@@ -197,7 +323,7 @@ const RecruiterProfile = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div className="bg-[#F7F6FC] rounded-xl p-4 border border-[#E7E5F3]">
                   <div className="font-['Sora'] text-2xl font-bold text-[#5D5CDE]">
-                    {profile.stats.totalCandidates}
+                    {stats.totalCandidates}
                   </div>
                   <div className="text-[11.5px] text-[#6B6980] mt-1">
                     Total Candidates
@@ -205,7 +331,7 @@ const RecruiterProfile = () => {
                 </div>
                 <div className="bg-[#E4F7EF] rounded-xl p-4 border border-[#B3E8CD]">
                   <div className="font-['Sora'] text-2xl font-bold text-[#1C9A6C]">
-                    {profile.stats.hired}
+                    {stats.hired}
                   </div>
                   <div className="text-[11.5px] text-[#1C9A6C] font-medium mt-1">
                     Hired Candidates
@@ -213,7 +339,7 @@ const RecruiterProfile = () => {
                 </div>
                 <div className="bg-[#F7F6FC] rounded-xl p-4 border border-[#E7E5F3]">
                   <div className="font-['Sora'] text-2xl font-bold text-[#1B1A2E]">
-                    {profile.stats.totalJobs}
+                    {stats.totalJobs}
                   </div>
                   <div className="text-[11.5px] text-[#6B6980] mt-1">
                     Total Campaigns
@@ -221,7 +347,7 @@ const RecruiterProfile = () => {
                 </div>
                 <div className="bg-[#FCF1DC] rounded-xl p-4 border border-[#F3DDA6]">
                   <div className="font-['Sora'] text-2xl font-bold text-[#C9820A]">
-                    {profile.stats.activeJobs}
+                    {totalElements}
                   </div>
                   <div className="text-[11.5px] text-[#C9820A] font-medium mt-1">
                     Active Campaigns
@@ -246,12 +372,10 @@ const RecruiterProfile = () => {
                 <h3 className="font-['Sora'] text-[16px] font-bold text-[#1B1A2E]">
                   Active Campaigns
                 </h3>
-                <button className="text-[12.5px] font-semibold text-[#5D5CDE] hover:text-[#4338CA]">
-                  View All →
-                </button>
               </div>
 
               <div className="flex flex-col gap-3">
+                {loading && <CircleLoading />}
                 {activeJobs.map((job) => (
                   <div
                     key={job.id}
@@ -293,18 +417,57 @@ const RecruiterProfile = () => {
                     <div className="flex items-center gap-6">
                       <div className="text-right">
                         <div className="font-['Sora'] font-bold text-[15px] text-[#1B1A2E]">
-                          {job.candidates}
+                          {job.applicantCount}
                         </div>
                         <div className="text-[11px] text-[#A6A4B8]">
                           Applicants
                         </div>
                       </div>
                       <span className="text-[11px] font-semibold px-3 py-1 rounded-full bg-[#E4F7EF] text-[#1C9A6C]">
-                        {job.status}
+                        {getDynamicStatus(job)}
                       </span>
+                      <div className="text-[11px] text-gray-300">
+                        {job.createdAt}
+                      </div>
                     </div>
                   </div>
                 ))}
+                {activeJobs.length > 0 && (
+                  <div className="p-4 border-t border-gray-100 flex items-center justify-between text-sm text-gray-500">
+                    <span>Total Elements {totalElements}</span>
+                    <div className="flex gap-1">
+                      <button
+                        disabled={!previous}
+                        className={`px-3 py-1 border rounded
+                ${
+                  !previous
+                    ? "bg-gray-200 text-gray-400 hover:bg-gray-50 border-gray-200 cursor-not-allowed"
+                    : "bg-white text-[#5B5FC7] border-[#5B5FC7]/30 hover:bg-[#5B5FC7] hover:text-white cursor-pointer"
+                }
+                `}
+                        onClick={() => onChangePage(pageActive - 1)}
+                      >
+                        Previous
+                      </button>
+                      <button className="px-3 py-1 bg-[#5B5FC7] text-white rounded">
+                        {pageActive}
+                      </button>
+                      <button
+                        disabled={!next}
+                        className={`px-3 py-1 border rounded
+                  ${
+                    !next
+                      ? "bg-gray-200 text-gray-400 hover:bg-gray-50 border-gray-200 cursor-not-allowed"
+                      : "bg-white text-[#5B5FC7] border-[#5B5FC7]/30 hover:bg-[#5B5FC7] hover:text-white cursor-pointer"
+                  }
+                  `}
+                        onClick={() => onChangePage(pageActive + 1)}
+                      >
+                        Next
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>

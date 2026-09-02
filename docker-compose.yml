@@ -60,6 +60,29 @@ services:
     networks:
       - recruitment-network
 
+  application-service:
+    build: 
+      context: ./application-service
+      dockerfile: Dockerfile
+    container_name: application-service
+    ports:
+      - "8083:8083"
+    environment:
+      - DB_HOST=application-mysql
+      - DB_PORT=3306 
+      - DB_USER=root
+      - DB_PASS=root
+      - RABBITMQ_HOST=recruitment-rabbitmq
+      - RABBITMQ_PORT=5672
+      - CLOUDINARY_CLOUD_NAME=${CLOUDINARY_CLOUD_NAME}
+      - CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY}
+      - CLOUDINARY_API_SECRET=${CLOUDINARY_API_SECRET}
+    depends_on:
+      - application-db
+      - rabbitmq
+    networks:
+      - recruitment-network
+
 volumes:
   rabbitmq_data:
   redis_data:

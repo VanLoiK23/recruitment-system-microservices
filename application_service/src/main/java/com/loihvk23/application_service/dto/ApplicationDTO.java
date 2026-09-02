@@ -3,6 +3,7 @@ package com.loihvk23.application_service.dto;
 import java.time.LocalDateTime;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.loihvk23.application_service.CVSource;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -26,6 +27,13 @@ public class ApplicationDTO {
 
 	private String cvUrl;
 
+	private String cvTextExtracted;
+
+	@Builder.Default
+	private CVSource cvSourceType = CVSource.URL;
+
+	private String cvSnapshotJson;
+
 	private String status;
 
 	private String description;
@@ -35,6 +43,6 @@ public class ApplicationDTO {
 
 	@Builder.Default
 	private Integer scoreByAI = 0;
-	
+
 	private String aiAnalysisResult;
 }

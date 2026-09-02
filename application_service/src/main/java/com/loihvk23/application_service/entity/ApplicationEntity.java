@@ -2,6 +2,8 @@ package com.loihvk23.application_service.entity;
 
 import java.time.LocalDateTime;
 
+import com.loihvk23.application_service.CVSource;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -36,8 +38,18 @@ public class ApplicationEntity {
 	@Column(nullable = false)
 	private String phone;
 
-	@Column(nullable = false)
+	@Column(nullable = true)
 	private String cvUrl;
+	
+	@Column(columnDefinition = "text", nullable = true)
+	private String cvTextExtracted; 
+	
+	@Builder.Default
+	@Column(nullable = false)
+	private CVSource cvSourceType = CVSource.URL;
+	
+	@Column(columnDefinition = "jsonb", nullable = true)
+	private String cvSnapshotJson; // save ATS profile as json format
 
 	@Column(nullable = false)
 	private String status;

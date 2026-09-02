@@ -1,9 +1,12 @@
 package com.loihvk23.job_service.config;
 
+import org.springframework.amqp.core.AcknowledgeMode;
 import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.core.TopicExchange;
+import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
+import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.context.annotation.Bean;
@@ -24,6 +27,8 @@ public class RabbitMQConfig {
 	public static final String KEY_JOB_APPLIED_SAVE = "job.apply.save";
 	public static final String KEY_JOB_APPLIED_DELETE = "job.apply.delete";
 
+	public static final String SCORING_APPLICATION = "application.scored.queue";
+	
 	@Bean
 	public TopicExchange jobExchange() {
 		return new TopicExchange(JOB_EXCHANGE);
@@ -43,5 +48,14 @@ public class RabbitMQConfig {
 	@Bean
     public Binding bindJobApplied(Queue jobQueue, TopicExchange jobExchange) {
         return BindingBuilder.bind(jobQueue).to(jobExchange).with(KEY_JOB_APPLY_ALL_EVENTS_PATTERN);
+    }
+	
+	@Bean
+    public SimpleRabbitListenerContainerFactory manualAckContainerFactory(
+            ConnectionFactory connectionFactory) {
+        SimpleRabbitListenerContainerFactory factory = new SimpleRabbitListenerContainerFactory();
+        factory.setConnectionFactory(connectionFactory);
+        factory.setAcknowledgeMode(AcknowledgeMode.MANUAL);
+        return factory;
     }
 }

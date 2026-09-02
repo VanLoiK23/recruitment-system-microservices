@@ -1,5 +1,7 @@
 package com.loihvk23.application_service.dto.request;
 
+import com.loihvk23.application_service.CVSource;
+
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
@@ -26,4 +28,10 @@ public class ApplicationRequest {
 	
 	@NotBlank(message = "Fullname is required")
 	private String fullName;
+	
+	@NotBlank(message = "CV source tpye is required")
+	private CVSource cvSourceType;
+	
+	
+	private CandidateProfileRequest candidateProfileRequest;
 }

@@ -9,15 +9,21 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.loihvk23.application_service.CVSource;
 import com.loihvk23.application_service.StatusEnum;
 import com.loihvk23.application_service.config.RabbitMQConfig;
 import com.loihvk23.application_service.dto.ApplicationDTO;
 import com.loihvk23.application_service.dto.JobCacheDTO;
 import com.loihvk23.application_service.dto.request.ApplicationRequest;
+import com.loihvk23.application_service.dto.request.CandidateProfileRequest;
 import com.loihvk23.application_service.dto.request.UserAppliedJobEvent;
 import com.loihvk23.application_service.dto.response.JobApplicationsResponseDTO;
 import com.loihvk23.application_service.entity.ApplicationEntity;
 import com.loihvk23.application_service.exception.ResourceNotFoundException;
+import com.loihvk23.application_service.helper.ConvertProfileToCVText;
+import com.loihvk23.application_service.helper.DocumentExtractionService;
 import com.loihvk23.application_service.mapper.ApplicationMapper;
 import com.loihvk23.application_service.repository.ApplicationRepository;
 import com.loihvk23.application_service.service.ApplicationService;
@@ -41,10 +47,17 @@ public class ApplicationServiceImpl implements ApplicationService {
 
 	private final RabbitTemplate rabbitTemplate;
 
+	private final DocumentExtractionService documentExtractionService;
+
+	private final ObjectMapper objectMapper;
+
+	private final ConvertProfileToCVText convert;
+
 	@Override
 	@Transactional // if one of actions does not success then roll-back all
 	public ApplicationDTO postApplicationApplyJob(ApplicationRequest applicationRequest, String emailCandidate) {
 		JobCacheDTO jobCacheDTO = jobCacheService.findJobById(applicationRequest.getJobId());
+		boolean isUrl = CVSource.URL.equals(applicationRequest.getCvSourceType());
 
 		if (jobCacheDTO == null) {
 			throw new ResourceNotFoundException("The Job you are applying does not exist!");
@@ -71,20 +84,46 @@ public class ApplicationServiceImpl implements ApplicationService {
 			}
 		}
 
-		if (applicationRequest.getCvUrl().isEmpty()) {
-			throw new IllegalArgumentException("Url cv is required !!");
+		if (isUrl) {
+			if (applicationRequest.getCvUrl().isEmpty()) {
+				throw new IllegalArgumentException("Url cv is required !!");
+			}
 		}
 
-		ApplicationDTO applicationDTO = ApplicationDTO.builder().jobId(applicationRequest.getJobId())
-				.cvUrl(applicationRequest.getCvUrl()).status("PENDING").createdAt(LocalDateTime.now())
-				.description(applicationRequest.getDescription()).candidateEmail(emailCandidate)
-				.fullName(applicationRequest.getFullName()).phone(applicationRequest.getPhone()).build();
+		ApplicationDTO.ApplicationDTOBuilder builder = ApplicationDTO.builder().jobId(applicationRequest.getJobId())
+				.status("PENDING").description(applicationRequest.getDescription()).candidateEmail(emailCandidate)
+				.fullName(applicationRequest.getFullName()).cvSourceType(applicationRequest.getCvSourceType())
+				.phone(applicationRequest.getPhone()).createdAt(LocalDateTime.now());
+
+		String cvTextForScoring; // CV text to sent to job-service for scoring(matching jd CV)
+
+		if (isUrl) {
+			String extractedText = documentExtractionService.extractTextFromUrl(applicationRequest.getCvUrl());
+			builder.cvUrl(applicationRequest.getCvUrl());
+			builder.cvTextExtracted(extractedText); // avoid if candidate remove file CV
+			cvTextForScoring = extractedText;
+		} else {
+			CandidateProfileRequest profile = applicationRequest.getCandidateProfileRequest();
+			String builtText = convert.buildCvTextFromProfile(profile);
+			try {
+				builder.cvSnapshotJson(objectMapper.writeValueAsString(profile));
+			} catch (JsonProcessingException e) {
+				throw new RuntimeException("Failed to snapshot profile", e);
+			}
+			builder.cvTextExtracted(builtText);
+			builder.fullName(profile.getFullName());
+			builder.phone(profile.getPhone());
+			cvTextForScoring = builtText;
+		}
+
+		ApplicationDTO applicationDTO = builder.build();
 
 		ApplicationEntity applicationEntity = applicationRepository.save(applicationMapper.toEntity(applicationDTO));
 
 		UserAppliedJobEvent jobAppliedEvent = UserAppliedJobEvent.builder().candidateEmail(emailCandidate)
 				.jobId(applicationRequest.getJobId()).status(applicationEntity.getStatus())
-				.createdAt(LocalDateTime.now()).build();
+				.createdAt(LocalDateTime.now()).appID(applicationEntity.getId().toString())
+				.cvTextForScoring(cvTextForScoring).build();
 		rabbitTemplate.convertAndSend(RabbitMQConfig.JOB_EXCHANGE, RabbitMQConfig.JOB_EVENT_APPLY, jobAppliedEvent);
 
 		return applicationMapper.toDTO(applicationEntity);

@@ -1,7 +1,6 @@
 package com.loihvk23.job_service.listener;
 
 import java.io.IOException;
-import java.util.Map;
 
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -10,6 +9,7 @@ import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.stereotype.Component;
 
 import com.loihvk23.job_service.config.RabbitMQConfig;
+import com.loihvk23.job_service.dto.ScoreResult;
 import com.loihvk23.job_service.dto.UserAppliedJobDTO;
 import com.loihvk23.job_service.service.JobService;
 import com.loihvk23.job_service.service.UserAppliedJobService;
@@ -50,29 +50,29 @@ public class JobEventListener {
 			userAppliedJobService.deleteAppliedJob(userAppliedEvent.getJobId(), userAppliedEvent.getCandidateEmail());
 		}
 	}
-	
-	private void onSuccess(CvJdScoreClientTier1.ScoreResult tier1, String applicationId,
-			Channel channel, long deliveryTag) {
+
+	private void onSuccess(ScoreResult tier1, Long applicationId, Channel channel, long deliveryTag) {
 		try {
-			Map<String, Object> resultEvent = Map.of(
-					"applicationId", applicationId,
-					"finalScore", tier1.finalScore(),
-					"verdict", tier1.verdict(),
-					"tier2Eligible", tier1.finalScore() >= 0.45
-			);
-			rabbitTemplate.convertAndSend(RabbitMQConfig.SCORING_APPLICATION, resultEvent);
- 
-			channel.basicAck(deliveryTag, false); 
+			ScoreResult scoreRespone = ScoreResult.builder().applicationId(applicationId)
+					.finalScore(tier1.getFinalScore()).verdict(tier1.getVerdict())
+					.tier2Eligible(tier1.getFinalScore() >= 0.45)
+					.seniorityMismatchWarning(tier1.getSeniorityMismatchWarning())
+					.jobTextSnapshot(tier1.getJobTextSnapshot()).build();
+
+			rabbitTemplate.convertAndSend(RabbitMQConfig.SCORING_APPLICATION, scoreRespone);
+
+			channel.basicAck(deliveryTag, false);
 		} catch (IOException e) {
 //			log.error("Failed to ack message for application {}", applicationId, e);
 			e.printStackTrace();
 		}
 	}
- 
-	private void onError(Throwable error, String applicationId, Channel channel, long deliveryTag) {
+
+	private void onError(Throwable error, Long applicationId, Channel channel, long deliveryTag) {
 //		log.error("Scoring failed for application {}", applicationId, error);
 		try {
-			// requeue=true -- day message tro lai queue, RabbitMQ se giao lai (co the sang consumer khac)
+			// requeue=true -- day message tro lai queue, RabbitMQ se giao lai (co the sang
+			// consumer khac)
 			// Neu loi lap lai nhieu lan (VD: job khong ton tai vinh vien), nen cau hinh
 			// dead-letter-exchange thay vi requeue mai mai, tranh vong lap vo han.
 			channel.basicNack(deliveryTag, false, true);

@@ -111,7 +111,7 @@ public class GlobalHandlerException {
 	@ExceptionHandler(HttpMessageNotReadableException.class)
 	public ResponseEntity<ErrorResponse<String>> handleHttpMessageNotReadableException(
 			HttpMessageNotReadableException exp) {
-		String customizedMessage = "Dữ liệu gửi lên sai định dạng kiểu dữ liệu!";
+		String customizedMessage = "Bad formatted of data request!";
 
 		ErrorResponse<String> errorResponse = ErrorResponse.<String>builder().timestamp(LocalDateTime.now())
 				.status(HttpStatus.BAD_REQUEST.value()).error(HttpStatus.BAD_REQUEST.getReasonPhrase())
@@ -155,6 +155,15 @@ public class GlobalHandlerException {
 				.message("File CV is required").build();
 
 		return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
+	}
+	
+	@ExceptionHandler(RuntimeException.class)
+	public ResponseEntity<ErrorResponse<String>> handleRuntimeException(RuntimeException exp) {
+		ErrorResponse<String> errorResponse = ErrorResponse.<String>builder().timestamp(LocalDateTime.now())
+				.status(HttpStatus.NOT_ACCEPTABLE.value()).error(HttpStatus.NOT_ACCEPTABLE.getReasonPhrase())
+				.message(exp.getMessage()).build();
+
+		return new ResponseEntity<>(errorResponse, HttpStatus.NOT_ACCEPTABLE);
 	}
 
 	@ExceptionHandler(Exception.class)

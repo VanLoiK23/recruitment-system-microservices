@@ -18,6 +18,6 @@ public class UserAppliedJobDTO {
 	private String status;
 	private LocalDateTime createdAt;
 	
-	private String appID;
+	private Long appID;
 	private String cvTextForScoring;
 }

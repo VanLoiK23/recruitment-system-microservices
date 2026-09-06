@@ -8,6 +8,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 
 import com.loihvk23.job_service.document.JobDocument;
 import com.loihvk23.job_service.dto.JobDTO;
+import com.loihvk23.job_service.dto.ScoreResult;
 import com.loihvk23.job_service.mapper.JobMapper;
 import com.loihvk23.job_service.repository.JobRepository;
 
@@ -25,15 +26,15 @@ public class CvJdScoreClientTier1 {
 
 	private final JobMapper jobMapper;
 
-	public record ScoreResult(double finalScore, double sbertScore, double skillScore, String verdict,
-			boolean seniorityMismatchWarning) {
-	}
+//	public record ScoreResult(double finalScore, double sbertScore, double skillScore, String verdict,
+//			boolean seniorityMismatchWarning) {
+//	}
 
 	public Mono<ScoreResult> scoreSingle(String cvText, String jobId) {
 		return findJobById(jobId).flatMap(job -> {
 			JobDTO jobDTO = jobMapper.toDTO(job);
 			String jobText = buildJobText(jobDTO);
-			return scoreSingle(cvText, jobText, jobDTO.getJobLevel());
+			return scoreSingle(cvText, jobText, jobDTO.getJobLevel()).map(rs -> new ScoreResult(rs, jobText));
 		});
 	}
 

@@ -2,6 +2,7 @@ package com.loihvk23.application_service.entity;
 
 import java.time.LocalDateTime;
 
+import com.loihvk23.application_service.ApplicationStatus;
 import com.loihvk23.application_service.CVSource;
 
 import jakarta.persistence.Column;
@@ -40,19 +41,20 @@ public class ApplicationEntity {
 
 	@Column(nullable = true)
 	private String cvUrl;
-	
+
 	@Column(columnDefinition = "text", nullable = true)
-	private String cvTextExtracted; 
-	
+	private String cvTextExtracted;
+
 	@Builder.Default
 	@Column(nullable = false)
 	private CVSource cvSourceType = CVSource.URL;
-	
+
 	@Column(columnDefinition = "jsonb", nullable = true)
 	private String cvSnapshotJson; // save ATS profile as json format
 
+	@Builder.Default
 	@Column(nullable = false)
-	private String status;
+	private ApplicationStatus status = ApplicationStatus.PENDING;
 
 	@Column(nullable = false)
 	private String description;
@@ -60,10 +62,21 @@ public class ApplicationEntity {
 	@Column(nullable = true)
 	private LocalDateTime createdAt;
 
-	@Builder.Default
-	@Column(nullable = true, name = "score_by_AI")
-	private Integer scoreByAI = 0;
+	@Column(nullable = true, name = "score_tier1")
+	private Double scoreTier1;
+
+	@Column(nullable = true)
+	private String verdict;
+
+	@Column(nullable = true)
+	private Boolean seniorityMismatchWarning;
 	
+	@Column(columnDefinition = "text", nullable = true)
+	private String jobTextSnapshot; // serve for tier 2 send cv/jd to LLM for detail explain
+
+	@Column(nullable = true, name = "score_by_AI")
+	private Double scoreByAI;
+
 	@Column(columnDefinition = "jsonb")
 	private String aiAnalysisResult;
 }

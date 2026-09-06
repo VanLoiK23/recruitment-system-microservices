@@ -19,6 +19,6 @@ public class UserAppliedJobEvent {
 	private LocalDateTime createdAt;
 	
 	//sent to job-service for serving matching jd cv
-	private String appID;
+	private Long appID;
 	private String cvTextForScoring;
 }

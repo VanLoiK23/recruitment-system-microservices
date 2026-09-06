@@ -3,6 +3,7 @@ package com.loihvk23.application_service.dto;
 import java.time.LocalDateTime;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.loihvk23.application_service.ApplicationStatus;
 import com.loihvk23.application_service.CVSource;
 
 import lombok.AllArgsConstructor;
@@ -34,15 +35,23 @@ public class ApplicationDTO {
 
 	private String cvSnapshotJson;
 
-	private String status;
-
+	@Builder.Default
+	private ApplicationStatus status = ApplicationStatus.PENDING;
+	
 	private String description;
 
 	@JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Ho_Chi_Minh")
 	private LocalDateTime createdAt;
 
-	@Builder.Default
-	private Integer scoreByAI = 0;
+	private Double scoreTier1;
+
+	private String verdict;
+
+	private Boolean seniorityMismatchWarning;
+	
+	private String jobTextSnapshot;
+
+	private Double scoreByAI;
 
 	private String aiAnalysisResult;
 }

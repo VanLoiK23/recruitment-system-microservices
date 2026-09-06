@@ -20,10 +20,12 @@ public class RabbitMQConfig {
 	public static final String JOB_ALL_EVENTS_PATTERN = "job.event.#";
 	
 	public static final String JOB_EVENT_APPLY = "job.apply.save";
-	
 	public static final String JOB_EVENT_APPLIED_UPDATE = "job.apply.update";
-	
 	public static final String JOB_EVENT_APPLIED_DELETE = "job.apply.delete";
+	
+	public static final String APPLICATION_QUEUE = "candidate.applied.queue"; 
+	public static final String APPLICATION_ALL_EVENTS_PATTERN = "application.event.#";
+	public static final String SCORING_APPLICATION = "application.event.scored";
 
 	@Bean
 	public TopicExchange jobExchange() {
@@ -34,6 +36,11 @@ public class RabbitMQConfig {
 	public Queue jobQueue() {
 		return new Queue(JOB_QUEUE, true);// if shutdown then data can't lost
 	}
+	
+	@Bean
+	public Queue applicationQueue() {
+		return new Queue(APPLICATION_QUEUE, true);
+	}
 
 	// auto convert object to json
 	@Bean
@@ -43,7 +50,12 @@ public class RabbitMQConfig {
 
 	//catch all event start with job.event
 	@Bean
-	public Binding binding(Queue jobQueue, TopicExchange jobExchange) {
+	public Binding bindingJob(Queue jobQueue, TopicExchange jobExchange) {
 		return BindingBuilder.bind(jobQueue).to(jobExchange).with(JOB_ALL_EVENTS_PATTERN);
+	}
+	
+	@Bean
+	public Binding bindingApplication(Queue applicationQueue, TopicExchange jobExchange) {
+		return BindingBuilder.bind(applicationQueue).to(jobExchange).with(APPLICATION_ALL_EVENTS_PATTERN);
 	}
 }

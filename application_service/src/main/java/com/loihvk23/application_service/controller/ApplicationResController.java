@@ -37,6 +37,7 @@ import com.loihvk23.application_service.service.JobAppliedService;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import reactor.core.publisher.Mono;
 
 @RestController
 @RequestMapping("/api/applications")
@@ -60,7 +61,8 @@ public class ApplicationResController {
 
 		Pageable pageable = PageRequest.of(page - 1, limit, Sort.by(Sort.Direction.DESC, sortBy));
 
-		JobApplicationsResponseDTO jobApplicationsResponseDTO = applicationService.findApplicationsByJob(jobId, emailRecruiter, status, query, pageable);
+		JobApplicationsResponseDTO jobApplicationsResponseDTO = applicationService.findApplicationsByJob(jobId,
+				emailRecruiter, status, query, pageable);
 
 		return ResponseEntity.ok(jobApplicationsResponseDTO);
 	}
@@ -85,8 +87,7 @@ public class ApplicationResController {
 			@AuthenticationPrincipal UserDetails userDetails) {
 		String email = userDetails.getUsername();
 
-		String role = userDetails.getAuthorities().stream().map(GrantedAuthority::getAuthority).findFirst()
-				.orElse("");
+		String role = userDetails.getAuthorities().stream().map(GrantedAuthority::getAuthority).findFirst().orElse("");
 
 		ApplicationDTO applicationDTO = applicationService.findDetailByCandidateOrRecruiter(applicationId, email, role);
 
@@ -118,7 +119,7 @@ public class ApplicationResController {
 
 	@DeleteMapping("/profile/cv/{id}")
 	public ResponseEntity<?> deleteCv(@PathVariable(name = "id") String cvId,
-			@AuthenticationPrincipal UserDetails userDetails)  throws IOException {
+			@AuthenticationPrincipal UserDetails userDetails) throws IOException {
 		String emailCandidate = userDetails.getUsername();
 
 		cvService.deleteCv(cvId, emailCandidate);
@@ -183,5 +184,12 @@ public class ApplicationResController {
 		applicationService.deleteApplicationById(applicationId, emailCandidate);
 
 		return ResponseEntity.ok(Map.of("message", "Delete successfully"));
+	}
+
+	@GetMapping("/{id}/ai-insights")
+	public ResponseEntity<?> getAiInsights(@PathVariable Long id) {
+		Mono<ApplicationDTO> rs = applicationService.updateAIResultApplicationDTO(id);
+
+		return ResponseEntity.ok(rs);
 	}
 }

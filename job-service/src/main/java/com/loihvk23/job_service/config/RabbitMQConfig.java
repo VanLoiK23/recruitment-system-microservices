@@ -27,7 +27,7 @@ public class RabbitMQConfig {
 	public static final String KEY_JOB_APPLIED_SAVE = "job.apply.save";
 	public static final String KEY_JOB_APPLIED_DELETE = "job.apply.delete";
 
-	public static final String SCORING_APPLICATION = "application.scored.queue";
+	public static final String SCORING_APPLICATION = "application.event.scored";
 	
 	@Bean
 	public TopicExchange jobExchange() {

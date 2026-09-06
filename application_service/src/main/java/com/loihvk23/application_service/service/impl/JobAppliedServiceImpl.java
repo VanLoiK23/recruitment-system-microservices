@@ -51,7 +51,7 @@ public class JobAppliedServiceImpl implements JobAppliedService {
 			jobAppliedDTO.setJobId(application.getJobId());
 
 			jobAppliedDTO.setCreatedAt(application.getCreatedAt());
-			jobAppliedDTO.setStatus(application.getStatus());
+			jobAppliedDTO.setStatus(application.getStatus().toString());
 
 			String title = jobTitleMap.get(application.getJobId());
 			jobAppliedDTO.setTitle(title != null ? title : "Unknown Job Title");

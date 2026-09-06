@@ -5,7 +5,10 @@ import org.springframework.data.domain.Slice;
 
 import com.loihvk23.application_service.dto.ApplicationDTO;
 import com.loihvk23.application_service.dto.request.ApplicationRequest;
+import com.loihvk23.application_service.dto.request.ScoreResult;
 import com.loihvk23.application_service.dto.response.JobApplicationsResponseDTO;
+
+import reactor.core.publisher.Mono;
 
 public interface ApplicationService {
 	ApplicationDTO postApplicationApplyJob(ApplicationRequest request, String emailCandidate);
@@ -16,13 +19,14 @@ public interface ApplicationService {
 
 	ApplicationDTO findDetailByCandidateOrRecruiter(Long applicationId, String email, String role);
 
-	ApplicationDTO updateAIResultApplicationDTO(Long applicationId, String result);
-
 	void deleteApplicationById(Long applicationId, String emailCandidate);
 
 	JobApplicationsResponseDTO findApplicationsByJob(String jobId, String emailRecruiter, String status, String query,
 			Pageable pageable);
 
 	Slice<ApplicationDTO> findApplicationsOfCandidate(String emailCandidate, Pageable pageable);
-
+	
+	ApplicationDTO updateScoreTier1Application(Long appId, ScoreResult scoreResult);
+	
+	Mono<ApplicationDTO> updateAIResultApplicationDTO(Long applicationId);
 }

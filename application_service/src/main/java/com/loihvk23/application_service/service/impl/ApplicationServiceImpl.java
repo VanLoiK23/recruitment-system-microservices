@@ -11,13 +11,14 @@ import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.loihvk23.application_service.ApplicationStatus;
 import com.loihvk23.application_service.CVSource;
-import com.loihvk23.application_service.StatusEnum;
 import com.loihvk23.application_service.config.RabbitMQConfig;
 import com.loihvk23.application_service.dto.ApplicationDTO;
 import com.loihvk23.application_service.dto.JobCacheDTO;
 import com.loihvk23.application_service.dto.request.ApplicationRequest;
 import com.loihvk23.application_service.dto.request.CandidateProfileRequest;
+import com.loihvk23.application_service.dto.request.ScoreResult;
 import com.loihvk23.application_service.dto.request.UserAppliedJobEvent;
 import com.loihvk23.application_service.dto.response.JobApplicationsResponseDTO;
 import com.loihvk23.application_service.entity.ApplicationEntity;
@@ -28,12 +29,14 @@ import com.loihvk23.application_service.mapper.ApplicationMapper;
 import com.loihvk23.application_service.repository.ApplicationRepository;
 import com.loihvk23.application_service.service.ApplicationService;
 import com.loihvk23.application_service.service.JobCacheService;
-import com.loihvk23.application_service.util.JsonUtils;
+import com.loihvk23.application_service.service.client.GeminiTier2Client;
 
 import jakarta.persistence.EntityExistsException;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.BadRequestException;
 import lombok.RequiredArgsConstructor;
+import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 @Service
 @RequiredArgsConstructor
@@ -52,6 +55,8 @@ public class ApplicationServiceImpl implements ApplicationService {
 	private final ObjectMapper objectMapper;
 
 	private final ConvertProfileToCVText convert;
+
+	private final GeminiTier2Client geminiClient;
 
 	@Override
 	@Transactional // if one of actions does not success then roll-back all
@@ -76,8 +81,9 @@ public class ApplicationServiceImpl implements ApplicationService {
 
 		if (applicationEntities != null && !applicationEntities.isEmpty()) {
 			boolean hasActiveApplication = applicationEntities.stream()
-					.anyMatch(app -> app.getStatus().equalsIgnoreCase("PENDING")
-							|| app.getStatus().equalsIgnoreCase("REVIEWING"));
+					.anyMatch(app -> ApplicationStatus.PENDING.equals(app.getStatus())
+							|| ApplicationStatus.SCORED.equals(app.getStatus())
+							|| ApplicationStatus.REVIEWING.equals(app.getStatus()));
 
 			if (hasActiveApplication) {
 				throw new EntityExistsException("You have apply for this Job and wait the recruiter approves!");
@@ -91,9 +97,10 @@ public class ApplicationServiceImpl implements ApplicationService {
 		}
 
 		ApplicationDTO.ApplicationDTOBuilder builder = ApplicationDTO.builder().jobId(applicationRequest.getJobId())
-				.status("PENDING").description(applicationRequest.getDescription()).candidateEmail(emailCandidate)
-				.fullName(applicationRequest.getFullName()).cvSourceType(applicationRequest.getCvSourceType())
-				.phone(applicationRequest.getPhone()).createdAt(LocalDateTime.now());
+				.status(ApplicationStatus.PENDING).description(applicationRequest.getDescription())
+				.candidateEmail(emailCandidate).fullName(applicationRequest.getFullName())
+				.cvSourceType(applicationRequest.getCvSourceType()).phone(applicationRequest.getPhone())
+				.createdAt(LocalDateTime.now());
 
 		String cvTextForScoring; // CV text to sent to job-service for scoring(matching jd CV)
 
@@ -121,9 +128,9 @@ public class ApplicationServiceImpl implements ApplicationService {
 		ApplicationEntity applicationEntity = applicationRepository.save(applicationMapper.toEntity(applicationDTO));
 
 		UserAppliedJobEvent jobAppliedEvent = UserAppliedJobEvent.builder().candidateEmail(emailCandidate)
-				.jobId(applicationRequest.getJobId()).status(applicationEntity.getStatus())
-				.createdAt(LocalDateTime.now()).appID(applicationEntity.getId().toString())
-				.cvTextForScoring(cvTextForScoring).build();
+				.jobId(applicationRequest.getJobId()).status(applicationEntity.getStatus().toString())
+				.createdAt(LocalDateTime.now()).appID(applicationEntity.getId()).cvTextForScoring(cvTextForScoring)
+				.build();
 		rabbitTemplate.convertAndSend(RabbitMQConfig.JOB_EXCHANGE, RabbitMQConfig.JOB_EVENT_APPLY, jobAppliedEvent);
 
 		return applicationMapper.toDTO(applicationEntity);
@@ -142,7 +149,7 @@ public class ApplicationServiceImpl implements ApplicationService {
 
 	// if non valid throw exception
 	private static void checkValidStatus(String status) {
-		boolean isValidStatus = Stream.of(StatusEnum.values())
+		boolean isValidStatus = Stream.of(ApplicationStatus.values())
 				.anyMatch(enumConstant -> enumConstant.name().equals(status));
 
 		if (!isValidStatus) {
@@ -166,7 +173,11 @@ public class ApplicationServiceImpl implements ApplicationService {
 					"You can't update status application (This job wasn't been created by " + emailRecruiter + ")");
 		}
 
-		if (applicationEntity.getStatus().equalsIgnoreCase(status)) {
+		if (ApplicationStatus.SCORED.toString().equalsIgnoreCase(status)) {
+			throw new IllegalArgumentException("You can't update invalid status");
+		}
+
+		if (applicationEntity.getStatus().toString().equalsIgnoreCase(status)) {
 			throw new IllegalArgumentException("You can't update old status");
 		}
 
@@ -174,13 +185,13 @@ public class ApplicationServiceImpl implements ApplicationService {
 
 		checkValidStatus(upperStatus);
 
-		applicationEntity.setStatus(upperStatus);
+		applicationEntity.setStatus(ApplicationStatus.valueOf(upperStatus));
 
 		ApplicationEntity savedEntity = applicationRepository.save(applicationEntity);
 
 		UserAppliedJobEvent jobAppliedEvent = UserAppliedJobEvent.builder()
 				.candidateEmail(savedEntity.getCandidateEmail()).jobId(savedEntity.getJobId())
-				.status(savedEntity.getStatus()).createdAt(savedEntity.getCreatedAt()).build();
+				.status(savedEntity.getStatus().toString()).createdAt(savedEntity.getCreatedAt()).build();
 		rabbitTemplate.convertAndSend(RabbitMQConfig.JOB_EXCHANGE, RabbitMQConfig.JOB_EVENT_APPLIED_UPDATE,
 				jobAppliedEvent);
 
@@ -278,19 +289,40 @@ public class ApplicationServiceImpl implements ApplicationService {
 	}
 
 	@Override
-	public ApplicationDTO updateAIResultApplicationDTO(Long applicationId, String result) {
-		ApplicationEntity applicationEntity = applicationRepository.findById(applicationId)
+	public ApplicationDTO updateScoreTier1Application(Long appId, ScoreResult scoreResult) {
+		ApplicationEntity applicationEntity = applicationRepository.findById(appId)
+				.orElseThrow(() -> new IllegalArgumentException("Application doesn't exist"));
+
+		applicationEntity.setScoreTier1(scoreResult.getFinalScore());
+		applicationEntity.setVerdict(scoreResult.getVerdict());
+		applicationEntity.setSeniorityMismatchWarning(scoreResult.getSeniorityMismatchWarning());
+		applicationEntity.setJobTextSnapshot(scoreResult.getJobTextSnapshot());
+		applicationEntity.setStatus(ApplicationStatus.SCORED);
+
+		ApplicationEntity applicationSavedEntity = applicationRepository.save(applicationEntity);
+
+		return applicationMapper.toDTO(applicationSavedEntity);
+	}
+
+	@Override
+	public Mono<ApplicationDTO> updateAIResultApplicationDTO(Long applicationId) {
+		ApplicationEntity app = applicationRepository.findById(applicationId)
 				.orElseThrow(() -> new ResourceNotFoundException("The application doesn't exist. Try again !!"));
 
-		String cleanResult = result.replace("```json", "").replace("```", "").trim();
-		if (!JsonUtils.isValidJson(cleanResult)) {
-			throw new IllegalArgumentException("Invalid format result of analysis from AI");
-		}
-		applicationEntity.setAiAnalysisResult(cleanResult);
+		String cvContent = geminiClient.resolveCvContent(app.getCvSnapshotJson(), app.getCvTextExtracted());
 
-		ApplicationEntity applicationSaved = applicationRepository.save(applicationEntity);
+		return geminiClient.scoreDetailed(cvContent, app.getJobTextSnapshot()).map(result -> {
+			try {
+				app.setAiAnalysisResult(objectMapper.writeValueAsString(result));
 
-		return applicationMapper.toDTO(applicationSaved);
+				ApplicationEntity savedApp = applicationRepository.save(app);
+
+				return applicationMapper.toDTO(savedApp);
+
+			} catch (Exception e) {
+				throw new RuntimeException("Error mapping AI result or saving to DB", e);
+			}
+		}).subscribeOn(Schedulers.boundedElastic());
 	}
 
 }

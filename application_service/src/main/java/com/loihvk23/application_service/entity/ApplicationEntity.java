@@ -49,7 +49,7 @@ public class ApplicationEntity {
 	@Column(nullable = false)
 	private CVSource cvSourceType = CVSource.URL;
 
-	@Column(columnDefinition = "jsonb", nullable = true)
+	@Column(columnDefinition = "json", nullable = true)
 	private String cvSnapshotJson; // save ATS profile as json format
 
 	@Builder.Default
@@ -77,6 +77,6 @@ public class ApplicationEntity {
 	@Column(nullable = true, name = "score_by_AI")
 	private Double scoreByAI;
 
-	@Column(columnDefinition = "jsonb")
+	@Column(columnDefinition = "json")
 	private String aiAnalysisResult;
 }

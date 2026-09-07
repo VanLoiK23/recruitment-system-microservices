@@ -57,7 +57,7 @@ const ProfilePage = () => {
   useEffect(() => {
     const fetchGeneralInfo = async () => {
       try {
-        const data = await axios.get("profile");
+        const data = await axios.get("profile/candidate");
         if (data) {
           setProfileInfo(data);
           setIsToWork(data.openToWork);
@@ -78,7 +78,7 @@ const ProfilePage = () => {
     setProfileInfo({ ...profileInfo, ...updatedData });
     console.log({ ...profileInfo, ...updatedData });
     try {
-      const data = await axios.post("profile", {
+      const data = await axios.post("profile/candidate", {
         ...profileInfo,
         ...updatedData,
       });

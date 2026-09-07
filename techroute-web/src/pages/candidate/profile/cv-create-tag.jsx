@@ -67,7 +67,7 @@ const CvCreateTag = ({ profileInfo, setIsEditModalOpen, onProfileUpdated }) => {
     const fetchProfile = async () => {
       setShowPdfCv(false);
       try {
-        const data = await axios.get("profile");
+        const data = await axios.get("profile/candidate");
         if (data) {
           setSummary(data.summary || "");
           setSkillSelected(data.skills || []);
@@ -132,7 +132,7 @@ const CvCreateTag = ({ profileInfo, setIsEditModalOpen, onProfileUpdated }) => {
       };
 
       const percent = calculatePercent(payload);
-      const data = await axios.post("profile", {
+      const data = await axios.post("profile/candidate", {
         ...payload,
         totalPercent: percent,
       });

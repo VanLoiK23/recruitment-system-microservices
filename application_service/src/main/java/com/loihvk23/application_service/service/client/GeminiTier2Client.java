@@ -29,7 +29,7 @@ public class GeminiTier2Client {
 
 	private Map<String, Object> buildResponseSchema() {
 		return Map.of("type", "object", "properties",
-				Map.of("overall_match_score", Map.of("type", "double"), "matched_skills",
+				Map.of("overall_match_score", Map.of("type", "number"), "matched_skills",
 						Map.of("type", "array", "items", Map.of("type", "string")), "missing_skills",
 						Map.of("type", "array", "items", Map.of("type", "string")), "experience_alignment",
 						Map.of("type", "string"), "summary_comment", Map.of("type", "string")),
@@ -61,7 +61,12 @@ public class GeminiTier2Client {
 		return geminiWebClient.post()
 				.uri(uriBuilder -> uriBuilder.path("/v1beta/models/{model}:generateContent").queryParam("key", apiKey)
 						.build(model))
-				.bodyValue(requestBody).retrieve().bodyToMono(JsonNode.class).map(this::parseGeminiResponse);
+				.bodyValue(requestBody).retrieve().onStatus(status -> status.is4xxClientError(),
+						response -> response.bodyToMono(String.class).flatMap(body -> {
+							System.out.println("Gemini API rejected request: " + body);
+							return Mono.error(new RuntimeException("Gemini API error: " + body));
+						}))
+				.bodyToMono(JsonNode.class).map(this::parseGeminiResponse);
 	}
 
 	private Tier2Result parseGeminiResponse(JsonNode geminiResponse) {

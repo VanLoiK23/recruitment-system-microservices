@@ -16,6 +16,17 @@ const getScoreColor = (score) => {
   return "#D6455D";
 };
 
+const parseAiResult = (raw) => {
+  if (!raw) return null;
+  if (typeof raw === "object") return raw;
+  try {
+    return JSON.parse(raw);
+  } catch (e) {
+    console.error("Failed to parse aiAnalysisResult:", e);
+    return null;
+  }
+};
+
 const AVATAR_COLORS = [
   "#5D5CDE",
   "#D946EF",
@@ -56,6 +67,9 @@ const CandidatesManagement = () => {
 
   const [candidateEmail, setCandidateEmail] = useState("");
   const [profileInfo, setProfileInfo] = useState({});
+
+  // for tier 2 AI scoring
+  const [loadingInsights, setLoadingInsights] = useState(false);
 
   useEffect(() => {
     const fetchJobPostings = async () => {
@@ -98,11 +112,10 @@ const CandidatesManagement = () => {
       }
       try {
         setLoading(true);
-        let url = `applications/job/${activeJobId}?&page=${pageActiveCandidate}&limit=${limitCandidate}`;
+        let url = `applications/job/${activeJobId}?&page=${pageActiveCandidate}&limit=${limitCandidate}&sort=scoreByAI,desc`;
         if (query) url += `&query=${query}`;
         if (status && status !== "ALL") url += `&status=${status}`;
 
-        console.log(url);
         const data = await axios.get(url);
 
         if (data) {
@@ -113,7 +126,6 @@ const CandidatesManagement = () => {
           setNumberHighScore(data?.numberHighScore);
           setNumberNotScan(data?.numberNotScan);
         }
-        console.log(data);
       } catch (err) {
         toast.error(err.message);
       } finally {
@@ -157,6 +169,33 @@ const CandidatesManagement = () => {
     fetchProfile();
   }, [candidateEmail]);
 
+  useEffect(() => {
+    const fetchAiInsights = async () => {
+      if (!selectedCandidate?.id) return;
+
+      const alreadyParsed = parseAiResult(selectedCandidate.aiAnalysisResult);
+      if (alreadyParsed) return;
+
+      try {
+        setLoadingInsights(true);
+        const data = await axios.get(
+          `applications/${selectedCandidate.id}/ai-insights`
+        );
+        if (data) {
+          setSelectedCandidate((prev) =>
+            prev ? { ...prev, aiAnalysisResult: data } : prev
+          );
+        }
+      } catch (err) {
+        toast.error(err.message);
+      } finally {
+        setLoadingInsights(false);
+      }
+    };
+
+    fetchAiInsights();
+  }, [selectedCandidate?.id]);
+
   const onChangePageJob = (newPage) => {
     setPageActiveJob(newPage);
   };
@@ -167,7 +206,6 @@ const CandidatesManagement = () => {
 
   const onChangeSearch = (e) => {
     const query = e.target.value;
-
     setQuery(query);
   };
 
@@ -196,6 +234,8 @@ const CandidatesManagement = () => {
       url
     )}&embedded=true`;
   };
+
+  const aiResult = parseAiResult(selectedCandidate?.aiAnalysisResult);
 
   return (
     <div className="flex h-screen overflow-hidden bg-[#F7F6FC] text-[#1B1A2E] font-['Be_Vietnam_Pro',sans-serif] antialiased">
@@ -422,12 +462,10 @@ const CandidatesManagement = () => {
             </thead>
             <tbody>
               {candidatesByJob.map((c) => {
-                const sColor = getScoreColor(c.scoreByAI);
+                const sColor = getScoreColor(c.scoreByAI * 100);
                 const circumference = 2 * Math.PI * 14;
                 const offset =
-                  c.scoreByAI !== null
-                    ? circumference * (1 - c.scoreByAI / 100)
-                    : 0;
+                  c.scoreByAI !== null ? circumference * (1 - c.scoreByAI) : 0;
                 return (
                   <tr
                     key={c.id}
@@ -503,7 +541,7 @@ const CandidatesManagement = () => {
                             className="font-['Sora'] font-bold text-[13.5px]"
                             style={{ color: sColor }}
                           >
-                            {c.scoreByAI}%
+                            {c.scoreByAI * 100}%
                           </span>
                         </div>
                       )}
@@ -649,7 +687,7 @@ const CandidatesManagement = () => {
             <div className="flex-1 flex overflow-hidden">
               <div className="w-[44%] border-r border-[#E7E5F3] bg-[#F7F6FC] p-5 overflow-y-auto">
                 <div className="bg-white rounded-xl shadow-[0_8px_24px_rgba(27,26,46,0.1)] p-7 h-full text-xs text-[#38364F]">
-                  {selectedCandidate?.url !== "user" ? (
+                  {selectedCandidate?.cvSourceType === "URL" ? (
                     <iframe
                       src={getCvViewerUrl(selectedCandidate.cvUrl)}
                       title="Candidate CV Preview"
@@ -659,8 +697,6 @@ const CandidatesManagement = () => {
                     <PDFViewer
                       width="100%"
                       height="100%"
-                      // onMouseOver={() => setShowDemoPdf(true)}
-                      // onMouseLeave={() => setShowDemoPdf(false)}
                       className="w-full h-full flex-1 border-none rounded-xl"
                     >
                       <CvTemplate profileInfo={profileInfo} />
@@ -670,25 +706,39 @@ const CandidatesManagement = () => {
               </div>
 
               <div className="w-[56%] overflow-y-auto p-5 pb-10">
-                <div className="rounded-[18px] bg-gradient-to-br from-[#5D5CDE] to-[#C026C8] p-[1px] mb-5">
-                  <div className="bg-gradient-to-b from-[#FBFAFF] to-[#F3F1FE] rounded-[17px] p-5">
-                    <div className="flex items-center gap-3.5">
-                      <div className="relative w-[74px] h-[74px] shrink-0">
-                        <svg
-                          className="-rotate-90"
-                          width="74"
-                          height="74"
-                          viewBox="0 0 74 74"
-                        >
-                          <circle
-                            cx="37"
-                            cy="37"
-                            r="31"
-                            fill="none"
-                            stroke="#E7E5F3"
-                            strokeWidth="7"
-                          />
-                          {selectedCandidate.scoreByAI !== null && (
+                {loadingInsights ? (
+                  <div className="rounded-[18px] bg-gradient-to-br from-[#5D5CDE] to-[#C026C8] p-[1px] mb-5">
+                    <div className="bg-gradient-to-b from-[#FBFAFF] to-[#F3F1FE] rounded-[17px] p-5 flex items-center gap-3.5">
+                      <div className="w-[74px] h-[74px] rounded-full border-4 border-[#EBEAFD] border-t-[#5D5CDE] animate-spin shrink-0" />
+                      <div>
+                        <div className="font-['Sora'] text-[10.5px] font-bold uppercase tracking-wide text-[#C026C8]">
+                          AI Matching Score
+                        </div>
+                        <div className="text-[13px] text-[#6B6980] mt-1">
+                          Detailed AI analysis in progress; please wait....
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : aiResult ? (
+                  <div className="rounded-[18px] bg-gradient-to-br from-[#5D5CDE] to-[#C026C8] p-[1px] mb-5">
+                    <div className="bg-gradient-to-b from-[#FBFAFF] to-[#F3F1FE] rounded-[17px] p-5">
+                      <div className="flex items-center gap-3.5">
+                        <div className="relative w-[74px] h-[74px] shrink-0">
+                          <svg
+                            className="-rotate-90"
+                            width="74"
+                            height="74"
+                            viewBox="0 0 74 74"
+                          >
+                            <circle
+                              cx="37"
+                              cy="37"
+                              r="31"
+                              fill="none"
+                              stroke="#E7E5F3"
+                              strokeWidth="7"
+                            />
                             <circle
                               cx="37"
                               cy="37"
@@ -699,82 +749,84 @@ const CandidatesManagement = () => {
                               strokeLinecap="round"
                               strokeDasharray={194.7}
                               strokeDashoffset={
-                                194.7 * (1 - selectedCandidate.scoreByAI / 100)
+                                194.7 * (1 - aiResult.overall_match_score / 100)
                               }
                               className="transition-all duration-1000"
                             />
-                          )}
-                          <defs>
-                            <linearGradient
-                              id="gaugeGrad"
-                              x1="0"
-                              y1="0"
-                              x2="1"
-                              y2="1"
-                            >
-                              <stop offset="0%" stopColor="#5D5CDE" />
-                              <stop offset="100%" stopColor="#D946EF" />
-                            </linearGradient>
-                          </defs>
-                        </svg>
-                        <div className="absolute inset-0 flex items-center justify-center font-['Sora'] font-extrabold text-[18px] text-[#1B1A2E]">
-                          {selectedCandidate.scoreByAI !== null
-                            ? `${selectedCandidate.scoreByAI}%`
-                            : "..."}
+                            <defs>
+                              <linearGradient
+                                id="gaugeGrad"
+                                x1="0"
+                                y1="0"
+                                x2="1"
+                                y2="1"
+                              >
+                                <stop offset="0%" stopColor="#5D5CDE" />
+                                <stop offset="100%" stopColor="#D946EF" />
+                              </linearGradient>
+                            </defs>
+                          </svg>
+                          <div className="absolute inset-0 flex items-center justify-center font-['Sora'] font-extrabold text-[18px] text-[#1B1A2E]">
+                            {aiResult.overall_match_score}%
+                          </div>
+                        </div>
+                        <div>
+                          <div className="font-['Sora'] text-[10.5px] font-bold uppercase tracking-wide text-[#C026C8]">
+                            AI Matching Score
+                          </div>
+                          <div className="font-['Sora'] text-base font-bold text-[#1B1A2E] mt-0.5">
+                            {selectedCandidate.status}
+                          </div>
+                          <div className="text-xs text-[#6B6980] mt-0.5">
+                            Compared with Job Description & posted JD
+                          </div>
                         </div>
                       </div>
-                      <div>
-                        <div className="font-['Sora'] text-[10.5px] font-bold uppercase tracking-wide text-[#C026C8]">
-                          AI Matching Score
-                        </div>
-                        <div className="font-['Sora'] text-base font-bold text-[#1B1A2E] mt-0.5">
-                          {selectedCandidate.status}
-                        </div>
-                        <div className="text-xs text-[#6B6980] mt-0.5">
-                          Compared with Job Description & posted JD
-                        </div>
-                      </div>
-                    </div>
 
-                    <ul className="flex flex-col gap-2 mt-4 text-[12.5px] text-[#38364F] leading-relaxed">
-                      {selectedCandidate?.aiAnalysisResult?.matched_points?.map(
-                        (point, index) => (
+                      {aiResult.summary_comment && (
+                        <p className="text-[12.5px] text-[#38364F] leading-relaxed mt-4 italic">
+                          {aiResult.summary_comment}
+                        </p>
+                      )}
+
+                      <ul className="flex flex-col gap-2 mt-4 text-[12.5px] text-[#38364F] leading-relaxed">
+                        {aiResult.matched_skills?.map((point, index) => (
                           <li key={index} className="flex gap-2">
                             <span className="w-4 h-4 rounded-full bg-[#E4F7EF] text-[#1C9A6C] flex items-center justify-center shrink-0 mt-0.5">
                               ✓
                             </span>
                             {point}
                           </li>
-                        )
-                      )}
-                    </ul>
+                        ))}
+                      </ul>
 
-                    {selectedCandidate?.aiAnalysisResult?.missing_points?.map(
-                      (missing, index) => (
-                        <div
-                          key={index}
-                          className="mt-3.5 bg-[#FCF1DC] border border-[#F3DDA6] rounded-xl p-3 flex gap-2 text-xs text-[#8A5A05] leading-relaxed"
-                        >
+                      {aiResult.missing_skills?.length > 0 && (
+                        <div className="mt-3.5 bg-[#FCF1DC] border border-[#F3DDA6] rounded-xl p-3 flex gap-2 text-xs text-[#8A5A05] leading-relaxed">
                           <span>⚠️</span>
                           <div>
-                            <strong>Missing/Note:</strong> {missing}
+                            <strong>Missing skills:</strong>{" "}
+                            {aiResult.missing_skills.join(", ")}
                           </div>
                         </div>
-                      )
-                    )}
+                      )}
 
-                    <div className="flex gap-2 mt-4">
-                      <button className="flex-1 font-['Sora'] text-[13px] font-bold text-white bg-gradient-to-br from-[#5D5CDE] to-[#4338CA] py-2.5 rounded-lg text-center hover:opacity-90 transition">
-                        {selectedCandidate.score >= 85
-                          ? "💬 Message & Schedule"
-                          : "📅 Schedule Interview"}
-                      </button>
-                      <button className="flex-1 font-['Sora'] text-[13px] font-bold text-[#38364F] bg-white border border-[#E7E5F3] py-2.5 rounded-lg text-center hover:bg-gray-50 transition">
-                        Save Profile
-                      </button>
+                      <div className="flex gap-2 mt-4">
+                        <button className="flex-1 font-['Sora'] text-[13px] font-bold text-white bg-gradient-to-br from-[#5D5CDE] to-[#4338CA] py-2.5 rounded-lg text-center hover:opacity-90 transition">
+                          {aiResult.overall_match_score >= 85
+                            ? "💬 Message & Schedule"
+                            : "📅 Schedule Interview"}
+                        </button>
+                        <button className="flex-1 font-['Sora'] text-[13px] font-bold text-[#38364F] bg-white border border-[#E7E5F3] py-2.5 rounded-lg text-center hover:bg-gray-50 transition">
+                          Save Profile
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="rounded-[18px] border border-[#E7E5F3] bg-[#F7F6FC] p-5 mb-5 text-[13px] text-[#6B6980] italic">
+                    There is no AI analysis data available for this candidate.
+                  </div>
+                )}
 
                 <div className="mb-5">
                   <h4 className="font-['Sora'] text-[12.5px] font-bold uppercase tracking-wide text-[#A6A4B8] mb-2.5">
@@ -784,7 +836,7 @@ const CandidatesManagement = () => {
                     <div>
                       <div className="text-[11px] text-[#6B6980]">Email</div>
                       <div className="text-[13px] text-[#1B1A2E] font-medium mt-0.5">
-                        {selectedCandidate.email}
+                        {selectedCandidate.candidateEmail}
                       </div>
                     </div>
                     <div>
@@ -795,12 +847,10 @@ const CandidatesManagement = () => {
                     </div>
                     <div>
                       <div className="text-[11px] text-[#6B6980]">
-                        Experience
+                        Experience Alignment
                       </div>
                       <div className="text-[13px] text-[#1B1A2E] font-medium mt-0.5">
-                        {selectedCandidate?.aiAnalysisResult?.experience_years
-                          ? `${aiData.experience_years} years`
-                          : "Unknown"}
+                        {aiResult?.experience_alignment || "Chưa phân tích"}
                       </div>
                     </div>
                   </div>
@@ -808,18 +858,22 @@ const CandidatesManagement = () => {
 
                 <div className="mb-5">
                   <h4 className="font-['Sora'] text-[12.5px] font-bold uppercase tracking-wide text-[#A6A4B8] mb-2.5">
-                    Highlighted Skills
+                    Skills to Verify
                   </h4>
                   <div className="flex flex-wrap gap-2">
-                    {selectedCandidate?.aiAnalysisResult?.skills?.map(
-                      (tag, i) => (
+                    {aiResult?.missing_skills?.length > 0 ? (
+                      aiResult.missing_skills.map((tag, i) => (
                         <span
                           key={i}
-                          className="text-xs px-3 py-1.5 rounded-full bg-[#F5F4FF] text-[#4338CA] font-medium"
+                          className="text-xs px-3 py-1.5 rounded-full bg-[#FCF1DC] text-[#8A5A05] font-medium"
                         >
                           {tag}
                         </span>
-                      )
+                      ))
+                    ) : (
+                      <span className="text-xs text-[#A6A4B8] italic">
+                        Không có thông tin
+                      </span>
                     )}
                   </div>
                 </div>

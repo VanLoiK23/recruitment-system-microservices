@@ -43,8 +43,6 @@ public class ApplicationDTO {
 	@JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Ho_Chi_Minh")
 	private LocalDateTime createdAt;
 
-	private Double scoreTier1;
-
 	private String verdict;
 
 	private Boolean seniorityMismatchWarning;

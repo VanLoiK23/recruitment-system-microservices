@@ -16,6 +16,7 @@ import com.loihvk23.application_service.CVSource;
 import com.loihvk23.application_service.config.RabbitMQConfig;
 import com.loihvk23.application_service.dto.ApplicationDTO;
 import com.loihvk23.application_service.dto.JobCacheDTO;
+import com.loihvk23.application_service.dto.Tier2Result;
 import com.loihvk23.application_service.dto.request.ApplicationRequest;
 import com.loihvk23.application_service.dto.request.CandidateProfileRequest;
 import com.loihvk23.application_service.dto.request.ScoreResult;
@@ -293,7 +294,7 @@ public class ApplicationServiceImpl implements ApplicationService {
 		ApplicationEntity applicationEntity = applicationRepository.findById(appId)
 				.orElseThrow(() -> new IllegalArgumentException("Application doesn't exist"));
 
-		applicationEntity.setScoreTier1(scoreResult.getFinalScore());
+		applicationEntity.setScoreByAI(scoreResult.getFinalScore());
 		applicationEntity.setVerdict(scoreResult.getVerdict());
 		applicationEntity.setSeniorityMismatchWarning(scoreResult.getSeniorityMismatchWarning());
 		applicationEntity.setJobTextSnapshot(scoreResult.getJobTextSnapshot());
@@ -304,21 +305,50 @@ public class ApplicationServiceImpl implements ApplicationService {
 		return applicationMapper.toDTO(applicationSavedEntity);
 	}
 
+//	@Override
+//	public Mono<ApplicationDTO> updateAIResultApplicationDTO(Long applicationId) {
+//		ApplicationEntity app = applicationRepository.findById(applicationId)
+//				.orElseThrow(() -> new ResourceNotFoundException("The application doesn't exist. Try again !!"));
+//
+//		String cvContent = geminiClient.resolveCvContent(app.getCvSnapshotJson(), app.getCvTextExtracted());
+//
+//		return geminiClient.scoreDetailed(cvContent, app.getJobTextSnapshot()).map(result -> {
+//			try {
+//				app.setAiAnalysisResult(objectMapper.writeValueAsString(result));
+//
+//				ApplicationEntity savedApp = applicationRepository.save(app);
+//
+//				return applicationMapper.toDTO(savedApp);
+//
+//			} catch (Exception e) {
+//				e.printStackTrace();
+//				throw new RuntimeException("Error mapping AI result or saving to DB", e);
+//			}
+//		}).subscribeOn(Schedulers.boundedElastic());
+//	}
+
 	@Override
 	public Mono<ApplicationDTO> updateAIResultApplicationDTO(Long applicationId) {
-		ApplicationEntity app = applicationRepository.findById(applicationId)
-				.orElseThrow(() -> new ResourceNotFoundException("The application doesn't exist. Try again !!"));
+		return Mono
+				.fromCallable(() -> applicationRepository.findById(applicationId).orElseThrow(
+						() -> new ResourceNotFoundException("The application doesn't exist. Try again !!")))
+				.subscribeOn(Schedulers.boundedElastic()).flatMap(app -> {
+					if (app.getAiAnalysisResult() != null && !app.getAiAnalysisResult().isBlank()) {
+						return Mono.just(applicationMapper.toDTO(app));
+					}
+					String cvContent = geminiClient.resolveCvContent(app.getCvSnapshotJson(), app.getCvTextExtracted());
 
-		String cvContent = geminiClient.resolveCvContent(app.getCvSnapshotJson(), app.getCvTextExtracted());
+					return geminiClient.scoreDetailed(cvContent, app.getJobTextSnapshot())
+							.flatMap(result -> saveAiResult(app, result));
+				});
+	}
 
-		return geminiClient.scoreDetailed(cvContent, app.getJobTextSnapshot()).map(result -> {
+	private Mono<ApplicationDTO> saveAiResult(ApplicationEntity app, Tier2Result result) {
+		return Mono.fromCallable(() -> {
 			try {
 				app.setAiAnalysisResult(objectMapper.writeValueAsString(result));
-
 				ApplicationEntity savedApp = applicationRepository.save(app);
-
 				return applicationMapper.toDTO(savedApp);
-
 			} catch (Exception e) {
 				throw new RuntimeException("Error mapping AI result or saving to DB", e);
 			}

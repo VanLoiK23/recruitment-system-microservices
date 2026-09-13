@@ -25,6 +25,7 @@ services:
       - recruitment-network
     environment:
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE}
+      - ALLOW_URL=${ALLOW_URL}
     restart: on-failure
 
   rabbitmq:
@@ -125,6 +126,8 @@ services:
       - DB_PORT=3306 
       - DB_USER=root
       - DB_PASS=root
+      - REDIS_HOST=redis_cache
+      - REDIS_PORT=6379
       - EMAIL_APP_PASSWORD=${EMAIL_APP_PASSWORD}
       - EMAIL_SEND=${EMAIL_SEND}
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE}
@@ -144,7 +147,7 @@ services:
     ports:
       - "8082:8082"
     environment:
-      - MONGODB_URI=${MONGODB_URI}
+      - MONGODB_URI=${MONGODB_URI_JOB}
       - RABBITMQ_HOST=recruitment-rabbitmq
       - RABBITMQ_PORT=5672
       - BASE_URL_MATCHING_SERVICE=${BASE_URL_MATCHING_SERVICE}
@@ -164,7 +167,7 @@ services:
     ports:
       - "8084:8084"
     environment:
-      - MONGODB_URI=${MONGODB_URI}
+      - MONGODB_URI=${MONGODB_URI_PROFILE}
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE}
     depends_on:
       - rabbitmq
@@ -181,7 +184,7 @@ services:
     ports:
       - "8085:8085"
     environment:
-      - MONGODB_URI=${MONGODB_URI}
+      - MONGODB_URI=${MONGODB_URI_BLOG}
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE}
       - CLOUDINARY_CLOUD_NAME=${CLOUDINARY_CLOUD_NAME}
       - CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY}
@@ -199,7 +202,7 @@ services:
       dockerfile: Dockerfile
     container_name: techroute-web
     ports:
-      - "3000:80"
+      - "80:80"
     depends_on:
       - api-gateway
     networks:

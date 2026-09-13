@@ -41,9 +41,15 @@ public class JobEventListener {
 			jobService.incrementApplicantCount(jobId);
 			userAppliedJobService.saveAppliedJob(userAppliedEvent);
 
-			scoreClient.scoreSingle(userAppliedEvent.getCvTextForScoring(), userAppliedEvent.getJobId()).subscribe(
-					tier1 -> onSuccess(tier1, userAppliedEvent.getAppID(), channel, deliveryTag),
-					error -> onError(error, userAppliedEvent.getAppID(), channel, deliveryTag));
+			scoreClient.scoreSingle(userAppliedEvent.getCvTextForScoring(), userAppliedEvent.getJobId())
+					.subscribe(tier1 -> {
+						System.out.println("Score CV compelete: " + userAppliedEvent.getAppID() + " - Score: "
+								+ tier1.getFinalScore());
+						onSuccess(tier1, userAppliedEvent.getAppID(), channel, deliveryTag);
+					}, error -> {
+						System.err.println("Error " + userAppliedEvent.getAppID() + ": " + error.getMessage());
+						onError(error, userAppliedEvent.getAppID(), channel, deliveryTag);
+					});
 		} else if (RabbitMQConfig.KEY_JOB_APPLIED_UPDATE.equals(routingKey)) {
 			userAppliedJobService.saveAppliedJob(userAppliedEvent);
 		} else if (RabbitMQConfig.KEY_JOB_APPLIED_DELETE.equals(routingKey)) {
@@ -59,11 +65,12 @@ public class JobEventListener {
 					.seniorityMismatchWarning(tier1.getSeniorityMismatchWarning())
 					.jobTextSnapshot(tier1.getJobTextSnapshot()).build();
 
-			rabbitTemplate.convertAndSend(RabbitMQConfig.SCORING_APPLICATION, scoreRespone);
+			rabbitTemplate.convertAndSend(RabbitMQConfig.JOB_EXCHANGE, RabbitMQConfig.SCORING_APPLICATION,
+					scoreRespone);
 
 			channel.basicAck(deliveryTag, false);
 		} catch (IOException e) {
-//			log.error("Failed to ack message for application {}", applicationId, e);
+			System.out.print("Failed to ack message for application {}" + applicationId + e.getMessage());
 			e.printStackTrace();
 		}
 	}
@@ -75,7 +82,8 @@ public class JobEventListener {
 			// consumer khac)
 			// Neu loi lap lai nhieu lan (VD: job khong ton tai vinh vien), nen cau hinh
 			// dead-letter-exchange thay vi requeue mai mai, tranh vong lap vo han.
-			channel.basicNack(deliveryTag, false, true);
+//			channel.basicNack(deliveryTag, false, true);
+			channel.basicNack(deliveryTag, false, false);
 		} catch (IOException e) {
 //			log.error("Failed to nack message for application {}", applicationId, e);
 		}

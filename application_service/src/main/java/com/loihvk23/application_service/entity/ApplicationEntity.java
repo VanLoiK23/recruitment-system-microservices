@@ -62,8 +62,9 @@ public class ApplicationEntity {
 	@Column(nullable = true)
 	private LocalDateTime createdAt;
 
-	@Column(nullable = true, name = "score_tier1")
-	private Double scoreTier1;
+	//score for tier1
+	@Column(nullable = true, name = "score_by_AI")
+	private Double scoreByAI;
 
 	@Column(nullable = true)
 	private String verdict;
@@ -73,9 +74,6 @@ public class ApplicationEntity {
 	
 	@Column(columnDefinition = "text", nullable = true)
 	private String jobTextSnapshot; // serve for tier 2 send cv/jd to LLM for detail explain
-
-	@Column(nullable = true, name = "score_by_AI")
-	private Double scoreByAI;
 
 	@Column(columnDefinition = "json")
 	private String aiAnalysisResult;

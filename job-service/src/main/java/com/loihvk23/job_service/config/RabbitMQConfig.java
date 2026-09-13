@@ -50,12 +50,17 @@ public class RabbitMQConfig {
         return BindingBuilder.bind(jobQueue).to(jobExchange).with(KEY_JOB_APPLY_ALL_EVENTS_PATTERN);
     }
 	
+	//handle custom container message should been resent or not
 	@Bean
     public SimpleRabbitListenerContainerFactory manualAckContainerFactory(
-            ConnectionFactory connectionFactory) {
+            ConnectionFactory connectionFactory, 
+            MessageConverter jsonMessageConverter) {
+        
         SimpleRabbitListenerContainerFactory factory = new SimpleRabbitListenerContainerFactory();
         factory.setConnectionFactory(connectionFactory);
-        factory.setAcknowledgeMode(AcknowledgeMode.MANUAL);
+        factory.setAcknowledgeMode(AcknowledgeMode.MANUAL);        
+        factory.setMessageConverter(jsonMessageConverter); 
+        
         return factory;
     }
 }

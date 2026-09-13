@@ -29,12 +29,14 @@ public class SecurityConfig {
 
 	@Bean
 	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-		http.csrf(csrf -> csrf.disable()).cors(cors -> cors.disable()).authorizeHttpRequests(auth -> auth
+		http.csrf(csrf -> csrf.disable()).cors(cors -> cors.disable())
+		.authorizeHttpRequests(auth -> auth
 				.requestMatchers(HttpMethod.GET, "/api/applications/job/**").hasRole("RECRUITER") // fetch list
 																									// application
 																									// follow
 																									// job
-
+				.requestMatchers(HttpMethod.GET, "/api/applications/*/ai-insights").hasRole("RECRUITER") 
+				
 				.requestMatchers(HttpMethod.PUT, "/api/applications/*/status").hasRole("RECRUITER") // update
 																									// status
 																									// application

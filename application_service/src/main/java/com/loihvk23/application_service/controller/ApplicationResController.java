@@ -187,9 +187,8 @@ public class ApplicationResController {
 	}
 
 	@GetMapping("/{id}/ai-insights")
-	public ResponseEntity<?> getAiInsights(@PathVariable Long id) {
-		Mono<ApplicationDTO> rs = applicationService.updateAIResultApplicationDTO(id);
-
-		return ResponseEntity.ok(rs);
+	public ResponseEntity<ApplicationDTO> getAiInsights(@PathVariable Long id) {
+		ApplicationDTO result = applicationService.updateAIResultApplicationDTO(id).block();
+		return ResponseEntity.ok(result);
 	}
 }

@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import com.loihvk23.application_service.ApplicationStatus;
 import com.loihvk23.application_service.entity.ApplicationEntity;
 
 public interface ApplicationRepository extends JpaRepository<ApplicationEntity, Long> {
@@ -17,7 +18,7 @@ public interface ApplicationRepository extends JpaRepository<ApplicationEntity, 
 
 	Slice<ApplicationEntity> findByCandidateEmail(String candidateEmail, Pageable pageable);
 
-	Slice<ApplicationEntity> findByJobIdAndStatus(String jobId, String status, Pageable pageable);
+	Slice<ApplicationEntity> findByJobIdAndStatus(String jobId, ApplicationStatus status, Pageable pageable);
 
 	boolean existsByCandidateEmailAndJobId(String candidateEmail, String jobId);
 
@@ -30,5 +31,5 @@ public interface ApplicationRepository extends JpaRepository<ApplicationEntity, 
 	@Query("SELECT a FROM ApplicationEntity a " + "WHERE a.jobId = :jobId " + "AND (:st IS NULL OR a.status = :st) "
 			+ "AND (:name IS NULL OR LOWER(a.fullName) LIKE LOWER(CONCAT('%', :name, '%')))")
 	Slice<ApplicationEntity> findByJobIdAndStatusAndNameCandidate(@Param("jobId") String jobId,
-			@Param("st") String status, @Param("name") String name, Pageable pageable);
+			@Param("st") ApplicationStatus status, @Param("name") String name, Pageable pageable);
 }

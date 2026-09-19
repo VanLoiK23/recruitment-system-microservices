@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.loihvk23.profile_service.dto.CandidateProfileDTO;
@@ -21,6 +22,13 @@ import lombok.RequiredArgsConstructor;
 @RequestMapping("/api/profile")
 public class profileController {
 	private final ProfileService profileService;
+
+	@GetMapping
+	public ResponseEntity<?> fetchProfile(@RequestParam(name = "email") String email) {
+		CandidateProfileDTO candidateProfileDTO = profileService.findCandidateProfileByEmail(email);
+
+		return ResponseEntity.ok(candidateProfileDTO);
+	}
 
 	@GetMapping("/candidate")
 	public ResponseEntity<?> fechInfoCandidateProfile(@AuthenticationPrincipal UserDetails userDetails) {

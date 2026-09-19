@@ -1,5 +1,7 @@
 package com.loihvk23.application_service.service;
 
+import java.util.List;
+
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 
@@ -16,6 +18,8 @@ public interface ApplicationService {
 	boolean checkJobApply(String jobId, String emailCandidate);
 
 	ApplicationDTO updateStatusApplication(Long applicationId, String emailRecruiter, String status);
+	
+	void updateBulkStatusApplication(List<Long> ids, String emailRecruiter, String status);
 
 	ApplicationDTO findDetailByCandidateOrRecruiter(Long applicationId, String email, String role);
 

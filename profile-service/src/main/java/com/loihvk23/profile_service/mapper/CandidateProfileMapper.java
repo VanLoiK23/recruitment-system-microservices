@@ -1,6 +1,5 @@
 package com.loihvk23.profile_service.mapper;
 
-import org.mapstruct.MapMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;

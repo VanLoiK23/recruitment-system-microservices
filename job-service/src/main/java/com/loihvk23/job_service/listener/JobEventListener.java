@@ -1,6 +1,7 @@
 package com.loihvk23.job_service.listener;
 
 import java.io.IOException;
+import java.util.List;
 
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -29,31 +30,62 @@ public class JobEventListener {
 	private final RabbitTemplate rabbitTemplate;
 
 	// if queue has item them this is active
-	@RabbitListener(queues = RabbitMQConfig.JOB_QUEUE, containerFactory = "manualAckContainerFactory")
-	public void consumJobEvent(UserAppliedJobDTO userAppliedEvent,
+	@RabbitListener(queues = RabbitMQConfig.APPLICATION_QUEUE, containerFactory = "manualAckContainerFactory")
+	public void consumApplicationEvent(UserAppliedJobDTO userAppliedEvent,
 			@Header(AmqpHeaders.RECEIVED_ROUTING_KEY) String routingKey, Channel channel,
-			@Header(AmqpHeaders.DELIVERY_TAG) long deliveryTag) {
+			@Header(AmqpHeaders.DELIVERY_TAG) long deliveryTag) throws IOException {
 		System.out.println("Receive a message from Application Service: " + userAppliedEvent);
 
-		String jobId = userAppliedEvent.getJobId();
+		if (RabbitMQConfig.APPLICATION_EVENT_SAVE.equals(routingKey)) {
+			String jobId = userAppliedEvent.getJobId();
 
-		if (RabbitMQConfig.KEY_JOB_APPLIED_SAVE.equals(routingKey)) {
-			jobService.incrementApplicantCount(jobId);
-			userAppliedJobService.saveAppliedJob(userAppliedEvent);
+			if (userAppliedJobService.saveAppliedJob(userAppliedEvent) != null) {
+				jobService.incrementApplicantCount(jobId);
+			}
 
-			scoreClient.scoreSingle(userAppliedEvent.getCvTextForScoring(), userAppliedEvent.getJobId())
-					.subscribe(tier1 -> {
-						System.out.println("Score CV compelete: " + userAppliedEvent.getAppID() + " - Score: "
-								+ tier1.getFinalScore());
-						onSuccess(tier1, userAppliedEvent.getAppID(), channel, deliveryTag);
-					}, error -> {
-						System.err.println("Error " + userAppliedEvent.getAppID() + ": " + error.getMessage());
-						onError(error, userAppliedEvent.getAppID(), channel, deliveryTag);
-					});
-		} else if (RabbitMQConfig.KEY_JOB_APPLIED_UPDATE.equals(routingKey)) {
-			userAppliedJobService.saveAppliedJob(userAppliedEvent);
-		} else if (RabbitMQConfig.KEY_JOB_APPLIED_DELETE.equals(routingKey)) {
-			userAppliedJobService.deleteAppliedJob(userAppliedEvent.getJobId(), userAppliedEvent.getCandidateEmail());
+//			scoreClient.scoreSingle(userAppliedEvent.getCvTextForScoring(), userAppliedEvent.getJobId())
+//					.subscribe(tier1 -> {
+//						System.out.println("Score CV compelete: " + userAppliedEvent.getAppID() + " - Score: "
+//								+ tier1.getFinalScore());
+//						onSuccess(tier1, userAppliedEvent.getAppID(), channel, deliveryTag);
+//					}, error -> {
+//						System.err.println("Error " + userAppliedEvent.getAppID() + ": " + error.getMessage());
+//						onError(error, userAppliedEvent.getAppID(), channel, deliveryTag);
+//					});
+//			
+			try {
+				ScoreResult tier1 = scoreClient
+						.scoreSingle(userAppliedEvent.getCvTextForScoring(), userAppliedEvent.getJobId()).block();
+
+				onSuccess(tier1, userAppliedEvent.getAppID(), channel, deliveryTag);
+			} catch (Exception e) {
+				onError(e, userAppliedEvent.getAppID(), channel, deliveryTag);
+			}
+		} else if (RabbitMQConfig.APPLICATION_EVENT_UPDATE.equals(routingKey)) {
+			try {
+				userAppliedJobService.saveAppliedJob(userAppliedEvent);
+				channel.basicAck(deliveryTag, false);
+			} catch (Exception e) {
+				channel.basicNack(deliveryTag, false, false);
+			}
+		} else if (RabbitMQConfig.APPLICATION_EVENT_DELETE.equals(routingKey)) {
+			try {
+				userAppliedJobService.deleteAppliedJob(userAppliedEvent.getJobId(),
+						userAppliedEvent.getCandidateEmail());
+				channel.basicAck(deliveryTag, false);
+			} catch (Exception e) {
+				channel.basicNack(deliveryTag, false, false);
+			}
+		}
+	}
+
+	@RabbitListener(queues = RabbitMQConfig.APPLICATION_BULK_QUEUE)
+	public void consumApplicationBulkEvent(List<UserAppliedJobDTO> userAppliedEvents,
+			@Header(AmqpHeaders.RECEIVED_ROUTING_KEY) String routingKey, Channel channel,
+			@Header(AmqpHeaders.DELIVERY_TAG) long deliveryTag) throws IOException {
+
+		if (RabbitMQConfig.APPLICATION_EVENT_BULK_UPDATE.equals(routingKey)) {
+			userAppliedJobService.updateBulkStatus(userAppliedEvents);
 		}
 	}
 

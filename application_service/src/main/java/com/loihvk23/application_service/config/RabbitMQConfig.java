@@ -14,14 +14,18 @@ public class RabbitMQConfig {
 
 	public static final String JOB_QUEUE = "job.application.queue";
 	public static final String JOB_EXCHANGE = "job.exchange";
-	public static final String JOB_UPSERTED_KEY = "job.event.upserted";
-	public static final String JOB_DELETE_KEY = "job.event.deleted";
 
 	public static final String JOB_ALL_EVENTS_PATTERN = "job.event.#";
+
+	public static final String JOB_UPSERTED_KEY = "job.event.upserted";
+	public static final String JOB_DELETE_KEY = "job.event.deleted";
 	
-	public static final String JOB_EVENT_APPLY = "job.apply.save";
-	public static final String JOB_EVENT_APPLIED_UPDATE = "job.apply.update";
-	public static final String JOB_EVENT_APPLIED_DELETE = "job.apply.delete";
+	
+	public static final String APPLICATION_EVENT_SAVE = "application.event.save";
+	public static final String APPLICATION_EVENT_UPDATE = "application.event.update";
+	public static final String APPLICATION_EVENT_DELETE = "application.event.delete";
+	
+	public static final String APPLICATION_EVENT_BULK_UPDATE = "application.bulk.update";
 	
 	public static final String APPLICATION_QUEUE = "candidate.applied.queue"; 
 	public static final String APPLICATION_ALL_EVENTS_PATTERN = "application.event.#";

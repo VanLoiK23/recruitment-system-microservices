@@ -71,6 +71,7 @@ public class JobServiceImpl implements JobService {
 	private final UserAppliedJobRepository userAppliedJobRepository;
 
 	@Override
+	@Transactional(readOnly = true)
 	public Slice<JobDTO> findAll(Pageable pageable, String email) {
 		Slice<JobDocument> jobDocuments = jobRepository.findAll(pageable);
 
@@ -117,6 +118,7 @@ public class JobServiceImpl implements JobService {
 	}
 
 	@Override
+	@Transactional(readOnly = true)
 	public JobPostedResponse getJobPostedByRecruiter(String recruiterEmail, String query, String status,
 			Pageable pageable) {
 
@@ -269,12 +271,11 @@ public class JobServiceImpl implements JobService {
 				jobDTO.setStatus(JobStatus.PENDING);
 			} else if (isTitleChanged || isDescChanged || isMinSalaryChanged || isMaxSalaryChanged || isBenefitsChanged
 					|| isRequirementsChanged) {
-				if (!JobStatus.CLOSED.equals(jobDTO.getStatus()) || JobStatus.OPENING.equals(jobDTO.getStatus())) {
-					jobDTO.setStatus(JobStatus.PENDING);
-				}
+				jobDTO.setStatus(JobStatus.PENDING);
 			} else {
-				if (JobStatus.OPENING.equals(jobDocument.getStatus())) {
-					jobDTO.setStatus(jobDocument.getStatus());
+				if (JobStatus.OPENING.equals(jobDocument.getStatus())
+						|| JobStatus.CLOSED.equals(jobDocument.getStatus())) {
+					jobDTO.setStatus(JobStatus.OPENING);
 				}
 			}
 		}
@@ -319,6 +320,7 @@ public class JobServiceImpl implements JobService {
 	}
 
 	@Override
+	@Transactional(readOnly = true)
 	public JobDTO findDetailJob(String jobId, String email) {
 		JobDocument jobDocument = jobRepository.findById(jobId)
 				.orElseThrow(() -> new ResourceNotFoundException("Job isn't exist. Can not see !!"));
@@ -338,6 +340,7 @@ public class JobServiceImpl implements JobService {
 	}
 
 	@Override
+	@Transactional(readOnly = true)
 	public Page<JobDTO> filterAdvanceJobs(AdvanceFilterRequest searchRequest, Pageable pageable, String email) {
 
 		Query query = new Query();
@@ -425,6 +428,7 @@ public class JobServiceImpl implements JobService {
 	}
 
 	@Override
+	@Transactional(readOnly = true)
 	public Slice<JobDTO> findJobRelevants(List<String> technologies, String jobId, Pageable pageable, String email) {
 		String statusActive = "OPENING";
 		Slice<JobDocument> jobDocumentSlices = jobRepository.findByTechnologiesInAndIdNotAndStatusAndDeadlineAfter(
@@ -479,6 +483,7 @@ public class JobServiceImpl implements JobService {
 	}
 
 	@Override
+	@Transactional(readOnly = true)
 	public Slice<JobManagementResponse> getViewdJobs(String emailCandidate, Pageable pageable) {
 		String key = "viewed_jobs:" + emailCandidate;
 

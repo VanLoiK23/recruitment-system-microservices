@@ -29,6 +29,7 @@ import org.springframework.web.multipart.MultipartFile;
 import com.loihvk23.application_service.dto.ApplicationDTO;
 import com.loihvk23.application_service.dto.CvDTO;
 import com.loihvk23.application_service.dto.request.ApplicationRequest;
+import com.loihvk23.application_service.dto.request.UpdateBulkStatusRequest;
 import com.loihvk23.application_service.dto.response.JobApplicationsResponseDTO;
 import com.loihvk23.application_service.dto.response.JobAppliedDTO;
 import com.loihvk23.application_service.service.ApplicationService;
@@ -37,7 +38,6 @@ import com.loihvk23.application_service.service.JobAppliedService;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import reactor.core.publisher.Mono;
 
 @RestController
 @RequestMapping("/api/applications")
@@ -176,6 +176,16 @@ public class ApplicationResController {
 		return ResponseEntity.ok(applicationDTO);
 	}
 
+	@PutMapping("/bulk/status")
+	public ResponseEntity<?> updateBulkStatusByRecruiter(@RequestBody @Valid UpdateBulkStatusRequest request,
+			@AuthenticationPrincipal UserDetails userDetails) {
+		String emailRecruiter = userDetails.getUsername();
+
+		applicationService.updateBulkStatusApplication(request.getIds(), emailRecruiter, request.getStatus());
+
+		return ResponseEntity.ok(Map.of("success", true));
+	}
+
 	@DeleteMapping("/{id}")
 	public ResponseEntity<?> deleteApplicationByCandidate(@PathVariable(name = "id") long applicationId,
 			@AuthenticationPrincipal UserDetails userDetails) {
@@ -188,7 +198,9 @@ public class ApplicationResController {
 
 	@GetMapping("/{id}/ai-insights")
 	public ResponseEntity<ApplicationDTO> getAiInsights(@PathVariable Long id) {
-		ApplicationDTO result = applicationService.updateAIResultApplicationDTO(id).block();
+		ApplicationDTO result = applicationService.updateAIResultApplicationDTO(id).block(); // convert
+																								// non-blockking(reactive)
+																								// to blocking!
 		return ResponseEntity.ok(result);
 	}
 }

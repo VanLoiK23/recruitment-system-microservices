@@ -1,6 +1,7 @@
 package com.loihvk23.application_service.service.impl;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -132,7 +133,7 @@ public class ApplicationServiceImpl implements ApplicationService {
 				.jobId(applicationRequest.getJobId()).status(applicationEntity.getStatus().toString())
 				.createdAt(LocalDateTime.now()).appID(applicationEntity.getId()).cvTextForScoring(cvTextForScoring)
 				.build();
-		rabbitTemplate.convertAndSend(RabbitMQConfig.JOB_EXCHANGE, RabbitMQConfig.JOB_EVENT_APPLY, jobAppliedEvent);
+		rabbitTemplate.convertAndSend(RabbitMQConfig.JOB_EXCHANGE, RabbitMQConfig.APPLICATION_EVENT_SAVE, jobAppliedEvent);
 
 		return applicationMapper.toDTO(applicationEntity);
 	}
@@ -193,10 +194,43 @@ public class ApplicationServiceImpl implements ApplicationService {
 		UserAppliedJobEvent jobAppliedEvent = UserAppliedJobEvent.builder()
 				.candidateEmail(savedEntity.getCandidateEmail()).jobId(savedEntity.getJobId())
 				.status(savedEntity.getStatus().toString()).createdAt(savedEntity.getCreatedAt()).build();
-		rabbitTemplate.convertAndSend(RabbitMQConfig.JOB_EXCHANGE, RabbitMQConfig.JOB_EVENT_APPLIED_UPDATE,
+		rabbitTemplate.convertAndSend(RabbitMQConfig.JOB_EXCHANGE, RabbitMQConfig.APPLICATION_EVENT_UPDATE,
 				jobAppliedEvent);
 
 		return applicationMapper.toDTO(savedEntity);
+	}
+
+	@Override
+	@Transactional
+	public void updateBulkStatusApplication(List<Long> ids, String emailRecruiter, String status) {
+		ApplicationEntity testApplicationEntity = applicationRepository.findById(ids.get(0))
+				.orElseThrow(() -> new ResourceNotFoundException("The application doesn't exist. Try again !!"));
+
+		checkValidJobAndRecruiterEmail(testApplicationEntity.getJobId(), emailRecruiter);
+		
+		if (ApplicationStatus.SCORED.toString().equalsIgnoreCase(status)) {
+			throw new IllegalArgumentException("You can't update invalid status");
+		}
+
+		String upperStatus = status.toUpperCase();
+		ApplicationStatus newStatus = ApplicationStatus.valueOf(upperStatus);
+
+		checkValidStatus(upperStatus);
+
+		List<ApplicationEntity> applicationEntities = applicationRepository.findAllById(ids);
+
+		applicationEntities.forEach(app -> app.setStatus(newStatus));
+
+		List<ApplicationEntity> applicationSavedEntities = applicationRepository.saveAll(applicationEntities);
+
+		List<UserAppliedJobEvent> userAppliedJobEvents = applicationSavedEntities.stream()
+				.map(savedEntity -> UserAppliedJobEvent.builder().candidateEmail(savedEntity.getCandidateEmail())
+						.jobId(savedEntity.getJobId()).status(savedEntity.getStatus().toString())
+						.createdAt(savedEntity.getCreatedAt()).build())
+				.toList();
+
+		rabbitTemplate.convertAndSend(RabbitMQConfig.JOB_EXCHANGE, RabbitMQConfig.APPLICATION_EVENT_BULK_UPDATE,
+				userAppliedJobEvents);
 	}
 
 	@Override
@@ -213,7 +247,7 @@ public class ApplicationServiceImpl implements ApplicationService {
 		applicationRepository.deleteById(applicationId);
 		UserAppliedJobEvent jobAppliedEvent = UserAppliedJobEvent.builder()
 				.candidateEmail(applicationEntity.getCandidateEmail()).jobId(applicationEntity.getJobId()).build();
-		rabbitTemplate.convertAndSend(RabbitMQConfig.JOB_EXCHANGE, RabbitMQConfig.JOB_EVENT_APPLIED_DELETE,
+		rabbitTemplate.convertAndSend(RabbitMQConfig.JOB_EXCHANGE, RabbitMQConfig.APPLICATION_EVENT_DELETE,
 				jobAppliedEvent);
 	}
 
@@ -242,8 +276,14 @@ public class ApplicationServiceImpl implements ApplicationService {
 			query = null;
 		}
 
+		ApplicationStatus jobStatus = null;
+
+		if (status != null) {
+			jobStatus = ApplicationStatus.valueOf(status);
+		}
+
 		Slice<ApplicationEntity> applicationEntities = applicationRepository.findByJobIdAndStatusAndNameCandidate(jobId,
-				status, query, pageable);
+				jobStatus, query, pageable);
 		Slice<ApplicationDTO> applicationDtos = applicationEntities.map(applicationMapper::toDTO);
 
 		long totalCandidates = applicationRepository.countByJobId(jobId);

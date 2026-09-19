@@ -26,10 +26,6 @@ public class CvJdScoreClientTier1 {
 
 	private final JobMapper jobMapper;
 
-//	public record ScoreResult(double finalScore, double sbertScore, double skillScore, String verdict,
-//			boolean seniorityMismatchWarning) {
-//	}
-
 	public Mono<ScoreResult> scoreSingle(String cvText, String jobId) {
 		return findJobById(jobId).flatMap(job -> {
 			JobDTO jobDTO = jobMapper.toDTO(job);
@@ -59,20 +55,6 @@ public class CvJdScoreClientTier1 {
 						Map.of("cv_text", cvText, "job_text", jobText, "job_level", jobLevel == null ? "" : jobLevel))
 				.retrieve().bodyToMono(ScoreResult.class);
 	}
-
-//	public ScoreResult scoreSingle(String cvText, String jobText, String jobLevel) {
-//		return cvJdWebClient.post().uri("/score")
-//				.bodyValue(
-//						Map.of("cv_text", cvText, "job_text", jobText, "job_level", jobLevel == null ? "" : jobLevel))
-//				.retrieve().bodyToMono(ScoreResult.class).block();
-//	}
-
-//	public List<Map<String, Object>> scoreBatch(String jobText, String jobLevel, List<Map<String, Object>> candidates) {
-//		return cvJdWebClient
-//				.post().uri("/score/batch").bodyValue(Map.of("job_text", jobText, "job_level",
-//						jobLevel == null ? "" : jobLevel, "candidates", candidates))
-//				.retrieve().bodyToMono(List.class).block();
-//	}
 
 	@SuppressWarnings("unchecked")
 	public Mono<List<Map<String, Object>>> scoreBatch(String jobText, String jobLevel,

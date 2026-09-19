@@ -8,7 +8,7 @@ import axios from "../../utils/axios.customize";
 import { PDFViewer } from "@react-pdf/renderer";
 import CvTemplate from "../../pdf-templates/cv-template";
 import getDynamicStatus from "../../components/get-dynamic-status-job";
-
+import { Resizable } from "re-resizable";
 const getScoreColor = (score) => {
   if (score === null) return "#A6A4B8";
   if (score >= 80) return "#1C9A6C";
@@ -65,11 +65,16 @@ const CandidatesManagement = () => {
   const [numberHighScore, setNumberHighScore] = useState(0);
   const [numberNotScan, setNumberNotScan] = useState(0);
 
-  const [candidateEmail, setCandidateEmail] = useState("");
   const [profileInfo, setProfileInfo] = useState({});
+  const [aiResult, setAIResult] = useState({});
 
   // for tier 2 AI scoring
   const [loadingInsights, setLoadingInsights] = useState(false);
+
+  //resize modal watch AI score
+  const [width, setWidth] = useState("min(980px, 92vw)");
+
+  const [candidateSelected, setCandidate] = useState([]);
 
   useEffect(() => {
     const fetchJobPostings = async () => {
@@ -112,7 +117,7 @@ const CandidatesManagement = () => {
       }
       try {
         setLoading(true);
-        let url = `applications/job/${activeJobId}?&page=${pageActiveCandidate}&limit=${limitCandidate}&sort=scoreByAI,desc`;
+        let url = `applications/job/${activeJobId}?&page=${pageActiveCandidate}&limit=${limitCandidate}`;
         if (query) url += `&query=${query}`;
         if (status && status !== "ALL") url += `&status=${status}`;
 
@@ -151,12 +156,12 @@ const CandidatesManagement = () => {
 
   useEffect(() => {
     const fetchProfile = async () => {
-      if (!candidateEmail) {
+      if (!selectedCandidate) {
         return;
       }
       try {
         const data = await axios.get(
-          "profile?candidateEmail=" + candidateEmail
+          "profile?email=" + selectedCandidate.candidateEmail
         );
         if (data) {
           setProfileInfo(data);
@@ -167,13 +172,16 @@ const CandidatesManagement = () => {
     };
 
     fetchProfile();
-  }, [candidateEmail]);
+  }, [selectedCandidate]);
 
   useEffect(() => {
     const fetchAiInsights = async () => {
       if (!selectedCandidate?.id) return;
 
+      console.log(selectedCandidate.aiAnalysisResult);
       const alreadyParsed = parseAiResult(selectedCandidate.aiAnalysisResult);
+      setAIResult(alreadyParsed);
+      console.log(alreadyParsed);
       if (alreadyParsed) return;
 
       try {
@@ -183,8 +191,9 @@ const CandidatesManagement = () => {
         );
         if (data) {
           setSelectedCandidate((prev) =>
-            prev ? { ...prev, aiAnalysisResult: data } : prev
+            prev ? { ...prev, aiAnalysisResult: data.aiAnalysisResult } : prev
           );
+          setAIResult(parseAiResult(data?.aiAnalysisResult));
         }
       } catch (err) {
         toast.error(err.message);
@@ -195,6 +204,37 @@ const CandidatesManagement = () => {
 
     fetchAiInsights();
   }, [selectedCandidate?.id]);
+
+  const handleBulkEmail = async () => {
+    try{
+      
+    }catch(err){
+      toast.error(err.message);
+    }
+  };
+
+  const handleBulkReject = async () => {
+    const check = window.confirm(
+      "Do you want to REJECT ALL APPLICATION SELECTED"
+    );
+
+    if (!check) {
+      return;
+    }
+    try {
+      const ids = selectedCandidate.map((c) => c.id);
+      const data = await axios.put(`applications/bulk/status`, {
+        ids: ids,
+        status: "REJECTED",
+      });
+
+      if(data.success){
+        toast.success("Successfully reject ALL applications")
+      }
+    } catch (err) {
+      toast.error(err.message);
+    }
+  };
 
   const onChangePageJob = (newPage) => {
     setPageActiveJob(newPage);
@@ -234,8 +274,6 @@ const CandidatesManagement = () => {
       url
     )}&embedded=true`;
   };
-
-  const aiResult = parseAiResult(selectedCandidate?.aiAnalysisResult);
 
   return (
     <div className="flex h-screen overflow-hidden bg-[#F7F6FC] text-[#1B1A2E] font-['Be_Vietnam_Pro',sans-serif] antialiased">
@@ -436,12 +474,45 @@ const CandidatesManagement = () => {
           </div>
         </div>
 
+        {candidateSelected.length > 0 && (
+          <div className="fixed bottom-10 left-1/2 -translate-x-1/2 bg-[#1B1A2E] text-white px-5 py-3 rounded-2xl shadow-[0_20px_60px_rgba(27,26,46,0.3)] flex items-center gap-3 z-[60] transform transition-all duration-300 ease-out translate-y-0 opacity-100">
+            <span className="text-[13px] font-['Sora'] font-medium border-r border-[#4A4968] pr-4 whitespace-nowrap">
+              Đã chọn{" "}
+              <b className="text-[#8482F6] text-[15px] mx-1">
+                {candidateSelected.length}
+              </b>{" "}
+              ứng viên
+            </span>
+
+            <button
+              onClick={handleBulkEmail}
+              className="flex items-center gap-2 bg-[#5D5CDE] hover:bg-[#4948ba] px-4 py-2 rounded-xl text-[13px] font-['Sora'] font-semibold transition-colors whitespace-nowrap"
+            >
+              ✉️ Gửi Email
+            </button>
+
+            <button
+              onClick={handleBulkReject}
+              className="flex items-center gap-2 bg-[#FF4C4C]/15 hover:bg-[#FF4C4C]/25 text-[#FF4C4C] px-4 py-2 rounded-xl text-[13px] font-['Sora'] font-semibold transition-colors whitespace-nowrap"
+            >
+              🗑️ Reject All
+            </button>
+
+            <button
+              onClick={() => setCandidate([])}
+              className="text-[#A6A4B8] hover:text-white px-3 py-2 text-[13px] font-['Sora'] font-medium transition-colors whitespace-nowrap ml-1"
+            >
+              Hủy chọn
+            </button>
+          </div>
+        )}
+
         <div className="flex-1 overflow-y-auto p-0 px-8 pb-8 mt-2">
           <table className="w-full border-collapse bg-white rounded-2xl overflow-hidden shadow-[0_4px_20px_rgba(44,42,130,0.06)]">
             <thead>
               <tr>
-                <th className="text-left font-['Sora'] text-[11px] font-bold tracking-wide uppercase text-[#A6A4B8] p-3.5 bg-[#F7F6FC] border-b border-[#E7E5F3] w-8">
-                  <input type="checkbox" />
+                <th className="text-left font-['Sora'] text-[11px] font-bold tracking-wide uppercase text-[#A6A4B8] p-3.5 bg-[#F7F6FC] border-b border-[#E7E5F3]">
+                  Select
                 </th>
                 <th className="text-left font-['Sora'] text-[11px] font-bold tracking-wide uppercase text-[#A6A4B8] p-3.5 bg-[#F7F6FC] border-b border-[#E7E5F3]">
                   Candidate
@@ -475,7 +546,17 @@ const CandidatesManagement = () => {
                     <td className="p-3.5 text-[13px] align-middle">
                       <input
                         type="checkbox"
-                        onClick={(e) => e.stopPropagation()}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (candidateSelected.includes(c)) {
+                            setCandidate(
+                              candidateSelected.filter((item) => item !== c)
+                            );
+                          } else {
+                            setCandidate([...candidateSelected, c]);
+                          }
+                        }}
+                        checked={candidateSelected.includes(c)}
                       />
                     </td>
                     <td className="p-3.5 text-[13px] align-middle">
@@ -595,7 +676,7 @@ const CandidatesManagement = () => {
               })}
             </tbody>
             {candidatesByJob.length > 0 && (
-              <div className="flex gap-1 justify-end items-center">
+              <div className="flex gap-1 justify-end items-center m-5">
                 <button
                   disabled={!previousCandidate}
                   className={`px-3 py-1 border rounded
@@ -641,246 +722,272 @@ const CandidatesManagement = () => {
       />
 
       <aside
-        className={`fixed top-0 right-0 bottom-0 w-[min(980px,92vw)] bg-white shadow-[0_20px_60px_rgba(27,26,46,0.22)] z-50 flex flex-col transform transition-transform duration-300 ease-[cubic-bezier(.2,.9,.25,1)] ${
+        className={`fixed top-0 right-0 bottom-0 w-[min(980px,92vw)] bg-white shadow-[0_20px_60px_rgba(27,26,46,0.22)] z-50 flex flex-col pointer-events-none transform transition-transform duration-300 ease-[cubic-bezier(.2,.9,.25,1)] ${
           selectedCandidate ? "translate-x-0" : "translate-x-full"
         }`}
       >
-        {selectedCandidate && (
-          <>
-            <div className="flex items-center justify-between p-5 border-b border-[#E7E5F3]">
-              <div className="flex items-center gap-3">
-                <div
-                  className="w-9 h-9 rounded-lg flex items-center justify-center font-['Sora'] font-bold text-[13px] text-white"
-                  style={{
-                    backgroundColor: getAvatarColor(selectedCandidate.fullName),
-                  }}
-                >
-                  {getInitials(selectedCandidate.fullName)}
-                </div>
-                <div>
-                  <h2 className="font-['Sora'] text-[17px] font-bold m-0 text-[#1B1A2E]">
-                    {selectedCandidate.fullName}
-                  </h2>
-                  <div className="text-xs text-[#6B6980] mt-0.5">
-                    Applied for {activeJob.title} · Applied on{" "}
-                    {selectedCandidate.createdAt}
+        <Resizable
+          size={{ width, height: "100%" }}
+          onResizeStop={(e, direction, ref, d) => {
+            setWidth(ref.style.width);
+          }}
+          minWidth={480}
+          maxWidth="95vw"
+          // only drag left side
+          enable={{
+            top: false,
+            right: false,
+            bottom: false,
+            left: true,
+            topRight: false,
+            bottomRight: false,
+            bottomLeft: false,
+            topLeft: false,
+          }}
+          handleClasses={{
+            left: "w-2.5 hover:bg-blue-500/20 active:bg-blue-500 transition-colors cursor-col-resize !left-0 z-50",
+          }}
+          className="pointer-events-auto bg-white shadow-[0_20px_60px_rgba(27,26,46,0.22)] flex flex-col h-full border-l border-[#E7E5F3]"
+        >
+          {selectedCandidate && (
+            <>
+              <div className="flex items-center justify-between p-5 border-b border-[#E7E5F3]">
+                <div className="flex items-center gap-3">
+                  <div
+                    className="w-9 h-9 rounded-lg flex items-center justify-center font-['Sora'] font-bold text-[13px] text-white"
+                    style={{
+                      backgroundColor: getAvatarColor(
+                        selectedCandidate.fullName
+                      ),
+                    }}
+                  >
+                    {getInitials(selectedCandidate.fullName)}
                   </div>
-                </div>
-              </div>
-              <button
-                className="w-8 h-8 rounded-lg border border-[#E7E5F3] bg-[#F7F6FC] flex items-center justify-center text-[#6B6980] hover:bg-gray-100"
-                onClick={closeDrawer}
-              >
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                >
-                  <path d="M18 6 6 18M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-
-            <div className="flex-1 flex overflow-hidden">
-              <div className="w-[44%] border-r border-[#E7E5F3] bg-[#F7F6FC] p-5 overflow-y-auto">
-                <div className="bg-white rounded-xl shadow-[0_8px_24px_rgba(27,26,46,0.1)] p-7 h-full text-xs text-[#38364F]">
-                  {selectedCandidate?.cvSourceType === "URL" ? (
-                    <iframe
-                      src={getCvViewerUrl(selectedCandidate.cvUrl)}
-                      title="Candidate CV Preview"
-                      className="w-full h-full flex-1 border-none rounded-xl"
-                    />
-                  ) : (
-                    <PDFViewer
-                      width="100%"
-                      height="100%"
-                      className="w-full h-full flex-1 border-none rounded-xl"
-                    >
-                      <CvTemplate profileInfo={profileInfo} />
-                    </PDFViewer>
-                  )}
-                </div>
-              </div>
-
-              <div className="w-[56%] overflow-y-auto p-5 pb-10">
-                {loadingInsights ? (
-                  <div className="rounded-[18px] bg-gradient-to-br from-[#5D5CDE] to-[#C026C8] p-[1px] mb-5">
-                    <div className="bg-gradient-to-b from-[#FBFAFF] to-[#F3F1FE] rounded-[17px] p-5 flex items-center gap-3.5">
-                      <div className="w-[74px] h-[74px] rounded-full border-4 border-[#EBEAFD] border-t-[#5D5CDE] animate-spin shrink-0" />
-                      <div>
-                        <div className="font-['Sora'] text-[10.5px] font-bold uppercase tracking-wide text-[#C026C8]">
-                          AI Matching Score
-                        </div>
-                        <div className="text-[13px] text-[#6B6980] mt-1">
-                          Detailed AI analysis in progress; please wait....
-                        </div>
-                      </div>
+                  <div>
+                    <h2 className="font-['Sora'] text-[17px] font-bold m-0 text-[#1B1A2E]">
+                      {selectedCandidate.fullName}
+                    </h2>
+                    <div className="text-xs text-[#6B6980] mt-0.5">
+                      Applied for {activeJob.title} · Applied on{" "}
+                      {selectedCandidate.createdAt}
                     </div>
                   </div>
-                ) : aiResult ? (
-                  <div className="rounded-[18px] bg-gradient-to-br from-[#5D5CDE] to-[#C026C8] p-[1px] mb-5">
-                    <div className="bg-gradient-to-b from-[#FBFAFF] to-[#F3F1FE] rounded-[17px] p-5">
-                      <div className="flex items-center gap-3.5">
-                        <div className="relative w-[74px] h-[74px] shrink-0">
-                          <svg
-                            className="-rotate-90"
-                            width="74"
-                            height="74"
-                            viewBox="0 0 74 74"
-                          >
-                            <circle
-                              cx="37"
-                              cy="37"
-                              r="31"
-                              fill="none"
-                              stroke="#E7E5F3"
-                              strokeWidth="7"
-                            />
-                            <circle
-                              cx="37"
-                              cy="37"
-                              r="31"
-                              fill="none"
-                              stroke="url(#gaugeGrad)"
-                              strokeWidth="7"
-                              strokeLinecap="round"
-                              strokeDasharray={194.7}
-                              strokeDashoffset={
-                                194.7 * (1 - aiResult.overall_match_score / 100)
-                              }
-                              className="transition-all duration-1000"
-                            />
-                            <defs>
-                              <linearGradient
-                                id="gaugeGrad"
-                                x1="0"
-                                y1="0"
-                                x2="1"
-                                y2="1"
-                              >
-                                <stop offset="0%" stopColor="#5D5CDE" />
-                                <stop offset="100%" stopColor="#D946EF" />
-                              </linearGradient>
-                            </defs>
-                          </svg>
-                          <div className="absolute inset-0 flex items-center justify-center font-['Sora'] font-extrabold text-[18px] text-[#1B1A2E]">
-                            {aiResult.overall_match_score}%
-                          </div>
-                        </div>
+                </div>
+                <button
+                  className="w-8 h-8 rounded-lg border border-[#E7E5F3] bg-[#F7F6FC] flex items-center justify-center text-[#6B6980] hover:bg-gray-100"
+                  onClick={closeDrawer}
+                >
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <path d="M18 6 6 18M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              <div className="flex-1 flex overflow-hidden">
+                <div className="w-[44%] border-r border-[#E7E5F3] bg-[#F7F6FC] p-5 overflow-y-auto">
+                  <div className="bg-white rounded-xl shadow-[0_8px_24px_rgba(27,26,46,0.1)] p-7 h-full text-xs text-[#38364F]">
+                    {selectedCandidate?.cvSourceType === "URL" ? (
+                      <iframe
+                        src={getCvViewerUrl(selectedCandidate.cvUrl)}
+                        title="Candidate CV Preview"
+                        className="w-full h-full flex-1 border-none rounded-xl"
+                      />
+                    ) : (
+                      <PDFViewer
+                        width="100%"
+                        height="100%"
+                        className="w-full h-full flex-1 border-none rounded-xl"
+                      >
+                        <CvTemplate profileInfo={profileInfo} />
+                      </PDFViewer>
+                    )}
+                  </div>
+                </div>
+
+                <div className="w-[56%] overflow-y-auto p-5 pb-10">
+                  {loadingInsights ? (
+                    <div className="rounded-[18px] bg-gradient-to-br from-[#5D5CDE] to-[#C026C8] p-[1px] mb-5">
+                      <div className="bg-gradient-to-b from-[#FBFAFF] to-[#F3F1FE] rounded-[17px] p-5 flex items-center gap-3.5">
+                        <div className="w-[74px] h-[74px] rounded-full border-4 border-[#EBEAFD] border-t-[#5D5CDE] animate-spin shrink-0" />
                         <div>
                           <div className="font-['Sora'] text-[10.5px] font-bold uppercase tracking-wide text-[#C026C8]">
                             AI Matching Score
                           </div>
-                          <div className="font-['Sora'] text-base font-bold text-[#1B1A2E] mt-0.5">
-                            {selectedCandidate.status}
-                          </div>
-                          <div className="text-xs text-[#6B6980] mt-0.5">
-                            Compared with Job Description & posted JD
+                          <div className="text-[13px] text-[#6B6980] mt-1">
+                            Detailed AI analysis in progress; please wait....
                           </div>
                         </div>
                       </div>
-
-                      {aiResult.summary_comment && (
-                        <p className="text-[12.5px] text-[#38364F] leading-relaxed mt-4 italic">
-                          {aiResult.summary_comment}
-                        </p>
-                      )}
-
-                      <ul className="flex flex-col gap-2 mt-4 text-[12.5px] text-[#38364F] leading-relaxed">
-                        {aiResult.matched_skills?.map((point, index) => (
-                          <li key={index} className="flex gap-2">
-                            <span className="w-4 h-4 rounded-full bg-[#E4F7EF] text-[#1C9A6C] flex items-center justify-center shrink-0 mt-0.5">
-                              ✓
-                            </span>
-                            {point}
-                          </li>
-                        ))}
-                      </ul>
-
-                      {aiResult.missing_skills?.length > 0 && (
-                        <div className="mt-3.5 bg-[#FCF1DC] border border-[#F3DDA6] rounded-xl p-3 flex gap-2 text-xs text-[#8A5A05] leading-relaxed">
-                          <span>⚠️</span>
+                    </div>
+                  ) : aiResult ? (
+                    <div className="rounded-[18px] bg-gradient-to-br from-[#5D5CDE] to-[#C026C8] p-[1px] mb-5">
+                      <div className="bg-gradient-to-b from-[#FBFAFF] to-[#F3F1FE] rounded-[17px] p-5">
+                        <div className="flex items-center gap-3.5">
+                          <div className="relative w-[74px] h-[74px] shrink-0">
+                            <svg
+                              className="-rotate-90"
+                              width="74"
+                              height="74"
+                              viewBox="0 0 74 74"
+                            >
+                              <circle
+                                cx="37"
+                                cy="37"
+                                r="31"
+                                fill="none"
+                                stroke="#E7E5F3"
+                                strokeWidth="7"
+                              />
+                              <circle
+                                cx="37"
+                                cy="37"
+                                r="31"
+                                fill="none"
+                                stroke="url(#gaugeGrad)"
+                                strokeWidth="7"
+                                strokeLinecap="round"
+                                strokeDasharray={194.7}
+                                strokeDashoffset={
+                                  194.7 * (1 - aiResult.overallMatchScore / 100)
+                                }
+                                className="transition-all duration-1000"
+                              />
+                              <defs>
+                                <linearGradient
+                                  id="gaugeGrad"
+                                  x1="0"
+                                  y1="0"
+                                  x2="1"
+                                  y2="1"
+                                >
+                                  <stop offset="0%" stopColor="#5D5CDE" />
+                                  <stop offset="100%" stopColor="#D946EF" />
+                                </linearGradient>
+                              </defs>
+                            </svg>
+                            <div className="absolute inset-0 flex items-center justify-center font-['Sora'] font-extrabold text-[18px] text-[#1B1A2E]">
+                              {aiResult.overallMatchScore}%
+                            </div>
+                          </div>
                           <div>
-                            <strong>Missing skills:</strong>{" "}
-                            {aiResult.missing_skills.join(", ")}
+                            <div className="font-['Sora'] text-[10.5px] font-bold uppercase tracking-wide text-[#C026C8]">
+                              AI Matching Score
+                            </div>
+                            <div className="font-['Sora'] text-base font-bold text-[#1B1A2E] mt-0.5">
+                              {selectedCandidate.status}
+                            </div>
+                            <div className="text-xs text-[#6B6980] mt-0.5">
+                              Compared with Job Description & posted JD
+                            </div>
                           </div>
                         </div>
-                      )}
 
-                      <div className="flex gap-2 mt-4">
-                        <button className="flex-1 font-['Sora'] text-[13px] font-bold text-white bg-gradient-to-br from-[#5D5CDE] to-[#4338CA] py-2.5 rounded-lg text-center hover:opacity-90 transition">
-                          {aiResult.overall_match_score >= 85
-                            ? "💬 Message & Schedule"
-                            : "📅 Schedule Interview"}
-                        </button>
-                        <button className="flex-1 font-['Sora'] text-[13px] font-bold text-[#38364F] bg-white border border-[#E7E5F3] py-2.5 rounded-lg text-center hover:bg-gray-50 transition">
-                          Save Profile
-                        </button>
+                        {aiResult.summaryComment && (
+                          <p className="text-[12.5px] text-[#38364F] leading-relaxed mt-4 italic">
+                            {aiResult.summaryComment}
+                          </p>
+                        )}
+
+                        <ul className="flex flex-col gap-2 mt-4 text-[12.5px] text-[#38364F] leading-relaxed">
+                          {aiResult.matchedSkills?.map((point, index) => (
+                            <li key={index} className="flex gap-2">
+                              <span className="w-4 h-4 rounded-full bg-[#E4F7EF] text-[#1C9A6C] flex items-center justify-center shrink-0 mt-0.5">
+                                ✓
+                              </span>
+                              {point}
+                            </li>
+                          ))}
+                        </ul>
+
+                        {aiResult.missingSkills?.length > 0 && (
+                          <div className="mt-3.5 bg-[#FCF1DC] border border-[#F3DDA6] rounded-xl p-3 flex gap-2 text-xs text-[#8A5A05] leading-relaxed">
+                            <span>⚠️</span>
+                            <div>
+                              <strong>Missing skills:</strong>{" "}
+                              {aiResult.missingSkills.join(", ")}
+                            </div>
+                          </div>
+                        )}
+
+                        <div className="flex gap-2 mt-4">
+                          <button className="flex-1 font-['Sora'] text-[13px] font-bold text-white bg-gradient-to-br from-[#5D5CDE] to-[#4338CA] py-2.5 rounded-lg text-center hover:opacity-90 transition">
+                            {aiResult.overallMatchScore >= 85
+                              ? "💬 Message & Schedule"
+                              : "📅 Schedule Interview"}
+                          </button>
+                          <button className="flex-1 font-['Sora'] text-[13px] font-bold text-[#38364F] bg-white border border-[#E7E5F3] py-2.5 rounded-lg text-center hover:bg-gray-50 transition">
+                            Save Profile
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="rounded-[18px] border border-[#E7E5F3] bg-[#F7F6FC] p-5 mb-5 text-[13px] text-[#6B6980] italic">
+                      There is no AI analysis data available for this candidate.
+                    </div>
+                  )}
+
+                  <div className="mb-5">
+                    <h4 className="font-['Sora'] text-[12.5px] font-bold uppercase tracking-wide text-[#A6A4B8] mb-2.5">
+                      Contact Information
+                    </h4>
+                    <div className="grid grid-cols-2 gap-y-3 gap-x-5">
+                      <div>
+                        <div className="text-[11px] text-[#6B6980]">Email</div>
+                        <div className="text-[13px] text-[#1B1A2E] font-medium mt-0.5">
+                          {selectedCandidate.candidateEmail}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-[11px] text-[#6B6980]">Phone</div>
+                        <div className="text-[13px] text-[#1B1A2E] font-medium mt-0.5">
+                          {selectedCandidate.phone}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-[11px] text-[#6B6980]">
+                          Experience Alignment
+                        </div>
+                        <div className="text-[13px] text-[#1B1A2E] font-medium mt-0.5">
+                          {aiResult?.experienceAlignment || "Chưa phân tích"}
+                        </div>
                       </div>
                     </div>
                   </div>
-                ) : (
-                  <div className="rounded-[18px] border border-[#E7E5F3] bg-[#F7F6FC] p-5 mb-5 text-[13px] text-[#6B6980] italic">
-                    There is no AI analysis data available for this candidate.
-                  </div>
-                )}
 
-                <div className="mb-5">
-                  <h4 className="font-['Sora'] text-[12.5px] font-bold uppercase tracking-wide text-[#A6A4B8] mb-2.5">
-                    Contact Information
-                  </h4>
-                  <div className="grid grid-cols-2 gap-y-3 gap-x-5">
-                    <div>
-                      <div className="text-[11px] text-[#6B6980]">Email</div>
-                      <div className="text-[13px] text-[#1B1A2E] font-medium mt-0.5">
-                        {selectedCandidate.candidateEmail}
-                      </div>
-                    </div>
-                    <div>
-                      <div className="text-[11px] text-[#6B6980]">Phone</div>
-                      <div className="text-[13px] text-[#1B1A2E] font-medium mt-0.5">
-                        {selectedCandidate.phone}
-                      </div>
-                    </div>
-                    <div>
-                      <div className="text-[11px] text-[#6B6980]">
-                        Experience Alignment
-                      </div>
-                      <div className="text-[13px] text-[#1B1A2E] font-medium mt-0.5">
-                        {aiResult?.experience_alignment || "Chưa phân tích"}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mb-5">
-                  <h4 className="font-['Sora'] text-[12.5px] font-bold uppercase tracking-wide text-[#A6A4B8] mb-2.5">
-                    Skills to Verify
-                  </h4>
-                  <div className="flex flex-wrap gap-2">
-                    {aiResult?.missing_skills?.length > 0 ? (
-                      aiResult.missing_skills.map((tag, i) => (
-                        <span
-                          key={i}
-                          className="text-xs px-3 py-1.5 rounded-full bg-[#FCF1DC] text-[#8A5A05] font-medium"
-                        >
-                          {tag}
+                  <div className="mb-5">
+                    <h4 className="font-['Sora'] text-[12.5px] font-bold uppercase tracking-wide text-[#A6A4B8] mb-2.5">
+                      Skills to Verify
+                    </h4>
+                    <div className="flex flex-wrap gap-2">
+                      {aiResult?.missingSkills?.length > 0 ? (
+                        aiResult.missingSkills.map((tag, i) => (
+                          <span
+                            key={i}
+                            className="text-xs px-3 py-1.5 rounded-full bg-[#FCF1DC] text-[#8A5A05] font-medium"
+                          >
+                            {tag}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="text-xs text-[#A6A4B8] italic">
+                          Không có thông tin
                         </span>
-                      ))
-                    ) : (
-                      <span className="text-xs text-[#A6A4B8] italic">
-                        Không có thông tin
-                      </span>
-                    )}
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          </>
-        )}
+            </>
+          )}
+        </Resizable>
       </aside>
     </div>
   );

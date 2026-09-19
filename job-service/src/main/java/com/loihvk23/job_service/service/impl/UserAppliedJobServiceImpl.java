@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.loihvk23.job_service.document.JobDocument;
 import com.loihvk23.job_service.document.UserAppliedJobDocument;
@@ -28,7 +29,6 @@ public class UserAppliedJobServiceImpl implements UserAppliedJobService {
 	private final UserAppliedJobMapper mapper;
 
 	private final JobRepository jobRepository;
-
 
 	@Override
 	public void deleteAppliedJob(String jobId, String candidateEmail) {
@@ -76,8 +76,22 @@ public class UserAppliedJobServiceImpl implements UserAppliedJobService {
 	}
 
 	@Override
-	public void saveAppliedJob(UserAppliedJobDTO userAppliedJobDTO) {
-		userAppliedJobRepository.save(mapper.toDocument(userAppliedJobDTO));
+	public UserAppliedJobDTO saveAppliedJob(UserAppliedJobDTO userAppliedJobDTO) {
+		if (userAppliedJobRepository.existsByCandidateEmailAndJobIdAndStatus(userAppliedJobDTO.getCandidateEmail(),
+				userAppliedJobDTO.getJobId(), userAppliedJobDTO.getStatus())) {
+			return null;
+		}
+
+		return mapper.toDTO(userAppliedJobRepository.save(mapper.toDocument(userAppliedJobDTO)));
+	}
+
+	@Override
+	@Transactional
+	public void updateBulkStatus(List<UserAppliedJobDTO> userAppliedJobDTOs) {
+		List<UserAppliedJobDocument> userAppliedJobDocuments = userAppliedJobDTOs.stream().map(mapper::toDocument)
+				.collect(Collectors.toList());
+
+		userAppliedJobRepository.saveAll(userAppliedJobDocuments);
 	}
 
 }

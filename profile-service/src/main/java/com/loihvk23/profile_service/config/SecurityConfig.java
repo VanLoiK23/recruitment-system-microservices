@@ -34,6 +34,8 @@ public class SecurityConfig {
 								
 								.requestMatchers(HttpMethod.GET, "/api/profile/recruiter").hasRole("RECRUITER")
 								.requestMatchers(HttpMethod.POST, "/api/profile/recruiter").hasRole("RECRUITER")
+								
+								.requestMatchers(HttpMethod.GET, "/api/profile").authenticated()
 
 								.anyRequest().authenticated())
 				// turn off session in system, make sure STATE LESS

@@ -6,14 +6,18 @@ import java.util.concurrent.TimeUnit;
 
 import javax.naming.AuthenticationException;
 
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.loihvk23.auth_service.config.JwtProvider;
+import com.loihvk23.auth_service.config.RabbitMQConfig;
+import com.loihvk23.auth_service.dto.NotificationEvent;
 import com.loihvk23.auth_service.dto.UserDTO;
 import com.loihvk23.auth_service.dto.request.LoginRequest;
 import com.loihvk23.auth_service.dto.request.RegisterRequest;
@@ -21,7 +25,6 @@ import com.loihvk23.auth_service.dto.response.JwtResponse;
 import com.loihvk23.auth_service.entity.UserEntity;
 import com.loihvk23.auth_service.mapper.UserMapper;
 import com.loihvk23.auth_service.repository.UserRepository;
-import com.loihvk23.auth_service.service.EmailService;
 import com.loihvk23.auth_service.service.UserService;
 
 import jakarta.persistence.EntityExistsException;
@@ -42,7 +45,7 @@ public class UserServiceImpl implements UserService {
 
 	private final RedisTemplate<String, Object> redisTemplate;
 
-	private final EmailService emailService;
+	private final RabbitTemplate rabbitTemplate;
 
 	@Override
 	public UserDTO register(RegisterRequest request) {
@@ -90,6 +93,7 @@ public class UserServiceImpl implements UserService {
 	}
 
 	@Override
+	@Transactional
 	public boolean generateOTPAndSendMail(String email) {
 		String key = "OTP_" + email;
 
@@ -99,7 +103,12 @@ public class UserServiceImpl implements UserService {
 
 		redisTemplate.opsForValue().set(key, otp, 5, TimeUnit.MINUTES);
 
-		return emailService.sendOTPEmail(email, otp);
+		NotificationEvent event = NotificationEvent.builder().email(email).otpOrResetToken(otp).build();
+
+		rabbitTemplate.convertAndSend(RabbitMQConfig.NOTIFICATION_EXCHANGE, RabbitMQConfig.ROUTING_KEY_CONFIRM_EMAIL,
+				event);
+
+		return true;
 	}
 
 	@Override
@@ -117,6 +126,7 @@ public class UserServiceImpl implements UserService {
 	}
 
 	@Override
+	@Transactional
 	public boolean generateTokenAndSendMailReset(String email) {
 		userRepository.findByEmail(email).orElseThrow(() -> new IllegalArgumentException("Email not found"));
 
@@ -124,7 +134,12 @@ public class UserServiceImpl implements UserService {
 
 		redisTemplate.opsForValue().set("RESET_" + resetToken, email, 15, TimeUnit.MINUTES);
 
-		return emailService.sendResetEmail(email, resetToken);
+		NotificationEvent event = NotificationEvent.builder().email(email).otpOrResetToken(resetToken).build();
+
+		rabbitTemplate.convertAndSend(RabbitMQConfig.NOTIFICATION_EXCHANGE, RabbitMQConfig.ROUTING_KEY_CONFIRM_EMAIL,
+				event);
+
+		return true;
 	}
 
 	@Override

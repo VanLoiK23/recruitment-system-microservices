@@ -1,11 +1,16 @@
-package com.loihvk23.auth_service.service.impl;
+package com.loihvk23.notification_service.service.impl;
+
+import java.util.List;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
-import com.loihvk23.auth_service.service.EmailService;
+import com.loihvk23.notification_service.document.TemplateDocument;
+import com.loihvk23.notification_service.dto.NotificationEvent;
+import com.loihvk23.notification_service.repository.TemplateRepository;
+import com.loihvk23.notification_service.service.EmailService;
 
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
@@ -16,10 +21,14 @@ public class EmailServiceImpl implements EmailService {
 
 	private final JavaMailSenderImpl mailSender;
 
+	private final TemplateRepository templateRepository;
+
 	@Value("${url.front-end}")
 	private String url;
 
-	public boolean sendOTPEmail(String toEmail, String OTP) {
+	public boolean sendOTPEmail(NotificationEvent event) {
+		String toEmail = event.getEmail();
+		String OTP = event.getOtpOrResetToken();
 		try {
 			MimeMessage message = mailSender.createMimeMessage();
 			MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
@@ -56,7 +65,9 @@ public class EmailServiceImpl implements EmailService {
 	}
 
 	@Override
-	public boolean sendResetEmail(String toEmail, String token) {
+	public boolean sendResetEmail(NotificationEvent event) {
+		String toEmail = event.getEmail();
+		String token = event.getOtpOrResetToken();
 		try {
 			MimeMessage message = mailSender.createMimeMessage();
 			MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
@@ -86,6 +97,14 @@ public class EmailServiceImpl implements EmailService {
 			e.printStackTrace();
 			return false;
 		}
+	}
+
+	@Override
+	public void sendEmailToCandidate(String authorEmail, String templateKey, List<String> toEmails) {
+		TemplateDocument templateDocument = templateRepository.findByOwnerEmailAndTemplateKey(authorEmail, templateKey)
+				.orElseThrow(() -> new IllegalArgumentException("Can't find any TEMPLTE with the key"));
+		
+		
 	}
 
 }

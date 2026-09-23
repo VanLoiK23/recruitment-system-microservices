@@ -1,31 +1,36 @@
 package com.loihvk23.notification_service.service.impl;
 
-import java.util.List;
-
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
+import com.loihvk23.notification_service.config.RabbitMQConfig;
 import com.loihvk23.notification_service.document.TemplateDocument;
-import com.loihvk23.notification_service.dto.NotificationEvent;
+import com.loihvk23.notification_service.dto.request.NotificationEvent;
+import com.loihvk23.notification_service.dto.request.NotificationRejectEvent;
+import com.loihvk23.notification_service.dto.request.NotificationRequest;
 import com.loihvk23.notification_service.repository.TemplateRepository;
-import com.loihvk23.notification_service.service.EmailService;
+import com.loihvk23.notification_service.service.NotificationService;
 
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
-public class EmailServiceImpl implements EmailService {
+public class NotificationServiceImpl implements NotificationService {
 
 	private final JavaMailSenderImpl mailSender;
 
 	private final TemplateRepository templateRepository;
 
+	private final RabbitTemplate rabbitTemplate;
+
 	@Value("${url.front-end}")
 	private String url;
 
+	@Override
 	public boolean sendOTPEmail(NotificationEvent event) {
 		String toEmail = event.getEmail();
 		String OTP = event.getOtpOrResetToken();
@@ -100,11 +105,105 @@ public class EmailServiceImpl implements EmailService {
 	}
 
 	@Override
-	public void sendEmailToCandidate(String authorEmail, String templateKey, List<String> toEmails) {
-		TemplateDocument templateDocument = templateRepository.findByOwnerEmailAndTemplateKey(authorEmail, templateKey)
-				.orElseThrow(() -> new IllegalArgumentException("Can't find any TEMPLTE with the key"));
-		
-		
+	public void sendEmailToCandidates(String authorEmail, NotificationRequest notificationRequest) {
+		TemplateDocument templateDocument = templateRepository
+				.findByOwnerEmailAndTemplateKey(authorEmail, notificationRequest.getTemplateKey())
+				.orElseThrow(() -> new IllegalArgumentException("Can't find any TEMPLATE with the key"));
+
+		String adjustSubject = replaceVariables(templateDocument.getSubject(), notificationRequest.getJobTitle(),
+				notificationRequest.getInterviewDate());
+		String adjustHtmlContent = replaceVariables(templateDocument.getHtmlContent(),
+				notificationRequest.getJobTitle(), notificationRequest.getInterviewDate());
+
+		if (notificationRequest.getReceivers() != null) {
+			for (NotificationRequest.ReceiverInfo receiver : notificationRequest.getReceivers()) {
+				try {
+					String finalSubject = replaceVariables(adjustSubject, receiver.getName());
+					String finalHtmlContent = replaceVariables(adjustHtmlContent, receiver.getName());
+
+					MimeMessage message = mailSender.createMimeMessage();
+					MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+					helper.setTo(receiver.getEmail());
+					helper.setSubject(finalSubject);
+					helper.setText(finalHtmlContent, true);
+
+					mailSender.send(message);
+
+					System.out.println("Send email success:" + receiver.getEmail());
+				} catch (Exception e) {
+					System.err.println("Send email error: " + receiver.getEmail() + ": " + e.getMessage());
+				}
+			}
+		}
+
+	}
+
+	// convert asyn task
+	@Override
+	public void processBulkEmailRequest(NotificationRequest request, String authorEmail) {
+		request.setAuthorEmail(authorEmail);
+		rabbitTemplate.convertAndSend(RabbitMQConfig.NOTIFICATION_EXCHANGE,
+				RabbitMQConfig.ROUTING_KEY_SENT_TO_CANDIDATE, request);
+	}
+
+	@Override
+	public void sendEmailRejectToCandidates(String authorEmail, NotificationRejectEvent request) {
+		// template reject default
+		String templateRejectKey = "reject_template";
+
+		String rejectPatern = "reject";
+
+		TemplateDocument templateDocument = templateRepository
+				.findByOwnerEmailAndTemplateKeyContaining(authorEmail, rejectPatern)
+				.orElse(templateRepository.findByTemplateKeyContaining(templateRejectKey).orElse(null));
+
+		if (templateDocument == null) {
+			return;
+		}
+
+		String adjustSubject = replaceVariables(templateDocument.getSubject(), request.getJobTitle(), null);
+		String adjustHtmlContent = replaceVariables(templateDocument.getHtmlContent(), request.getJobTitle(), null);
+
+		if (request.getReceivers() != null) {
+			for (NotificationRejectEvent.ReceiverInfo receiver : request.getReceivers()) {
+				try {
+					String finalSubject = replaceVariables(adjustSubject, receiver.getName());
+					String finalHtmlContent = replaceVariables(adjustHtmlContent, receiver.getName());
+
+					MimeMessage message = mailSender.createMimeMessage();
+					MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+					helper.setTo(receiver.getEmail());
+					helper.setSubject(finalSubject);
+					helper.setText(finalHtmlContent, true);
+
+					mailSender.send(message);
+
+					System.out.println("Send email success:" + receiver.getEmail());
+				} catch (Exception e) {
+					System.err.println("Send email error: " + receiver.getEmail() + ": " + e.getMessage());
+				}
+			}
+		}
+
+	}
+
+	private String replaceVariables(String rawText, String jobTitle, String interviewDate) {
+		if (rawText == null || rawText.isEmpty()) {
+			return "";
+		}
+
+		return rawText.replace("{{jobTitle}}", jobTitle != null ? jobTitle : "").replace("{{interviewDate}}",
+				interviewDate != null ? interviewDate : "");
+	}
+
+	private String replaceVariables(String rawText, String nameCandidate) {
+		if (rawText == null || rawText.isEmpty()) {
+			return "";
+		}
+
+		return rawText.replace("{{candidateName}}", nameCandidate != null ? nameCandidate : "");
 	}
 
 }

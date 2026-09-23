@@ -21,7 +21,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.loihvk23.notification_service.dto.CredentialNotificationDTO;
 import com.loihvk23.notification_service.dto.TemplateDTO;
+import com.loihvk23.notification_service.dto.request.NotificationRequest;
 import com.loihvk23.notification_service.service.CredentialNotificationService;
+import com.loihvk23.notification_service.service.NotificationService;
 import com.loihvk23.notification_service.service.TemplateService;
 
 import jakarta.validation.Valid;
@@ -35,6 +37,8 @@ public class NotificationController {
 	private final TemplateService templateService;
 
 	private final CredentialNotificationService credentialService;
+	
+	private final NotificationService notificationService;
 
 	@GetMapping("/credentials")
 	public ResponseEntity<CredentialNotificationDTO> getCredential(@AuthenticationPrincipal UserDetails userDetails) {
@@ -82,6 +86,14 @@ public class NotificationController {
 		String email = userDetails.getUsername();
 		templateService.deleteTemplate(id, email);
 
+		return ResponseEntity.ok(Map.of("success", true));
+	}
+	
+	@PostMapping("/sent")
+	public ResponseEntity<?> processSendBulkEmail(@RequestBody @Valid NotificationRequest request,
+			@AuthenticationPrincipal UserDetails userDetails) {
+		String email = userDetails.getUsername();
+		notificationService.processBulkEmailRequest(request,email);
 		return ResponseEntity.ok(Map.of("success", true));
 	}
 }

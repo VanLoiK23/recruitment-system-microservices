@@ -74,7 +74,39 @@ const CandidatesManagement = () => {
   //resize modal watch AI score
   const [width, setWidth] = useState("min(980px, 92vw)");
 
-  const [candidateSelected, setCandidate] = useState([]);
+  const [candidatesSelected, setCandidates] = useState([]);
+
+  const [isSendBulkEmail, setSendBulkEmail] = useState(false);
+  const [loadingTemplate, setLoadingTemplate] = useState(false);
+  const [templates, setTemplates] = useState([]);
+  const [page, setPage] = useState(1);
+  const [isLastPage, setIsLastPage] = useState(true);
+
+  const [notificationRequest, setNotificationRequest] = useState({});
+
+  useEffect(() => {
+    const fetchTemplates = async () => {
+      try {
+        setLoadingTemplate(true);
+        const data = await axios.get(
+          `notifications/templates?page=${page}&limit=4`
+        );
+
+        if (data) {
+          setTemplates(data.content);
+          setIsLastPage(data.last);
+        }
+      } catch (err) {
+        toast.error(err.message);
+      } finally {
+        setLoadingTemplate(false);
+      }
+    };
+
+    if (isSendBulkEmail) {
+      fetchTemplates();
+    }
+  }, [page]);
 
   useEffect(() => {
     const fetchJobPostings = async () => {
@@ -205,11 +237,27 @@ const CandidatesManagement = () => {
     fetchAiInsights();
   }, [selectedCandidate?.id]);
 
-  const handleBulkEmail = async () => {
-    try{
-      
-    }catch(err){
+  const handleBulkEmail = async (selectedTemplate) => {
+    try {
+      const receivers = candidatesSelected.map((c) => ({
+        name: c.candidateName,
+        email: c.candidateEmail,
+      }));
+
+      const data = await axios.post(`notifications/sent`, {
+        receivers: receivers,
+        jobTitle: activeJob.title,
+        templateKey: selectedTemplate.templateKey,
+      });
+
+      if (data.success) {
+        toast.success("Bulk email is processing in the background!");
+        setCandidates([]);
+      }
+    } catch (err) {
       toast.error(err.message);
+    } finally {
+      setSendBulkEmail(false);
     }
   };
 
@@ -228,8 +276,8 @@ const CandidatesManagement = () => {
         status: "REJECTED",
       });
 
-      if(data.success){
-        toast.success("Successfully reject ALL applications")
+      if (data.success) {
+        toast.success("Successfully reject ALL applications");
       }
     } catch (err) {
       toast.error(err.message);
@@ -474,21 +522,22 @@ const CandidatesManagement = () => {
           </div>
         </div>
 
-        {candidateSelected.length > 0 && (
+        {candidatesSelected.length > 0 && (
           <div className="fixed bottom-10 left-1/2 -translate-x-1/2 bg-[#1B1A2E] text-white px-5 py-3 rounded-2xl shadow-[0_20px_60px_rgba(27,26,46,0.3)] flex items-center gap-3 z-[60] transform transition-all duration-300 ease-out translate-y-0 opacity-100">
             <span className="text-[13px] font-['Sora'] font-medium border-r border-[#4A4968] pr-4 whitespace-nowrap">
-              Đã chọn{" "}
+              Candidate selected:{" "}
               <b className="text-[#8482F6] text-[15px] mx-1">
-                {candidateSelected.length}
+                {candidatesSelected.length}
               </b>{" "}
-              ứng viên
             </span>
 
             <button
-              onClick={handleBulkEmail}
+              onClick={() => {
+                setSendBulkEmail(true);
+              }}
               className="flex items-center gap-2 bg-[#5D5CDE] hover:bg-[#4948ba] px-4 py-2 rounded-xl text-[13px] font-['Sora'] font-semibold transition-colors whitespace-nowrap"
             >
-              ✉️ Gửi Email
+              ✉️ Send Email
             </button>
 
             <button
@@ -499,12 +548,27 @@ const CandidatesManagement = () => {
             </button>
 
             <button
-              onClick={() => setCandidate([])}
+              onClick={() => setCandidates([])}
               className="text-[#A6A4B8] hover:text-white px-3 py-2 text-[13px] font-['Sora'] font-medium transition-colors whitespace-nowrap ml-1"
             >
-              Hủy chọn
+              Cancel
             </button>
           </div>
+        )}
+
+        {isSendBulkEmail && (
+          <BulkEmailModal
+            templates={templates}
+            loading={loadingTemplate}
+            page={page}
+            isLastPage={isLastPage}
+            onPageChange={(newPage) => setPage(newPage)}
+            onClose={() => setSendBulkEmail(false)}
+            onConfirm={(selectedTemplate) => {
+              console.log("Send via template:", selectedTemplate);
+              handleBulkEmail(selectedTemplate);
+            }}
+          />
         )}
 
         <div className="flex-1 overflow-y-auto p-0 px-8 pb-8 mt-2">
@@ -548,15 +612,15 @@ const CandidatesManagement = () => {
                         type="checkbox"
                         onClick={(e) => {
                           e.stopPropagation();
-                          if (candidateSelected.includes(c)) {
-                            setCandidate(
-                              candidateSelected.filter((item) => item !== c)
+                          if (candidatesSelected.includes(c)) {
+                            setCandidates(
+                              candidatesSelected.filter((item) => item !== c)
                             );
                           } else {
-                            setCandidate([...candidateSelected, c]);
+                            setCandidates([...candidatesSelected, c]);
                           }
                         }}
-                        checked={candidateSelected.includes(c)}
+                        checked={candidatesSelected.includes(c)}
                       />
                     </td>
                     <td className="p-3.5 text-[13px] align-middle">
@@ -994,3 +1058,161 @@ const CandidatesManagement = () => {
 };
 
 export default CandidatesManagement;
+
+export const BulkEmailModal = ({
+  templates,
+  loading,
+  page,
+  isLastPage,
+  onPageChange,
+  onClose,
+  onConfirm,
+}) => {
+  const [selectedTemplateId, setSelectedTemplateId] = useState("");
+
+  const selectedTemplate = templates?.find((t) => t.id === selectedTemplateId);
+
+  const handleSubmit = () => {
+    if (!selectedTemplate) return;
+    onConfirm(selectedTemplate);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col max-h-[90vh]">
+        <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
+          <h2 className="text-xl font-bold text-gray-800">Send Bulk Email</h2>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600 font-bold text-xl"
+          >
+            &times;
+          </button>
+        </div>
+
+        <div className="p-6 overflow-y-auto flex-1">
+          {loading && templates.length === 0 ? (
+            <div className="flex justify-center items-center h-40">
+              <span className="text-gray-500">Loading templates...</span>
+            </div>
+          ) : (
+            <div className="flex flex-col md:flex-row gap-6 h-full">
+              <div className="w-full md:w-1/3 flex flex-col">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Select a template
+                </label>
+
+                <div className="space-y-2 flex-1 overflow-y-auto pr-2 min-h-[250px]">
+                  {templates?.length === 0 ? (
+                    <p className="text-sm text-gray-500 italic">
+                      No templates found.
+                    </p>
+                  ) : (
+                    templates?.map((tmpl) => (
+                      <div
+                        key={tmpl.id}
+                        onClick={() => setSelectedTemplateId(tmpl.id)}
+                        className={`p-3 border rounded-lg cursor-pointer transition-all ${
+                          selectedTemplateId === tmpl.id
+                            ? "border-blue-500 bg-blue-50"
+                            : "border-gray-200 hover:border-blue-300 hover:bg-gray-50"
+                        }`}
+                      >
+                        <p className="font-semibold text-gray-800 text-sm">
+                          {tmpl.templateKey}
+                        </p>
+                        <p className="text-xs text-gray-500 truncate mt-1">
+                          {tmpl.subject}
+                        </p>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-200">
+                  <button
+                    onClick={() => onPageChange(page - 1)}
+                    disabled={page === 1 || loading}
+                    className={`text-sm px-2 py-1 rounded transition-colors ${
+                      page === 1
+                        ? "text-gray-400 cursor-not-allowed"
+                        : "text-blue-600 hover:bg-blue-50 font-medium"
+                    }`}
+                  >
+                    &laquo; Prev
+                  </button>
+
+                  <span className="text-xs text-gray-500 font-medium">
+                    Page {page}
+                  </span>
+
+                  <button
+                    onClick={() => onPageChange(page + 1)}
+                    disabled={isLastPage || loading}
+                    className={`text-sm px-2 py-1 rounded transition-colors ${
+                      isLastPage
+                        ? "text-gray-400 cursor-not-allowed"
+                        : "text-blue-600 hover:bg-blue-50 font-medium"
+                    }`}
+                  >
+                    Next &raquo;
+                  </button>
+                </div>
+              </div>
+
+              <div className="w-full md:w-2/3 flex flex-col">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Preview Content
+                </label>
+                <div className="border border-gray-200 rounded-lg p-4 bg-gray-50 flex-1 min-h-[300px]">
+                  {selectedTemplate ? (
+                    <div>
+                      <div className="mb-4 pb-4 border-b border-gray-200">
+                        <p className="text-sm">
+                          <span className="font-semibold text-gray-600">
+                            Subject:{" "}
+                          </span>
+                          {selectedTemplate.subject}
+                        </p>
+                      </div>
+                      <div
+                        className="prose prose-sm max-w-none text-gray-700"
+                        dangerouslySetInnerHTML={{
+                          __html: selectedTemplate.htmlContent,
+                        }}
+                      />
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-center h-full text-gray-400 text-sm">
+                      Select a template on the left to preview its content.
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="px-6 py-4 border-t border-gray-200 flex justify-end gap-3 bg-gray-50">
+          <button
+            onClick={onClose}
+            className="px-5 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSubmit}
+            disabled={!selectedTemplateId}
+            className={`px-5 py-2 text-sm font-medium rounded-lg transition-colors ${
+              selectedTemplateId
+                ? "bg-blue-600 text-white hover:bg-blue-700"
+                : "bg-blue-300 text-white cursor-not-allowed"
+            }`}
+          >
+            Send to Candidates
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};

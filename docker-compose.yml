@@ -140,6 +140,7 @@ services:
       - RABBITMQ_PORT=5672
     depends_on:
       - auth-db
+      - rabbitmq
       - eureka-server
     networks:
       - recruitment-network
@@ -201,6 +202,7 @@ services:
     networks:
       - recruitment-network
     restart: on-failure
+
   notification-service:
     build: 
       context: ./notification-service
@@ -218,6 +220,7 @@ services:
       - URL_FE=${URL_FE}
     depends_on:
       - eureka-server
+      - rabbitmq
     networks:
       - recruitment-network
     restart: on-failure

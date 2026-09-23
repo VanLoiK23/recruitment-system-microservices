@@ -156,7 +156,7 @@ const AuthPage = () => {
       const data = await axios.post("auth/send-otp-check-email", userInfo);
 
       if (data.isSuccess) {
-        toast.success("Please check your email to get the 6-digit OTP code!");
+        toast.success("Your request has been received. Please check your email for the 6-digit OTP code!");
 
         setUserInfo({ ...userInfo, role: roleActive });
         sessionStorage.setItem("userInfo", JSON.stringify(userInfo));

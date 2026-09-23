@@ -22,7 +22,7 @@ const ForgotPasswordPage = () => {
     try {
       const data = await axios.post("auth/forgot-password", { email });
       if (data.success) {
-        toast.success("Send email success, Pls check for reset.");
+        toast.success("Password reset request submitted. Please check your inbox shortly.");
         navigate("/auth");
       }else{
         toast.warn("Send email failed. Try again !")

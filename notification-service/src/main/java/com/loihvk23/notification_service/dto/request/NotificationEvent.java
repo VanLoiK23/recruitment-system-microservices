@@ -1,4 +1,4 @@
-package com.loihvk23.notification_service.dto;
+package com.loihvk23.notification_service.dto.request;
 
 import lombok.Builder;
 import lombok.Data;

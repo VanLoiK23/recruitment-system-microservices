@@ -1,12 +1,9 @@
 package com.loihvk23.notification_service.config;
 
-import org.springframework.amqp.core.AcknowledgeMode;
 import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.core.TopicExchange;
-import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
-import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.context.annotation.Bean;
@@ -23,6 +20,8 @@ public class RabbitMQConfig {
 
 	public static final String ROUTING_KEY_RESET_PASSWORD = "notification.email.reset_password";
 	public static final String ROUTING_KEY_CONFIRM_EMAIL = "notification.email.sent_otp";
+	public static final String ROUTING_KEY_SENT_TO_CANDIDATE = "notification.email.sent_to_candidate";
+	public static final String ROUTING_KEY_REJECT_TO_CANDIDATE = "notification.email.reject_to_candidate";
 
 	@Bean
 	public TopicExchange notificationExchange() {

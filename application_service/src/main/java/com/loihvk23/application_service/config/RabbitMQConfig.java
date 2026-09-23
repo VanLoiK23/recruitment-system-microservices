@@ -31,6 +31,9 @@ public class RabbitMQConfig {
 	public static final String APPLICATION_ALL_EVENTS_PATTERN = "application.event.#";
 	public static final String SCORING_APPLICATION = "application.event.scored";
 
+	public static final String NOTIFICATION_EXCHANGE = "notification.exchange";
+	public static final String ROUTING_KEY_REJECT_TO_CANDIDATE = "notification.email.reject_to_candidate";
+	
 	@Bean
 	public TopicExchange jobExchange() {
 		return new TopicExchange(JOB_EXCHANGE);

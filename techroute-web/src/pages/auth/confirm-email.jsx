@@ -26,6 +26,8 @@ const ConfirmEmailPage = () => {
 
   const [isResend, setResend] = useState(false);
 
+  const [countdown, setCountdown] = useState(30);
+
   useEffect(() => {
     const rawData = sessionStorage.getItem("userInfo");
 
@@ -108,7 +110,20 @@ const ConfirmEmailPage = () => {
     }
   };
 
+  useEffect(() => {
+    let timer;
+    if (countdown > 0) {
+      timer = setInterval(() => {
+        setCountdown((prev) => prev - 1);
+      }, 1000);
+    }
+
+    return () => clearInterval(timer);
+  }, [countdown]);
+
   const handleReSend = async () => {
+    if (countdown > 0 || isLoading) return;
+
     setLoading(true);
     setResend(true);
     try {
@@ -116,6 +131,7 @@ const ConfirmEmailPage = () => {
 
       if (data.isSuccess) {
         toast.success("Please check your email to get the 6-digit OTP code!");
+        setCountdown(30);
       }
     } catch (err) {
       toast.error(err.message);
@@ -234,7 +250,7 @@ const ConfirmEmailPage = () => {
             disabled={isLoading}
             className={`flex gap-2 items-center ml-1 text-[9px] decoration-1 underline
               ${
-                isLoading
+                isLoading || countdown > 0
                   ? "text-gray-500 cursor-not-allowed"
                   : "text-[#00B2FF] cursor-pointer"
               }
@@ -245,6 +261,8 @@ const ConfirmEmailPage = () => {
                 <CircleLoading />
                 <span>Sending OTP...</span>
               </>
+            ) : countdown > 0 ? (
+              `Resend OTP in ${countdown}s`
             ) : (
               <span>Resend Code</span>
             )}

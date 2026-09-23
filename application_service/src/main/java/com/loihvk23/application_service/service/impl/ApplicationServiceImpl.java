@@ -17,6 +17,8 @@ import com.loihvk23.application_service.CVSource;
 import com.loihvk23.application_service.config.RabbitMQConfig;
 import com.loihvk23.application_service.dto.ApplicationDTO;
 import com.loihvk23.application_service.dto.JobCacheDTO;
+import com.loihvk23.application_service.dto.NotificationRejectEvent;
+import com.loihvk23.application_service.dto.NotificationRejectEvent.ReceiverInfo;
 import com.loihvk23.application_service.dto.Tier2Result;
 import com.loihvk23.application_service.dto.request.ApplicationRequest;
 import com.loihvk23.application_service.dto.request.CandidateProfileRequest;
@@ -133,7 +135,8 @@ public class ApplicationServiceImpl implements ApplicationService {
 				.jobId(applicationRequest.getJobId()).status(applicationEntity.getStatus().toString())
 				.createdAt(LocalDateTime.now()).appID(applicationEntity.getId()).cvTextForScoring(cvTextForScoring)
 				.build();
-		rabbitTemplate.convertAndSend(RabbitMQConfig.JOB_EXCHANGE, RabbitMQConfig.APPLICATION_EVENT_SAVE, jobAppliedEvent);
+		rabbitTemplate.convertAndSend(RabbitMQConfig.JOB_EXCHANGE, RabbitMQConfig.APPLICATION_EVENT_SAVE,
+				jobAppliedEvent);
 
 		return applicationMapper.toDTO(applicationEntity);
 	}
@@ -206,8 +209,16 @@ public class ApplicationServiceImpl implements ApplicationService {
 		ApplicationEntity testApplicationEntity = applicationRepository.findById(ids.get(0))
 				.orElseThrow(() -> new ResourceNotFoundException("The application doesn't exist. Try again !!"));
 
-		checkValidJobAndRecruiterEmail(testApplicationEntity.getJobId(), emailRecruiter);
-		
+		JobCacheDTO jobCache = jobCacheService.findJobById(testApplicationEntity.getJobId());
+		if (jobCache == null) {
+			throw new ResourceNotFoundException("The job post linked to this application (Job ID: "
+					+ testApplicationEntity.getJobId() + ") is no longer available.");
+		}
+		if (!jobCache.getRecruiterEmail().equalsIgnoreCase(emailRecruiter)) {
+			throw new IllegalArgumentException(
+					"You can't access list application (This job wasn't been created by " + emailRecruiter + ")");
+		}
+
 		if (ApplicationStatus.SCORED.toString().equalsIgnoreCase(status)) {
 			throw new IllegalArgumentException("You can't update invalid status");
 		}
@@ -229,8 +240,19 @@ public class ApplicationServiceImpl implements ApplicationService {
 						.createdAt(savedEntity.getCreatedAt()).build())
 				.toList();
 
+		// Synchronize and update application status (duplicated in job-service)
 		rabbitTemplate.convertAndSend(RabbitMQConfig.JOB_EXCHANGE, RabbitMQConfig.APPLICATION_EVENT_BULK_UPDATE,
 				userAppliedJobEvents);
+
+		List<ReceiverInfo> receiversInfo = applicationSavedEntities.stream().map(savedEntity -> ReceiverInfo.builder()
+				.email(savedEntity.getCandidateEmail()).name(savedEntity.getFullName()).build()).toList();
+
+		NotificationRejectEvent event = NotificationRejectEvent.builder().authorEmail(emailRecruiter)
+				.jobTitle(jobCache.getTitle()).receivers(receiversInfo).build();
+
+		rabbitTemplate.convertAndSend(RabbitMQConfig.NOTIFICATION_EXCHANGE,
+				RabbitMQConfig.ROUTING_KEY_REJECT_TO_CANDIDATE, event);
+
 	}
 
 	@Override

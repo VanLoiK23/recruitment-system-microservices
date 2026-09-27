@@ -18,7 +18,7 @@ const SideBar = () => {
   const location = useLocation();
   const { auth, setAuth } = useContext(AuthContext);
 
-  const isMini = location.pathname.includes("/recruiter/candidates");
+  const isMini = location.pathname.includes("/recruiter/candidates")||location.pathname.includes("/recruiter/settings");
 
   const menuItems = [
     {

@@ -106,7 +106,7 @@ const CandidatesManagement = () => {
     if (isSendBulkEmail) {
       fetchTemplates();
     }
-  }, [page]);
+  }, [page, isSendBulkEmail]);
 
   useEffect(() => {
     const fetchJobPostings = async () => {
@@ -240,7 +240,7 @@ const CandidatesManagement = () => {
   const handleBulkEmail = async (selectedTemplate) => {
     try {
       const receivers = candidatesSelected.map((c) => ({
-        name: c.candidateName,
+        name: c.fullName,
         email: c.candidateEmail,
       }));
 
@@ -255,7 +255,14 @@ const CandidatesManagement = () => {
         setCandidates([]);
       }
     } catch (err) {
-      toast.error(err.message);
+      console.log(err);
+      const errorData = err.message;
+
+      if (typeof errorData === "object" && errorData !== null) {
+        Object.values(errorData).forEach((msg) => toast.error(msg));
+      } else {
+        toast.error(errorData || "An error occurred!");
+      }
     } finally {
       setSendBulkEmail(false);
     }
@@ -263,14 +270,14 @@ const CandidatesManagement = () => {
 
   const handleBulkReject = async () => {
     const check = window.confirm(
-      "Do you want to REJECT ALL APPLICATION SELECTED"
+      "Do you want to REJECT ALL SELECTED APPLICATION"
     );
 
     if (!check) {
       return;
     }
     try {
-      const ids = selectedCandidate.map((c) => c.id);
+      const ids = candidatesSelected.map((c) => c.id);
       const data = await axios.put(`applications/bulk/status`, {
         ids: ids,
         status: "REJECTED",
@@ -1078,7 +1085,7 @@ export const BulkEmailModal = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+    <div className="fixed inset-0 z-100 flex items-center justify-center bg-black/80 bg-opacity-50">
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col max-h-[90vh]">
         <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
           <h2 className="text-xl font-bold text-gray-800">Send Bulk Email</h2>

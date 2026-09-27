@@ -15,4 +15,4 @@ USER spring:spring
 
 COPY --from=builder /build/target/*.jar app.jar
 
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-Xms64m", "-Xmx256m", "-jar", "app.jar"]

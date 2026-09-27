@@ -12,6 +12,7 @@ services:
     environment:
       - EUREKA_CLIENT_REGISTER_WITH_EUREKA=false
       - EUREKA_CLIENT_FETCH_REGISTRY=false
+    mem_limit: 384m
 
   api-gateway:
     build:
@@ -27,6 +28,7 @@ services:
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE}
       - ALLOW_URL=${ALLOW_URL}
     restart: on-failure
+    mem_limit: 384m
 
   rabbitmq:
     image: rabbitmq:3-management
@@ -43,6 +45,7 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    mem_limit: 256m
 
   auth-db:
     image: mysql:8.0
@@ -56,6 +59,7 @@ services:
       - auth_db_data:/var/lib/mysql
     networks:
       - recruitment-network
+    mem_limit: 512m
 
   application-db:
     image: mysql:8.0
@@ -69,6 +73,7 @@ services:
       - application_db_data:/var/lib/mysql
     networks:
       - recruitment-network
+    mem_limit: 512m
 
   redis:
     image: redis:7-alpine
@@ -80,6 +85,7 @@ services:
     restart: always
     networks:
       - recruitment-network
+    mem_limit: 128m
 
   matching-service:
     build:
@@ -91,6 +97,7 @@ services:
     restart: always
     networks:
       - recruitment-network
+    mem_limit: 1024m
 
   application-service:
     build: 
@@ -121,6 +128,7 @@ services:
     networks:
       - recruitment-network
     restart: on-failure
+    mem_limit: 512m
     
   auth-service:
     build: 
@@ -138,6 +146,7 @@ services:
       - REDIS_PORT=6379
       - RABBITMQ_HOST=recruitment-rabbitmq
       - RABBITMQ_PORT=5672
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE}
     depends_on:
       - auth-db
       - rabbitmq
@@ -145,6 +154,7 @@ services:
     networks:
       - recruitment-network
     restart: on-failure
+    mem_limit: 384m
 
   job-service:
     build: 
@@ -167,6 +177,7 @@ services:
     networks:
       - recruitment-network
     restart: on-failure
+    mem_limit: 384m
 
   profile-service:
     build: 
@@ -183,6 +194,7 @@ services:
     networks:
       - recruitment-network
     restart: on-failure
+    mem_limit: 384m
 
   blog-service:
     build: 
@@ -202,6 +214,7 @@ services:
     networks:
       - recruitment-network
     restart: on-failure
+    mem_limit: 384m
 
   notification-service:
     build: 
@@ -224,6 +237,7 @@ services:
     networks:
       - recruitment-network
     restart: on-failure
+    mem_limit: 384m
 
   techroute-web:
     build: 
@@ -236,6 +250,7 @@ services:
       - api-gateway
     networks:
       - recruitment-network
+    mem_limit: 128m
 
 volumes:
   rabbitmq_data:

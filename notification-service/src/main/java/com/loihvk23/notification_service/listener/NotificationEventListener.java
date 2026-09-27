@@ -16,7 +16,7 @@ import com.loihvk23.notification_service.service.NotificationService;
 import com.rabbitmq.client.Channel;
 
 import lombok.RequiredArgsConstructor;
-import tools.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Component
 @RequiredArgsConstructor

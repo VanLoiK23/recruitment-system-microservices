@@ -17,6 +17,7 @@ public class NotificationRejectEvent {
 
 	private List<ReceiverInfo> receivers;
 
+	@Data
 	@Builder
 	public static class ReceiverInfo {
 		@NotBlank(message = "Receiver name is required")

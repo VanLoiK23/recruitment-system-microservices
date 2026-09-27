@@ -10,7 +10,7 @@ export default function App() {
   const { auth, isAppLoading } = useContext(AuthContext);
   const location = useLocation();
 
-  const isCandidatePage = location.pathname.includes("/recruiter/candidates");
+  const isCandidateOrSettingPage = location.pathname.includes("/recruiter/candidates")||location.pathname.includes("/recruiter/settings");
 
   const isRecruiterPage = location.pathname.startsWith("/recruiter");
   const isAdminPage = location.pathname.startsWith("/admin");
@@ -30,7 +30,7 @@ export default function App() {
       (isRecruiterPage || isAdminPage) ? (
         <div
           className={`grid min-h-screen
-        ${isCandidatePage ? "grid-cols-[80px_1fr]" : "grid-cols-[260px_1fr]"}
+        ${isCandidateOrSettingPage ? "grid-cols-[80px_1fr]" : "grid-cols-[260px_1fr]"}
         `}
         >
           <SideBar />

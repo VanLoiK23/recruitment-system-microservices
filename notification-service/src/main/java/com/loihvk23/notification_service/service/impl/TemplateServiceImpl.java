@@ -40,8 +40,11 @@ public class TemplateServiceImpl implements TemplateService {
 			}
 		}
 
-		TemplateDocument templateDocument = templateRepository.findById(templateDTO.getId()).orElse(null);
+		TemplateDocument templateDocument = templateDTO.getId() == null || templateDTO.getId().isBlank()
+				? new TemplateDocument()
+				: templateRepository.findById(templateDTO.getId()).orElse(new TemplateDocument());
 
+		templateDocument.setOwnerEmail(email);
 		mapper.updateDocumentFromDTO(templateDTO, templateDocument);
 		if (templateDocument.getCreatedAt() == null) {
 			templateDocument.setCreatedAt(LocalDateTime.now());

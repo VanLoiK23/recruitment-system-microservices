@@ -15,6 +15,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class TemplateDTO {
+	
 	private String id;
 
 	@NotBlank(message = "Template key is required")

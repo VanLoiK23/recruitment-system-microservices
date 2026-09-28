@@ -27,6 +27,8 @@ public class RecruiterProfileDocument {
 	
 	private String fullName;
 	
+	private String avatar;
+	
 	private String jobPosition; 
 	
 	private String companyName; 
@@ -36,9 +38,7 @@ public class RecruiterProfileDocument {
 	private String phone;
 		
 	private String cityProvince;
-	
-	private String address;
-	
+		
 	private String linkedin; 
 	
 	private Integer yearsOfExperience; 

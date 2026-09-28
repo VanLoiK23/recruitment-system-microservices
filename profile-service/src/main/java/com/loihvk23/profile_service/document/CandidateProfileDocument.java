@@ -31,6 +31,8 @@ public class CandidateProfileDocument {
 	
 	private String fullName;
 	
+	private String avatar;
+	
 	private String jobPosition;
 	
 	private String phone;

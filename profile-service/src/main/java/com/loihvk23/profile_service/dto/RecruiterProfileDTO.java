@@ -19,6 +19,8 @@ public class RecruiterProfileDTO {
 	private String emailRecruiter;
 
 	private String fullName;
+	
+	private String avatar;
 
 	private String jobPosition;
 
@@ -29,8 +31,6 @@ public class RecruiterProfileDTO {
 	private String phone;
 
 	private String cityProvince;
-
-	private String address;
 
 	private String linkedin;
 

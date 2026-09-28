@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from 'react';
 
 const EditProfileRecruiterModal = ({ isOpen, onClose, profile, onSave }) => {
   const [editForm, setEditForm] = useState(profile);
@@ -50,7 +50,7 @@ const EditProfileRecruiterModal = ({ isOpen, onClose, profile, onSave }) => {
               <input
                 type="text"
                 name="fullName"
-                value={editForm.fullName}
+                value={editForm.fullName || ''}
                 onChange={handleChange}
                 required
                 className="w-full bg-[#F7F6FC] border border-[#E7E5F3] rounded-lg px-4 py-2.5 text-[13.5px] text-[#1B1A2E] focus:outline-none focus:border-[#5D5CDE] focus:bg-white focus:ring-2 focus:ring-[#5D5CDE]/20 transition-all"
@@ -64,7 +64,7 @@ const EditProfileRecruiterModal = ({ isOpen, onClose, profile, onSave }) => {
               <input
                 type="text"
                 name="role"
-                value={editForm.role}
+                value={editForm.jobPosition || ''}
                 onChange={handleChange}
                 required
                 className="w-full bg-[#F7F6FC] border border-[#E7E5F3] rounded-lg px-4 py-2.5 text-[13.5px] text-[#1B1A2E] focus:outline-none focus:border-[#5D5CDE] focus:bg-white focus:ring-2 focus:ring-[#5D5CDE]/20 transition-all"
@@ -73,12 +73,12 @@ const EditProfileRecruiterModal = ({ isOpen, onClose, profile, onSave }) => {
 
             <div className="col-span-2 sm:col-span-1">
               <label className="block text-[12.5px] font-bold text-[#38364F] mb-2 font-['Sora']">
-                Company
+                City / Province
               </label>
               <input
                 type="text"
-                name="company"
-                value={editForm.company}
+                name="cityProvince"
+                value={editForm.cityProvince || ''}
                 onChange={handleChange}
                 required
                 className="w-full bg-[#F7F6FC] border border-[#E7E5F3] rounded-lg px-4 py-2.5 text-[13.5px] text-[#1B1A2E] focus:outline-none focus:border-[#5D5CDE] focus:bg-white focus:ring-2 focus:ring-[#5D5CDE]/20 transition-all"
@@ -87,12 +87,13 @@ const EditProfileRecruiterModal = ({ isOpen, onClose, profile, onSave }) => {
 
             <div className="col-span-2 sm:col-span-1">
               <label className="block text-[12.5px] font-bold text-[#38364F] mb-2 font-['Sora']">
-                Location
+                Years of Experience
               </label>
               <input
-                type="text"
-                name="location"
-                value={editForm.location}
+                type="number"
+                name="yearsOfExperience"
+                min="0"
+                value={editForm.yearsOfExperience || ''}
                 onChange={handleChange}
                 required
                 className="w-full bg-[#F7F6FC] border border-[#E7E5F3] rounded-lg px-4 py-2.5 text-[13.5px] text-[#1B1A2E] focus:outline-none focus:border-[#5D5CDE] focus:bg-white focus:ring-2 focus:ring-[#5D5CDE]/20 transition-all"
@@ -106,10 +107,10 @@ const EditProfileRecruiterModal = ({ isOpen, onClose, profile, onSave }) => {
               <input
                 type="email"
                 name="email"
-                value={editForm.email}
+                value={editForm.email || ''}
                 required
                 readOnly
-                className="w-full bg-gray-400 border border-[#E7E5F3] rounded-lg px-4 py-2.5 text-[13.5px] text-[#1B1A2E] transition-all"
+                className="w-full bg-gray-100 border border-[#E7E5F3] rounded-lg px-4 py-2.5 text-[13.5px] text-[#6B6980] transition-all cursor-not-allowed"
               />
             </div>
 
@@ -120,7 +121,7 @@ const EditProfileRecruiterModal = ({ isOpen, onClose, profile, onSave }) => {
               <input
                 type="tel"
                 name="phone"
-                value={editForm.phone}
+                value={editForm.phone || ''}
                 onChange={handleChange}
                 required
                 className="w-full bg-[#F7F6FC] border border-[#E7E5F3] rounded-lg px-4 py-2.5 text-[13.5px] text-[#1B1A2E] focus:outline-none focus:border-[#5D5CDE] focus:bg-white focus:ring-2 focus:ring-[#5D5CDE]/20 transition-all"
@@ -133,7 +134,7 @@ const EditProfileRecruiterModal = ({ isOpen, onClose, profile, onSave }) => {
               </label>
               <textarea
                 name="about"
-                value={editForm.about}
+                value={editForm.about || ''}
                 onChange={handleChange}
                 rows="4"
                 required
@@ -152,7 +153,10 @@ const EditProfileRecruiterModal = ({ isOpen, onClose, profile, onSave }) => {
           </button>
           <button
             type="submit"
-            onClick={() => onSave(editForm)}
+            onClick={() => onSave({
+                ...editForm,
+                yearsOfExperience: editForm.yearsOfExperience ? parseInt(editForm.yearsOfExperience, 10) : 0
+            })}
             className="font-['Sora'] text-[13px] font-bold text-white bg-gradient-to-br from-[#5D5CDE] to-[#4338CA] px-6 py-2.5 rounded-lg hover:opacity-90 transition-opacity shadow-sm"
           >
             Save Changes

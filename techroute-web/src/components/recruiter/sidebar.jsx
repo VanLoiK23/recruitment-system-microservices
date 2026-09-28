@@ -44,7 +44,7 @@ const SideBar = () => {
     {
       title: "Setting",
       icon: <Settings size={20} />,
-      path: "/recruiter/settings",
+      path: "/recruiter/settings#company",
     },
   ];
 

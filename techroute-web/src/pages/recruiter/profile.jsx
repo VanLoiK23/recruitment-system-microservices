@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import getInitials from "../../components/get-avatar-name";
 import { toast } from "react-toastify";
 import axios from "../../utils/axios.customize";
@@ -6,6 +6,7 @@ import CircleLoading from "../../components/animation/animate-loading";
 import getDynamicStatus from "../../components/get-dynamic-status-job";
 import { useLocation } from "react-router-dom";
 import EditProfileRecruiterModal from "../../components/recruiter/profile/update-profile";
+import { Camera } from "lucide-react";
 
 const AVATAR_COLORS = [
   "#5D5CDE",
@@ -23,11 +24,11 @@ const RecruiterProfile = () => {
 
   const [profile, setProfile] = useState({
     fullName: "",
-    role: "",
+    jobPosition: "",
     company: "",
     email: "",
     phone: "",
-    location: "",
+    cityProvince: "",
     about: "",
   });
 
@@ -47,6 +48,9 @@ const RecruiterProfile = () => {
   const [totalElements, setTotalElements] = useState(0);
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
+  const fileInputRef = useRef(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -140,24 +144,8 @@ const RecruiterProfile = () => {
       toast.warn("Fullname is required!");
       return;
     }
-    if (!updatedProfile.company) {
-      toast.warn("Company is required!");
-      return;
-    }
-    if (!updatedProfile.role) {
-      toast.warn("Role is required!");
-      return;
-    }
-    if (!updatedProfile.phone) {
-      toast.warn("Phone is required!");
-      return;
-    }
-    if (!updatedProfile.location) {
-      toast.warn("Location is required!");
-      return;
-    }
-    if (!updatedProfile.about) {
-      toast.warn("Brief introduce is required!");
+    if (!updatedProfile.jobPosition) {
+      toast.warn("Job Position is required!");
       return;
     }
     try {
@@ -172,6 +160,38 @@ const RecruiterProfile = () => {
     }
   };
 
+  const handleAvatarUpload = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      alert("Please select an image avatar!");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      alert("The image size must not exceed 5MB.!");
+      return;
+    }
+
+    try {
+      setIsUploading(true);
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const data = await axios.post("profile/upload", formData);
+
+      if (data) {
+        setProfile({ ...profile, avatar: data.avatarUrl });
+        toast.success("Change avatar successfully !");
+      }
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setIsUploading(false);
+      event.target.value = "";
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#F7F6FC] text-[#1B1A2E] font-['Be_Vietnam_Pro',sans-serif] antialiased p-8">
       <div className="max-w-6xl mx-auto">
@@ -182,17 +202,53 @@ const RecruiterProfile = () => {
             <div className="flex justify-between items-end mb-4">
               <div className="relative -mt-16 flex items-end gap-5">
                 <div
-                  className="w-32 h-32 rounded-2xl flex items-center justify-center font-['Sora'] font-bold text-4xl text-white border-4 border-white shadow-lg shrink-0"
-                  style={{ backgroundColor: getAvatarColor(profile.fullName) }}
+                  className="relative w-32 h-32 rounded-2xl shadow-lg shrink-0 group cursor-pointer overflow-hidden border-4 border-white transition-transform hover:scale-105"
+                  onClick={() => !isUploading && fileInputRef.current?.click()}
                 >
-                  {getInitials(profile.fullName)}
+                  {profile.avatar ? (
+                    <img
+                      src={profile.avatar}
+                      alt={profile.fullName}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div
+                      className="w-full h-full flex items-center justify-center font-['Sora'] font-bold text-4xl text-white"
+                      style={{
+                        backgroundColor: getAvatarColor(profile.fullName),
+                      }}
+                    >
+                      {getInitials(profile.fullName)}
+                    </div>
+                  )}
+
+                  <div className="absolute inset-0 bg-[#1B1A2E]/60 backdrop-blur-[2px] flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300">
+                    {isUploading ? (
+                      <CircleLoading />
+                    ) : (
+                      <>
+                        <Camera size={24} className="text-white mb-1" />
+                        <span className="text-white text-[11px] font-semibold tracking-wide">
+                          Update
+                        </span>
+                      </>
+                    )}
+                  </div>
+
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    className="hidden"
+                    accept="image/png, image/jpeg, image/webp"
+                    onChange={handleAvatarUpload}
+                  />
                 </div>
                 <div className="mb-2">
                   <h1 className="font-['Sora'] text-2xl font-bold text-[#1B1A2E]">
                     {profile.fullName}
                   </h1>
                   <div className="text-[14px] text-[#6B6980] mt-1 font-medium">
-                    {profile.role} at{" "}
+                    {profile.jobPosition} with {profile.yearsOfExperience} at{" "}
                     <span className="text-[#5D5CDE] font-semibold">
                       {profile.company}
                     </span>
@@ -307,9 +363,36 @@ const RecruiterProfile = () => {
                     </svg>
                   </div>
                   <div>
-                    <div className="text-[11px] text-[#6B6980]">Location</div>
+                    <div className="text-[11px] text-[#6B6980]">
+                      City/Province
+                    </div>
                     <div className="text-[13px] font-semibold text-[#1B1A2E]">
-                      {profile.location}
+                      {profile.cityProvince}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-lg bg-[#F5F4FF] flex items-center justify-center text-[#5D5CDE] shrink-0">
+                    <svg
+                      width="18"
+                      height="18"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" />
+                      <rect width="4" height="12" x="2" y="9" />
+                      <circle cx="4" cy="4" r="2" />
+                    </svg>
+                  </div>
+                  <div>
+                    <div className="text-[11px] text-[#6B6980]">LinkedIn</div>
+                    <div className="text-[13px] font-semibold text-[#1B1A2E] truncate max-w-[200px]">
+                      {profile.linkedin || "Not set"}
                     </div>
                   </div>
                 </div>

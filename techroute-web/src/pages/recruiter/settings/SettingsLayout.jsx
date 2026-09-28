@@ -1,36 +1,64 @@
-import React, { useState } from 'react';
-import { User, Building, FileText, Bell, Sliders } from 'lucide-react';
-import ProfileTab from './ProfileTab';
-import CompanyTab from './CompanyTab';
-import TemplatesTab from './TemplatesTab';
+import React, { useState, useEffect } from "react";
+import { Building, FileText, Bell, Sliders } from "lucide-react";
+import CompanyTab from "./CompanyTab";
+import TemplatesTab from "./TemplatesTab";
+import { useLocation } from "react-router-dom";
 
 const tabs = [
-  { id: 'profile', label: 'Profile & Account', icon: User },
-  { id: 'company', label: 'Company Profile', icon: Building },
-  { id: 'templates', label: 'Templates', icon: FileText },
-  { id: 'notifications', label: 'Notifications', icon: Bell },
-  { id: 'preferences', label: 'Preferences', icon: Sliders },
+  { id: "company", label: "Company Profile", icon: Building },
+  { id: "templates", label: "Templates", icon: FileText },
+  { id: "notifications", label: "Notifications", icon: Bell },
+  { id: "preferences", label: "Preferences", icon: Sliders },
 ];
 
 export default function SettingsLayout() {
-  const [activeTab, setActiveTab] = useState('profile');
+  const location = useLocation();
+
+  const [activeTab, setActiveTab] = useState("company");
 
   const renderTabContent = () => {
     switch (activeTab) {
-      case 'profile':
-        return <ProfileTab />;
-      case 'company':
+      case "company":
         return <CompanyTab />;
-      case 'templates':
+      case "templates":
         return <TemplatesTab />;
-      case 'notifications':
-        return <div className="p-8"><h3 className="text-lg font-semibold text-gray-900">Notifications Settings</h3></div>;
-      case 'preferences':
-        return <div className="p-8"><h3 className="text-lg font-semibold text-gray-900">System Preferences</h3></div>;
+      case "notifications":
+        return (
+          <div className="p-8">
+            <h3 className="text-lg font-semibold text-gray-900">
+              Notifications Settings
+            </h3>
+          </div>
+        );
+      case "preferences":
+        return (
+          <div className="p-8">
+            <h3 className="text-lg font-semibold text-gray-900">
+              System Preferences
+            </h3>
+          </div>
+        );
       default:
-        return <ProfileTab />;
+        return <CompanyTab />;
     }
   };
+
+  const onChangeActiveTab = (tab) => {
+    window.location.hash = tab;
+    setActiveTab(tab);
+  };
+
+   useEffect(() => {
+      const hash = location.hash;
+  
+      const tab = hash.replace("#", "");
+  
+      if (tab) {
+        setActiveTab(tab);
+      } else {
+        setActiveTab("company");
+      }
+    }, [location]);
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -43,11 +71,11 @@ export default function SettingsLayout() {
             return (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => onChangeActiveTab(tab.id)}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
                   isActive
-                    ? 'bg-[#5D5CDE]/10 text-[#5D5CDE]'
-                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                    ? "bg-[#5D5CDE]/10 text-[#5D5CDE]"
+                    : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                 }`}
               >
                 <Icon size={18} />

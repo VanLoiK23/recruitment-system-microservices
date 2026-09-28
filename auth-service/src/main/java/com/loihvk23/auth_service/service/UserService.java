@@ -22,7 +22,4 @@ public interface UserService {
 	
 	boolean resetPassword(String token,String password);
 		
-	UserDTO findUserById(int id) throws AuthenticationException;
-	
-	UserDTO updateProfile (UserDTO userDTO);
 }

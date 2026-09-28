@@ -49,6 +49,10 @@ public class UserServiceImpl implements UserService {
 
 	@Override
 	public UserDTO register(RegisterRequest request) {
+		if (request.getRole().equalsIgnoreCase("admin")) {
+			throw new IllegalArgumentException("Invalid role. Try again!!");
+		}
+
 		if (userRepository.existsByEmail(request.getEmail())) {
 			throw new EntityExistsException("Email has already in the system. Try again !!");
 		}
@@ -80,14 +84,6 @@ public class UserServiceImpl implements UserService {
 	@Override
 	public UserDTO findUserByEmail(String email) {
 		UserEntity userEntity = userRepository.findByEmail(email).orElse(null);
-
-		return userMapper.toDTO(userEntity);
-	}
-
-	@Override
-	public UserDTO findUserById(int id) throws AuthenticationException {
-		UserEntity userEntity = userRepository.findById((long) id)
-				.orElseThrow(() -> new AuthenticationException("User not found"));
 
 		return userMapper.toDTO(userEntity);
 	}
@@ -166,10 +162,4 @@ public class UserServiceImpl implements UserService {
 		return true;
 	}
 
-	@Override
-	public UserDTO updateProfile(UserDTO userDTO) {
-		UserEntity userEntity = userRepository.save(userMapper.toEntity(userDTO));
-
-		return userMapper.toDTO(userEntity);
-	}
 }

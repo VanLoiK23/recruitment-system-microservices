@@ -43,10 +43,6 @@ public class AuthResController {
 
 	@PostMapping("register")
 	public ResponseEntity<?> register(@RequestBody @Valid RegisterRequest request) {
-		if (request.getRole().equalsIgnoreCase("admin")) {
-			throw new IllegalArgumentException("Invalid role. Try again!!");
-		}
-
 		UserDTO userDTO = userService.register(request);
 		userDTO.setPassword(null);
 

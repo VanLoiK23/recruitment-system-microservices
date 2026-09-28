@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useEffect, useState, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import { AuthContext } from "../../../components/context/auth.context.jsx";
 import axios from "../../../utils/axios.customize.js";
@@ -8,6 +8,7 @@ import CvUploadTag from "./cv-upload-tag.jsx";
 import JobManagementTag from "./job-management-tag.jsx";
 import { toast } from "react-toastify";
 import EmailManagementTab from "./email-management-tag.jsx";
+import { Camera } from "lucide-react";
 
 const ProfilePage = () => {
   const location = useLocation();
@@ -20,6 +21,7 @@ const ProfilePage = () => {
 
   const [profileInfo, setProfileInfo] = useState({
     fullName: auth?.user?.fullName || "Username",
+    avatar: "",
     jobPosition: "",
     cityProvince: "",
     phone: "",
@@ -36,6 +38,9 @@ const ProfilePage = () => {
     "my-cv": "CV Management",
     "email-management": "Email Management",
   };
+
+  const fileInputRef = useRef(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   const onChangeActiveTab = (tab) => {
     window.location.hash = tab;
@@ -85,6 +90,38 @@ const ProfilePage = () => {
       if (data) toast.success("Profile updated successfully!");
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  const handleAvatarUpload = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      alert("Please select an image avatar!");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      alert("The image size must not exceed 5MB.!");
+      return;
+    }
+
+    try {
+      setIsUploading(true);
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const data = await axios.post("profile/upload", formData);
+
+      if (data) {
+        setProfileInfo({ ...profileInfo, avatar: data.avatarUrl });
+        toast.success("Change avatar successfully !");
+      }
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setIsUploading(false);
+      event.target.value = "";
     }
   };
 
@@ -138,14 +175,49 @@ const ProfilePage = () => {
                         className="transition-all duration-500 ease-out"
                       />
                     </svg>
-                    <div className="w-24 h-24 bg-gray-100 rounded-full overflow-hidden border-2 border-white z-10 flex items-center justify-center">
-                      <svg
-                        className="w-14 h-14 text-gray-400"
-                        fill="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
-                      </svg>
+
+                    <div
+                      className="relative w-24 h-24 bg-gray-100 rounded-full overflow-hidden border-2 border-white z-10 flex items-center justify-center group cursor-pointer"
+                      onClick={() =>
+                        !isUploading && fileInputRef.current?.click()
+                      }
+                    >
+                      {profileInfo.avatar ? (
+                        <img
+                          src={profileInfo.avatar}
+                          alt={profileInfo.fullName}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <svg
+                          className="w-14 h-14 text-gray-400"
+                          fill="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+                        </svg>
+                      )}
+
+                      <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        {isUploading ? (
+                          <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        ) : (
+                          <>
+                            <Camera size={24} className="text-white mb-1" />
+                            <span className="text-white text-[10px] font-semibold tracking-wide mt-1">
+                              Update
+                            </span>
+                          </>
+                        )}
+                      </div>
+
+                      <input
+                        type="file"
+                        ref={fileInputRef}
+                        className="hidden"
+                        accept="image/png, image/jpeg, image/webp"
+                        onChange={handleAvatarUpload}
+                      />
                     </div>
                   </div>
                   <span className="text-[#5B5FC7] font-bold text-sm mb-2">
@@ -219,9 +291,7 @@ const ProfilePage = () => {
 
           {activeTab === "job-management" && <JobManagementTag />}
           {activeTab === "my-cv" && <CvUploadTag />}
-          {activeTab === "email-management" && (
-            <EmailManagementTab />
-          )}
+          {activeTab === "email-management" && <EmailManagementTab />}
         </div>
       </div>
     </div>

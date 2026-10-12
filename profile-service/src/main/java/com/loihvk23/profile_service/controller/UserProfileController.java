@@ -27,7 +27,7 @@ import lombok.RequiredArgsConstructor;
 @RestController("profileController")
 @RequiredArgsConstructor
 @RequestMapping("/api/profile")
-public class ProfileController {
+public class UserProfileController {
 	private final ProfileService profileService;
 
 	@GetMapping
@@ -78,10 +78,6 @@ public class ProfileController {
 	@PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	public ResponseEntity<?> uploadCV(@RequestPart("file") MultipartFile file,
 			@AuthenticationPrincipal UserDetails userDetails) throws IOException, IllegalAccessException {
-		if (file == null || file.isEmpty()) {
-			throw new IllegalAccessException("File upload is required");
-		}
-
 		String email = userDetails.getUsername();
 		String role = userDetails.getAuthorities().stream().map(GrantedAuthority::getAuthority).findFirst().orElse("");
 

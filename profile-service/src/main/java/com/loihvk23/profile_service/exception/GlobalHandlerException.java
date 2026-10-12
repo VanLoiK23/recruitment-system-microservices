@@ -54,6 +54,15 @@ public class GlobalHandlerException {
 
 		return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
 	}
+	
+	@ExceptionHandler(IllegalStateException.class)
+	public ResponseEntity<ErrorResponse<String>> handleStateInvalidException(IllegalStateException exp) {
+		ErrorResponse<String> errorResponse = ErrorResponse.<String>builder().timestamp(LocalDateTime.now())
+				.status(HttpStatus.BAD_REQUEST.value()).error(HttpStatus.BAD_REQUEST.getReasonPhrase())
+				.message(exp.getMessage()).build();
+
+		return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+	}
 
 	@ExceptionHandler(AccessDeniedException.class)
 	public ResponseEntity<ErrorResponse<String>> handleAccessDeniedException(AccessDeniedException exp) {

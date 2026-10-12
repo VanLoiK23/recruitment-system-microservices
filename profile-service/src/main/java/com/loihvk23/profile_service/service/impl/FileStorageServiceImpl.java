@@ -1,14 +1,19 @@
 package com.loihvk23.profile_service.service.impl;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
+import com.loihvk23.profile_service.document.TempMediaDocument;
+import com.loihvk23.profile_service.repository.TempMediaRepository;
 import com.loihvk23.profile_service.service.FileStorageService;
 
 import lombok.RequiredArgsConstructor;
@@ -18,6 +23,8 @@ import lombok.RequiredArgsConstructor;
 public class FileStorageServiceImpl implements FileStorageService {
 
 	private final Cloudinary cloudinary;
+
+	private final TempMediaRepository tempMediaRepository;
 
 	@Override
 	public String uploadAvatar(MultipartFile file) throws IOException {
@@ -44,8 +51,26 @@ public class FileStorageServiceImpl implements FileStorageService {
 		return uploadResult.get("secure_url").toString();
 	}
 
+	public String uploadCompanyFile(MultipartFile file, String folderType, String companyId) throws IOException {
+		String contentType = file.getContentType();
+		String resourceType = (contentType != null && contentType.equals("application/pdf")) ? "raw" : "image";
+
+		String folderPath = String.format("techroute/companies/%s/%s", companyId, folderType.toLowerCase());
+
+		Map<String, Object> params = ObjectUtils.asMap("folder", folderPath, "resource_type", resourceType,
+				"use_filename", true, "unique_filename", true);
+
+		Map uploadResult = cloudinary.uploader().upload(file.getBytes(), params);
+
+		String secureUrl = (String) uploadResult.get("secure_url");
+
+		tempMediaRepository.save(TempMediaDocument.builder().fileUrl(secureUrl).createdAt(LocalDateTime.now()).build());
+
+		return secureUrl;
+	}
+
 	@Override
-	public void deleteAvatar(String fileUrlOrPublicId) throws IOException {
+	public void deleteFile(String fileUrlOrPublicId) throws IOException {
 		if (fileUrlOrPublicId == null || fileUrlOrPublicId.isBlank()) {
 			return;
 		}
@@ -58,6 +83,16 @@ public class FileStorageServiceImpl implements FileStorageService {
 
 	private boolean isImageResourceType(String fileUrl) {
 		return fileUrl.contains("/image/upload/");
+	}
+
+	@Async
+	public void deleteFilesAsync(List<String> fileUrlsToDelete) throws IOException {
+		if (fileUrlsToDelete == null || fileUrlsToDelete.isEmpty())
+			return;
+
+		for (String url : fileUrlsToDelete) {
+			deleteFile(url);
+		}
 	}
 
 	private String extractPublicId(String fileUrl) {

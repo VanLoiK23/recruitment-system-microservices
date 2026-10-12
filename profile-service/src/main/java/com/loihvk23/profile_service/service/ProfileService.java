@@ -16,5 +16,5 @@ public interface ProfileService {
 
 	RecruiterProfileDTO findRecruiterProfileByEmail(String emailRecruiter);
 
-	String uploadAvatar(MultipartFile file, String email, String role) throws IOException;
+	String uploadAvatar(MultipartFile file, String email, String role) throws IOException,IllegalArgumentException;
 }

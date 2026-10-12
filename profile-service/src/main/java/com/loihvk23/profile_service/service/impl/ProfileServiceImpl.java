@@ -106,7 +106,11 @@ public class ProfileServiceImpl implements ProfileService {
 
 	@Override
 	@Transactional
-	public String uploadAvatar(MultipartFile file, String email, String role) throws IOException {
+	public String uploadAvatar(MultipartFile file, String email, String role) throws IOException, IllegalArgumentException {
+		if (file == null || file.isEmpty()) {
+			throw new IllegalArgumentException("File upload is required");
+		}
+		
 		if (role == null || role.isBlank()) {
 			throw new IllegalArgumentException("Unauthorization!!");
 		}
@@ -117,7 +121,7 @@ public class ProfileServiceImpl implements ProfileService {
 			CandidateProfileDocument candidateProfile = candidateProfileRepository.findByEmailCandidate(email)
 					.orElse(null);
 			if (candidateProfile == null) {
-				fileStorageService.deleteAvatar(avatar); // roll back
+				fileStorageService.deleteFile(avatar); // roll back
 				throw new IllegalArgumentException("Profile doesn't found !!");
 			}
 			deleteOldAvatar(candidateProfile.getAvatar());
@@ -127,7 +131,7 @@ public class ProfileServiceImpl implements ProfileService {
 			RecruiterProfileDocument recruiterProfile = recruiterProfileRepository.findByEmailRecruiter(email)
 					.orElse(null);
 			if (recruiterProfile == null) {
-				fileStorageService.deleteAvatar(avatar);
+				fileStorageService.deleteFile(avatar);
 				throw new IllegalArgumentException("Profile doesn't found !!");
 			}
 			deleteOldAvatar(recruiterProfile.getAvatar());
@@ -142,6 +146,6 @@ public class ProfileServiceImpl implements ProfileService {
 		if (old == null || old.isBlank()) {
 			return;
 		}
-		fileStorageService.deleteAvatar(old);
+		fileStorageService.deleteFile(old);
 	}
 }

@@ -16,6 +16,9 @@ public class CompanyMemberDTO {
 
 	@NotBlank(message = "Company's Id is required")
 	private String companyId;
+	private String companyName;
+	private String companyLogo;
+
 	private String recruiterEmail;
 
 	@Builder.Default

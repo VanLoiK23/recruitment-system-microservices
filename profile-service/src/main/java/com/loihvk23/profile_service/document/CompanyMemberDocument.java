@@ -26,7 +26,9 @@ public class CompanyMemberDocument {
 	private String id;
 
 	private String companyId; 
-	
+	private String companyName;
+	private String companyLogo;
+
 	@Indexed
 	private String recruiterEmail;
 

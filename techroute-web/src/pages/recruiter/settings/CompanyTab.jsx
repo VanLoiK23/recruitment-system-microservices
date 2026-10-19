@@ -18,6 +18,7 @@ import {
   Building2,
   ChevronDown,
   Check,
+  Circle,
 } from "lucide-react";
 import {
   MapContainer,
@@ -101,6 +102,9 @@ export default function CompanyTab() {
   const [formData, setFormData] = useState(INITIAL_FORM_DATA);
   const [isNewCompany, setNewCompany] = useState(true);
   const [isSaveLoading, setSaveLoading] = useState(false);
+  const [isUploading, setUploading] = useState(false);
+
+  const [previewImage, setPreviewImage] = useState(null);
 
   const [companiesList, setCompaniesList] = useState([]);
   const [selectedCompanyId, setSelectedCompanyId] = useState("NEW_COMPANY");
@@ -131,15 +135,12 @@ export default function CompanyTab() {
 
   const fetchMyCompanies = async () => {
     try {
-      const data = await axios.get(`profile/my-companies`);
+      const data = await axios.get(`profile/companies/info`);
 
-      // const mockList = [
-      //   { id: "comp_123", name: "TechRoute Corp", role: "OWNER", logo: null },
-      //   { id: "comp_456", name: "VNG Group", role: "RECRUITER", logo: null },
-      // ];
       if (data) {
         setCompaniesList(data);
       }
+      console.log(data)
 
       if (data.length > 0) {
         setSelectedCompanyId(data[0].id);
@@ -344,6 +345,7 @@ export default function CompanyTab() {
     }
 
     setSaveLoading(true);
+    setUploading(true);
 
     const uploadData = new FormData();
     uploadData.append("file", file);
@@ -351,11 +353,9 @@ export default function CompanyTab() {
     if (formData.id) uploadData.append("companyId", formData.id);
 
     try {
-      const { data } = await axios.post(
-        "profile/companies/upload",
-        uploadData,
-        { headers: { "Content-Type": "multipart/form-data" } }
-      );
+      const data = await axios.post("profile/companies/upload", uploadData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
       const secureUrl = data.url;
 
       if (!formData.id && data.newCompanyId) {
@@ -369,12 +369,13 @@ export default function CompanyTab() {
           return { ...prev, businessLicenseUrl: secureUrl };
         return { ...prev, [`${uploadTarget}Url`]: secureUrl };
       });
-    } catch (error) {
-      toast.error("Upload failed.");
+    } catch (err) {
+      toast.error("Upload failed: " + err.message);
     } finally {
       event.target.value = "";
       setUploadTarget(null);
       setSaveLoading(false);
+      setUploading(false);
     }
   };
 
@@ -427,9 +428,15 @@ export default function CompanyTab() {
         fetchMyCompanies();
       }
     } catch (err) {
-      toast.error(
-        err.response?.data?.message || err.message || "An error occurred!"
-      );
+      const errorData = err.message;
+
+      if (typeof errorData === "object" && errorData !== null) {
+        Object.values(errorData).forEach((message) => {
+          toast.error(message);
+        });
+      } else {
+        toast.error(err.message || "An error occurred!");
+      }
     } finally {
       setSaveLoading(false);
     }
@@ -718,13 +725,21 @@ export default function CompanyTab() {
             ) : (
               <ImageIcon className="text-gray-300 w-12 h-12" />
             )}
-            <button
-              type="button"
-              onClick={() => triggerUpload("coverImage")}
-              className="absolute flex items-center gap-2 px-4 py-2 bg-black/60 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
-            >
-              <Upload size={16} /> Update Cover
-            </button>
+            {isUploading && uploadTarget === "coverImage" ? (
+              <div className="absolute flex items-center bg-black/60  gap-2 px-4 py-2 rounded-lg">
+                <p className="scale-125">
+                  <CircleLoading />
+                </p>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => triggerUpload("coverImage")}
+                className="absolute flex items-center gap-2 px-4 py-2 bg-black/60 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
+              >
+                <Upload size={16} /> Update Cover
+              </button>
+            )}
           </div>
           <div className="absolute -bottom-8 left-8 w-24 h-24 bg-white rounded-2xl border border-gray-200 shadow-sm flex items-center justify-center relative overflow-hidden group">
             {formData.logoUrl ? (
@@ -733,7 +748,23 @@ export default function CompanyTab() {
                 className="w-full h-full object-contain p-1"
               />
             ) : (
-              <Building size={32} className="text-gray-300" />
+              <Building
+                size={32}
+                className={`
+                text-gray-300
+                ${
+                  isUploading && uploadTarget === "logo"
+                    ? "opacity-0"
+                    : "opacity-100"
+                }
+                `}
+              />
+            )}
+
+            {isUploading && uploadTarget === "logo" && (
+              <div className="absolute flex items-center bg-black/60  gap-2 px-4 py-2 rounded-lg">
+                <CircleLoading />
+              </div>
             )}
             <div
               onClick={() => triggerUpload("logo")}
@@ -816,11 +847,18 @@ export default function CompanyTab() {
             </label>
             <div className="flex items-center gap-3">
               <button
+                disabled={isUploading}
                 type="button"
                 onClick={() => triggerUpload("businessLicense")}
                 className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium"
               >
-                Upload Document
+                {isUploading && uploadTarget === "businessLicense" ? (
+                  <div className="flex items-center">
+                    <CircleLoading />
+                  </div>
+                ) : (
+                  <>Upload Document</>
+                )}
               </button>
               {formData.businessLicenseUrl && (
                 <a
@@ -1057,6 +1095,7 @@ export default function CompanyTab() {
             <h4 className="font-bold">Office Gallery</h4>
             <button
               type="button"
+              disabled={isUploading}
               onClick={() => triggerUpload("gallery")}
               className="flex items-center gap-1 text-sm font-medium text-[#5D5CDE]"
             >
@@ -1067,19 +1106,25 @@ export default function CompanyTab() {
             {formData.galleryImages.map((img, idx) => (
               <div
                 key={idx}
-                className="aspect-video rounded-xl relative group overflow-hidden"
+                className="aspect-video rounded-xl relative group overflow-hidden cursor-pointer"
               >
-                <img src={img} className="w-full h-full object-cover" />
+                <img
+                  src={img}
+                  className="w-full h-full object-cover"
+                  onClick={() => setPreviewImage(img)}
+                  alt={`Gallery image ${idx}`}
+                />
                 <button
-                  onClick={() =>
+                  onClick={(e) => {
+                    e.stopPropagation();
                     setFormData((p) => ({
                       ...p,
                       galleryImages: p.galleryImages.filter(
                         (_, i) => i !== idx
                       ),
-                    }))
-                  }
-                  className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-lg opacity-0 group-hover:opacity-100"
+                    }));
+                  }}
+                  className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
                 >
                   <Trash2 size={14} />
                 </button>
@@ -1088,11 +1133,33 @@ export default function CompanyTab() {
           </div>
         </div>
 
+        {previewImage && (
+          <div
+            className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4"
+            onClick={() => setPreviewImage(null)}
+          >
+            <div className="relative max-w-4xl max-h-[90vh]">
+              <img
+                src={previewImage}
+                alt="Preview"
+                className="max-w-full max-h-[90vh] object-contain rounded-lg"
+              />
+              <button
+                onClick={() => setPreviewImage(null)}
+                className="absolute top-2 right-2 bg-white/20 hover:bg-white/40 text-red-500 p-2 rounded-full backdrop-blur-sm"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+        )}
+
         <div className="flex justify-end pt-4">
           <button
             onClick={handleSave}
             disabled={isSaveLoading}
             className={`px-8 py-3 font-bold rounded-xl shadow-md
+              whitespace-nowrap
               ${
                 isSaveLoading
                   ? "bg-gray-400 text-black"

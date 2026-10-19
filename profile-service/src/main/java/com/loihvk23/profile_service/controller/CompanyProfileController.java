@@ -2,7 +2,6 @@ package com.loihvk23.profile_service.controller;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Map;
 
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -23,17 +22,27 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.loihvk23.profile_service.dto.CompanyProfileDTO;
+import com.loihvk23.profile_service.dto.response.CompaniesInfoResponse;
 import com.loihvk23.profile_service.dto.response.ResponseUpload;
 import com.loihvk23.profile_service.service.CompanyProfileService;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
-@RestController("CompanyProfileController")
+@RestController("companyProfileController")
 @RequiredArgsConstructor
 @RequestMapping("/api/profile/companies")
 public class CompanyProfileController {
 	private final CompanyProfileService companyProfileService;
+
+	@GetMapping("/info")
+	public ResponseEntity<?> findMyCompanies(@AuthenticationPrincipal UserDetails userDetails) {
+		String email = userDetails.getUsername();
+
+		List<CompaniesInfoResponse> infoCompanies = companyProfileService.findMyCompanies(email);
+
+		return ResponseEntity.ok(infoCompanies);
+	}
 
 	@GetMapping("/:id")
 	public ResponseEntity<?> findCompanyById(@PathVariable String id) {
@@ -42,14 +51,7 @@ public class CompanyProfileController {
 		return ResponseEntity.ok(companyProfileDTO);
 	}
 
-	public ResponseEntity<?> getListNameCompanyByOwner(@AuthenticationPrincipal UserDetails userDetails) {
-		String email = userDetails.getUsername();
-
-		List<String> nameCompanies = companyProfileService.findNameCompaniesByOwner(email);
-
-		return ResponseEntity.ok(Map.of("nameCompanies", nameCompanies));
-	}
-
+	@GetMapping 
 	public ResponseEntity<?> getListCompanyByOwner(@RequestParam(name = "page", defaultValue = "1") int page,
 			@RequestParam(name = "limit", defaultValue = "7") int limit,
 			@RequestParam(name = "sortBy", defaultValue = "createdAt") String sortBy,

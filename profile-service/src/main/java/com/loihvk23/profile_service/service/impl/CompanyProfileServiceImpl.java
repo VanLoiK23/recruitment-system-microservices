@@ -6,16 +6,25 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.bson.types.ObjectId;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.loihvk23.profile_service.CompanyMemberRole;
+import com.loihvk23.profile_service.CompanyMemberStatus;
 import com.loihvk23.profile_service.document.CompanyDocument;
+import com.loihvk23.profile_service.document.CompanyMemberDocument;
+import com.loihvk23.profile_service.dto.CompanyMemberDTO;
 import com.loihvk23.profile_service.dto.CompanyProfileDTO;
+import com.loihvk23.profile_service.dto.response.CompaniesInfoResponse;
 import com.loihvk23.profile_service.dto.response.ResponseUpload;
+import com.loihvk23.profile_service.mapper.CompanyMemberMapper;
 import com.loihvk23.profile_service.mapper.CompanyProfileMapper;
+import com.loihvk23.profile_service.repository.CompanyMemberRepository;
 import com.loihvk23.profile_service.repository.CompanyProfileRepository;
 import com.loihvk23.profile_service.repository.TempMediaRepository;
 import com.loihvk23.profile_service.service.CompanyProfileService;
@@ -30,9 +39,15 @@ public class CompanyProfileServiceImpl implements CompanyProfileService {
 
 	private final CompanyProfileMapper mapper;
 
-	private final FileStorageService fileStorageService;
+	private final CompanyMemberMapper memberMapper;
+
+	@Autowired
+	@Lazy
+	private FileStorageService fileStorageService;
 
 	private final TempMediaRepository tempMediaRepository;
+
+	private final CompanyMemberRepository companyMemberRepository;
 
 	@Override
 	@Transactional
@@ -54,7 +69,7 @@ public class CompanyProfileServiceImpl implements CompanyProfileService {
 
 		String companyId = companyProfileDTO.getId();
 		CompanyDocument oldProfile = companyProfileRepository.findByIdAndOwnerEmail(companyId, ownerEmail)
-				.orElseThrow(() -> new IllegalArgumentException("Company's profile not found or unauthorized"));
+				.orElse(new CompanyDocument());
 
 		List<String> oldUrlsToDelete = new ArrayList<>();
 
@@ -81,6 +96,18 @@ public class CompanyProfileServiceImpl implements CompanyProfileService {
 
 		mapper.updateDocumentFromDTO(companyProfileDTO, oldProfile);
 		CompanyDocument companySaveDocument = companyProfileRepository.save(oldProfile);
+
+		// add to company member
+		if (!companyMemberRepository.existsByRecruiterEmailAndCompanyId(ownerEmail, companySaveDocument.getId())) {
+			CompanyMemberRole companyMemberRole = "ROLE_ADMIN".equals(role) ? CompanyMemberRole.ADMIN
+					: CompanyMemberRole.OWNER;
+			CompanyMemberDTO memberDTO = CompanyMemberDTO.builder().recruiterEmail(ownerEmail)
+					.companyId(companySaveDocument.getId()).companyLogo(companySaveDocument.getLogoUrl())
+					.companyName(companySaveDocument.getCompanyName()).role(companyMemberRole)
+					.status(CompanyMemberStatus.ACTIVE).build();
+
+			companyMemberRepository.save(memberMapper.toDocument(memberDTO));
+		}
 
 		removeConfirmedUrlsFromTemp(companyProfileDTO);
 
@@ -128,11 +155,13 @@ public class CompanyProfileServiceImpl implements CompanyProfileService {
 	}
 
 	@Override
-	public List<String> findNameCompaniesByOwner(String ownerEmail) {
+	public List<CompaniesInfoResponse> findMyCompanies(String email) {
+		List<CompanyMemberDocument> memberDocuments = companyMemberRepository.findByRecruiterEmail(email);
 
-		List<CompanyDocument> companiesDocument = companyProfileRepository.findByOwnerEmail(ownerEmail);
-
-		return companiesDocument.stream().map(CompanyDocument::getCompanyName).collect(Collectors.toList());
+		return memberDocuments.stream()
+				.map(member -> CompaniesInfoResponse.builder().id(member.getCompanyId()).name(member.getCompanyName())
+						.role(member.getRole().name()).logo(member.getCompanyLogo()).build())
+				.collect(Collectors.toList());
 	}
 
 	@Override

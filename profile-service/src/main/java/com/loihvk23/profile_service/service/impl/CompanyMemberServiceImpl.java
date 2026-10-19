@@ -36,13 +36,13 @@ public class CompanyMemberServiceImpl implements CompanyMemberService {
 	@Override
 	public CompanyMemberDTO joinCompany(CompanyMemberDTO companyMemberDTO, String recruiterEmail) {
 
-		CompanyMemberDocument companyMemberDocument = companyMemberRepository
-				.findByRecruiterEmailAndCompanyId(recruiterEmail, companyMemberDTO.getCompanyId()).orElse(null);
-
-		if (companyMemberDocument != null) {
+		if (companyMemberRepository.existsByRecruiterEmailAndCompanyId(recruiterEmail,
+				companyMemberDTO.getCompanyId())) {
 			throw new IllegalArgumentException("You 've already applied join this company");
 		}
-		CompanyMemberDTO companyMemberAdjustDto = CompanyMemberDTO.builder().recruiterEmail(recruiterEmail).build();
+		CompanyMemberDTO companyMemberAdjustDto = CompanyMemberDTO.builder().recruiterEmail(recruiterEmail)
+				.companyId(companyMemberDTO.getCompanyId()).companyLogo(companyMemberDTO.getCompanyLogo())
+				.companyName(companyMemberDTO.getCompanyName()).build();
 
 		return mapper.toDTO(companyMemberRepository.save(mapper.toDocument(companyMemberAdjustDto)));
 	}

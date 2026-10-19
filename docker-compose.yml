@@ -13,6 +13,7 @@ services:
       - EUREKA_CLIENT_REGISTER_WITH_EUREKA=false
       - EUREKA_CLIENT_FETCH_REGISTRY=false
     mem_limit: 384m
+    profiles: ["app"]
 
   api-gateway:
     build:
@@ -29,6 +30,7 @@ services:
       - ALLOW_URL=${ALLOW_URL}
     restart: on-failure
     mem_limit: 384m
+    profiles: ["app"]
 
   rabbitmq:
     image: rabbitmq:3-management
@@ -98,6 +100,7 @@ services:
     networks:
       - recruitment-network
     mem_limit: 1024m
+    profiles: ["app"]
 
   application-service:
     build: 
@@ -129,6 +132,7 @@ services:
       - recruitment-network
     restart: on-failure
     mem_limit: 512m
+    profiles: ["app"]
     
   auth-service:
     build: 
@@ -155,6 +159,7 @@ services:
       - recruitment-network
     restart: on-failure
     mem_limit: 384m
+    profiles: ["app"]
 
   job-service:
     build: 
@@ -178,6 +183,7 @@ services:
       - recruitment-network
     restart: on-failure
     mem_limit: 384m
+    profiles: ["app"]
 
   profile-service:
     build: 
@@ -198,6 +204,7 @@ services:
       - recruitment-network
     restart: on-failure
     mem_limit: 384m
+    profiles: ["app"]
 
   blog-service:
     build: 
@@ -218,6 +225,7 @@ services:
       - recruitment-network
     restart: on-failure
     mem_limit: 384m
+    profiles: ["app"]
 
   notification-service:
     build: 
@@ -241,6 +249,7 @@ services:
       - recruitment-network
     restart: on-failure
     mem_limit: 384m
+    profiles: ["app"]
 
   techroute-web:
     build: 
@@ -254,6 +263,7 @@ services:
     networks:
       - recruitment-network
     mem_limit: 128m
+    profiles: ["app"]
 
 volumes:
   rabbitmq_data:

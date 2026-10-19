@@ -1,6 +1,7 @@
 package com.loihvk23.profile_service.repository;
 
 import java.util.Optional;
+import java.util.List;
 
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
@@ -14,4 +15,8 @@ public interface CompanyMemberRepository extends MongoRepository<CompanyMemberDo
 			Pageable pageable);
 
 	Optional<CompanyMemberDocument> findByRecruiterEmailAndCompanyId(String recruiterEmail, String companyId);
+	
+	boolean existsByRecruiterEmailAndCompanyId(String recruiterEmail, String companyId);
+
+	List<CompanyMemberDocument> findByRecruiterEmail(String recruiterEmail);
 }
